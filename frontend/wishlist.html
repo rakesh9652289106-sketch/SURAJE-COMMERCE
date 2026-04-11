@@ -44,7 +44,7 @@
     <script type="module">
         document.addEventListener("DOMContentLoaded", async () => {
             const wishlistJSON = localStorage.getItem('wishlist');
-            const wishlist = wishlistJSON ? JSON.parse(wishlistJSON) : [];
+            let wishlist = wishlistJSON ? JSON.parse(wishlistJSON).map(id => Number(id)) : [];
             const grid = document.getElementById("wishlistGrid");
             const emptyMsg = document.getElementById("emptyWishlistMsg");
 
@@ -60,6 +60,19 @@
                 const res = await fetch('/api/products');
                 const products = await res.json();
                 
+                // Load backend wishlist if logged in to be fully synced
+                const user_id = getCookie('user_id');
+                if (user_id) {
+                    try {
+                        const wishRes = await fetch('/api/user/wishlist');
+                        if (wishRes.ok) {
+                            const wishData = await wishRes.json();
+                            wishlist = wishData.map(item => Number(item.id || item.product_id));
+                            localStorage.setItem('wishlist', JSON.stringify(wishlist));
+                        }
+                    } catch(e) { console.error("Wishlist sync failed", e); }
+                }
+
                 // Filter products that are in the wishlist
                 const wishlistProducts = products.filter(p => wishlist.includes(p.id));
                 
@@ -68,11 +81,20 @@
                     return;
                 }
 
-                window.removeFromWishlist = function(e, prodId) {
-                    const prod = wishlistProducts.find(p => p.id == prodId);
+                window.removeFromWishlist = async function(e, prodId) {
+                    const pid = Number(prodId);
+                    const prod = wishlistProducts.find(p => p.id == pid);
                     const prodName = prod ? prod.name : "Product";
                     if (!confirm(`Remove ${prodName} from wishlist?`)) return;
-                    const idx = wishlist.indexOf(parseInt(prodId));
+                    
+                    const user_id = getCookie('user_id');
+                    if (user_id) {
+                        try {
+                            await fetch(`/api/user/wishlist/${pid}`, { method: 'DELETE' });
+                        } catch(e) {}
+                    }
+
+                    const idx = wishlist.indexOf(pid);
                     if (idx > -1) {
                         wishlist.splice(idx, 1);
                         localStorage.setItem('wishlist', JSON.stringify(wishlist));
@@ -141,7 +163,7 @@
                         return;
                     }
                     emptyMsg.style.display = "none";
-                    grid.innerHTML = wishlistProducts.filter(p => wishlist.includes(p.id)).map(prod => {
+                    grid.innerHTML = products.filter(p => wishlist.includes(Number(p.id))).map(prod => {
                         const escapedName = prod.name.replace(/'/g, "&apos;");
                         return `
                             <div class="product-card">

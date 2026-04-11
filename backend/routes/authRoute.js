@@ -88,8 +88,8 @@ router.post('/reset-password', async (req, res) => {
     const isA1Correct = providedA1 && user.security_a1 === providedA1;
     const isA2Correct = providedA2 && user.security_a2 === providedA2;
 
-    if (!isA1Correct && !isA2Correct) {
-        return res.status(401).json({ error: "Identity verification failed. Correct answers are required." });
+    if (!isA1Correct || !isA2Correct) {
+        return res.status(401).json({ error: "Identity verification failed. Both security answers are required." });
     }
 
     const hashedPassword = hashPassword(password);

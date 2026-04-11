@@ -67,6 +67,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     setupLocation();
     setupReviews();
     updateWishlistBadge();
+    fetchUserWishlist(); // Sync with backend if logged in
     setupCarousels();
     setupCustomerService();
     populateTestimonials();
@@ -229,6 +230,7 @@ function updateWishlistBadge() {
 window.toggleWishlist = async function(e, productId) {
     e.stopPropagation();
     const isLogged = !!getCookie('user_id');
+    const pid = Number(productId);
     
     // UI Feedback immediately
     const icon = e.target;
@@ -237,7 +239,7 @@ window.toggleWishlist = async function(e, productId) {
     if (isActive) {
         icon.classList.replace('ph-fill', 'ph');
         if (isLogged) {
-            await fetch(`/api/user/wishlist/${productId}`, { method: 'DELETE' });
+            await fetch(`/api/user/wishlist/${pid}`, { method: 'DELETE' });
         }
     } else {
         icon.classList.replace('ph', 'ph-fill');
@@ -245,19 +247,61 @@ window.toggleWishlist = async function(e, productId) {
             await fetch('/api/user/wishlist', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ product_id: productId })
+                body: JSON.stringify({ product_id: pid })
             });
         }
     }
 
-    // Local backup for badge updates
-    const index = wishlist.indexOf(productId);
+    // Local backup for badge updates - Ensure wishlist contains numbers
+    // Normalize existing wishlist to numbers just in case
+    wishlist = wishlist.map(id => Number(id));
+    
+    const index = wishlist.indexOf(pid);
     if (index > -1) wishlist.splice(index, 1);
-    else wishlist.push(productId);
+    else wishlist.push(pid);
     
     localStorage.setItem('wishlist', JSON.stringify(wishlist));
     updateWishlistBadge();
     Toast.show(isActive ? "Removed from wishlist" : "Added to wishlist", "info");
+}
+
+async function fetchUserWishlist() {
+    if (!getCookie('user_id')) return;
+    try {
+        const res = await fetch('/api/user/wishlist');
+        if (res.ok) {
+            const data = await res.json();
+            // Store as array of IDs (Numbers)
+            const backendIds = data.map(item => Number(item.id || item.product_id));
+            
+            // Merge with local if needed, or just overwrite (overwrite is safer for sync)
+            wishlist = backendIds;
+            localStorage.setItem('wishlist', JSON.stringify(wishlist));
+            updateWishlistBadge();
+            // If we are on the homepage, we might need to refresh heart icons
+            refreshWishlistIcons();
+        }
+    } catch(err) { console.error("Wishlist sync failed", err); }
+}
+
+function refreshWishlistIcons() {
+    const hearts = document.querySelectorAll('.ph-heart');
+    hearts.forEach(heart => {
+        // Need to find the product ID associated with this heart
+        // Usually it's in the onclick handler: toggleWishlist(event, 'ID')
+        const onclickStr = heart.getAttribute('onclick');
+        if (onclickStr) {
+            const match = onclickStr.match(/['"](\d+)['"]/);
+            if (match) {
+                const pid = Number(match[1]);
+                if (wishlist.includes(pid)) {
+                    heart.classList.replace('ph', 'ph-fill');
+                } else {
+                    heart.classList.replace('ph-fill', 'ph');
+                }
+            }
+        }
+    });
 }
 
 function setupNotifications() {
@@ -1061,10 +1105,6 @@ function setupAuth() {
         const confirmPass = document.getElementById('confirmPasswordInput')?.value;
         const answer = recoveryAnswerInput.value;
 
-        if (currentRecoveryStep === 3) {
-            if (pass !== confirmPass) return showAuthError("Passwords do not match.");
-        }
-
         if (currentRecoveryStep === 1 || currentRecoveryStep === 2) {
             if (!answer) return showAuthError("Please provide an answer.");
             
@@ -1076,30 +1116,26 @@ function setupAuth() {
                 });
                 
                 if (res.ok) {
-                    // Success! Any one correct is enough.
-                    userRecoveryAnswers = [];
-                    // Put the answer in the correct position for the final reset call
-                    if (currentRecoveryStep === 1) userRecoveryAnswers[0] = answer;
-                    else userRecoveryAnswers[1] = answer;
+                    // Success! Store the answer
+                    userRecoveryAnswers[currentRecoveryStep - 1] = answer;
                     
-                    Toast.show("Identity verified! You can now reset your password.", "success");
-                    currentRecoveryStep = 3; // Jump to reset pass step
+                    if (currentRecoveryStep === 1) {
+                        Toast.show("Question 1 verified! Please answer the second question.", "success");
+                        currentRecoveryStep = 2;
+                    } else {
+                        Toast.show("Identity verified! You can now reset your password.", "success");
+                        currentRecoveryStep = 3;
+                    }
                     recoveryAnswerInput.value = '';
                     updateModalState();
                 } else {
                     const data = await res.json();
-                    if (currentRecoveryStep === 1) {
-                        Toast.show("Incorrect answer. Please try the second question.", "info");
-                        currentRecoveryStep = 2;
-                        recoveryAnswerInput.value = '';
-                        updateModalState();
-                    } else {
-                        showAuthError("Identity verification failed. Both answers were incorrect.");
-                    }
+                    showAuthError(data.error || "Incorrect answer. Please try again.");
                 }
             } catch(e) { showAuthError("Verification failed"); }
         } else if (currentRecoveryStep === 3) {
             if (!pass) return showAuthError("New password required.");
+            if (pass !== confirmPass) return showAuthError("Passwords do not match.");
 
             try {
                 const res = await fetch('/api/auth/reset-password', {
@@ -1107,8 +1143,8 @@ function setupAuth() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         phone, password: pass, 
-                        security_a1: userRecoveryAnswers[0] || null, 
-                        security_a2: userRecoveryAnswers[1] || null 
+                        security_a1: userRecoveryAnswers[0], 
+                        security_a2: userRecoveryAnswers[1] 
                     })
                 });
                 if (res.ok) {
@@ -1171,8 +1207,8 @@ function setupAuth() {
                 submitAuthBtn.style.display = 'block';
                 submitAuthBtn.innerText = "Verify Answer";
                 recoverySection.style.display = 'block';
-                recoveryStepLabel.innerText = `Step ${currentRecoveryStep}: Verification`;
-                recoveryQuestionLabel.innerText = recoveryQuestions[currentRecoveryStep - 1];
+                recoveryStepLabel.innerText = `Step ${currentRecoveryStep} of 2: Verification`;
+                recoveryQuestionLabel.innerText = recoveryQuestions[currentRecoveryStep - 1] || "Security Question";
             } else {
                 authDesc.innerText = "Set your new account password";
                 regNameField.style.display = 'none';
@@ -1726,7 +1762,7 @@ function populateProducts(containerId, items) {
     items.forEach((prod, i) => {
         const cartItem = cart.find(c => c.name === prod.name);
         const qty = cartItem ? cartItem.quantity : 0;
-        const isWishlisted = wishlist.includes(prod.id);
+        const isWishlisted = wishlist.map(id => Number(id)).includes(Number(prod.id));
         const isAvailable = prod.is_available !== 0; 
         
         const safeName = prod.name.replace(/'/g, "\\'");
@@ -2217,7 +2253,7 @@ function updateAuthUI(name) {
     if (userFullName || username) {
         authContent.innerHTML = `
             <a href="profile.html" class="nav-link" style="color: var(--primary); font-weight: 600;">
-                <i class="ph-fill ph-user-circle"></i> Hi, ${userFullName || username}
+                <i class="ph-fill ph-user-circle"></i> HI, ${(userFullName || username).toUpperCase()}
             </a>
             <span class="divider">|</span>
             <a href="#" class="nav-link logout-trigger">Log Out</a>

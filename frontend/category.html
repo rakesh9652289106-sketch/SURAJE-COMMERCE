@@ -130,7 +130,22 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             initCatalog();
+            fetchUserWishlist(); // Sync wishlist from backend
         });
+
+        async function fetchUserWishlist() {
+            const user_id = getCookie('user_id');
+            if (!user_id) return;
+            try {
+                const res = await fetch('/api/user/wishlist');
+                if (res.ok) {
+                    const data = await res.json();
+                    wishlist = data.map(item => Number(item.id || item.product_id));
+                    localStorage.setItem('wishlist', JSON.stringify(wishlist));
+                    if (allProducts.length > 0) renderProducts(allProducts);
+                }
+            } catch(e) { console.error("Wishlist sync failed", e); }
+        }
 
         async function initCatalog() {
             setupNavMenu();
@@ -278,7 +293,7 @@
 
             grid.innerHTML = list.map(p => {
                 const cartItem = cart.find(c => c.name === p.name);
-                const isWish = wishlist.includes(p.id);
+                const isWish = wishlist.map(id => Number(id)).includes(Number(p.id));
                 
                 let btnHtml = '';
                 if (p.is_available === 0) {
@@ -342,18 +357,22 @@
             const icon = e.currentTarget.querySelector('i');
             const isActive = icon.classList.contains('ph-fill');
             const user_id = getCookie('user_id');
+            const pid = Number(id);
 
             if (isActive) {
                 icon.classList.replace('ph-fill', 'ph');
-                if (user_id) await fetch(`/api/user/wishlist/${id}`, { method: 'DELETE' });
+                if (user_id) await fetch(`/api/user/wishlist/${pid}`, { method: 'DELETE' });
             } else {
                 icon.classList.replace('ph', 'ph-fill');
-                if (user_id) await fetch('/api/user/wishlist', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({product_id:id}) });
+                if (user_id) await fetch('/api/user/wishlist', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({product_id:pid}) });
             }
 
-            const idx = wishlist.indexOf(id);
+            // Standardize wishlist as numbers
+            wishlist = wishlist.map(i => Number(i));
+            const idx = wishlist.indexOf(pid);
             if (idx > -1) wishlist.splice(idx, 1);
-            else wishlist.push(id);
+            else wishlist.push(pid);
+            
             localStorage.setItem('wishlist', JSON.stringify(wishlist));
             renderProducts(allProducts);
         }

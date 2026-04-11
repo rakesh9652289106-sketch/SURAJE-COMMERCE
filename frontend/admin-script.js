@@ -116,7 +116,6 @@ function setupEventListeners() {
     document.getElementById('bannerEditForm')?.addEventListener('submit', handleSaveBanner);
     document.getElementById('offerForm1')?.addEventListener('submit', (e) => handleSaveOffer(e, 1));
     document.getElementById('offerForm2')?.addEventListener('submit', (e) => handleSaveOffer(e, 2));
-    document.getElementById('offerForm3')?.addEventListener('submit', (e) => handleSaveOffer(e, 3));
 
     // New Management Forms
     document.getElementById('categoryForm')?.addEventListener('submit', handleCategorySubmit);
@@ -134,7 +133,7 @@ async function fetchCategories() {
     try {
         const res = await fetch('/api/categories');
         const categories = await res.json();
-        const dropdownIds = ['pCategory', 'editPCategory', 'adminCategoryFilter', 'bCategory', 'mfCategory', 'oCategory1', 'oCategory2', 'oCategory3', 'adminProductCategory'];
+        const dropdownIds = ['pCategory', 'editPCategory', 'adminCategoryFilter', 'bCategory', 'mfCategory', 'oCategory1', 'oCategory2', 'adminProductCategory'];
         const options = categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
         
         dropdownIds.forEach(id => {
