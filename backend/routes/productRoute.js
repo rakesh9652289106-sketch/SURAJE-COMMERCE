@@ -35,13 +35,7 @@ router.get('/', async (req, res) => {
     const { data, error } = await query;
     if (error) return res.status(500).json({ error: error.message });
     
-    // Map imgurl -> imgUrl, originalprice -> originalPrice
-    const mapped = data.map(p => ({
-        ...p,
-        imgUrl: p.imgurl,
-        originalPrice: p.originalprice
-    }));
-    res.json(mapped);
+    res.json(data);
 });
 
 // Get Reviews for a specific product
@@ -61,13 +55,7 @@ router.get('/:id', async (req, res) => {
     if (error) return res.status(500).json({ error: error.message });
     if (!row) return res.status(404).json({ error: "Product not found" });
     
-    // Map imgurl -> imgUrl, originalprice -> originalPrice
-    const mapped = {
-        ...row,
-        imgUrl: row.imgurl,
-        originalPrice: row.originalprice
-    };
-    res.json(mapped);
+    res.json(row);
 });
 
 // Get products by Category
@@ -81,12 +69,7 @@ router.get('/category/:categoryName', async (req, res) => {
     const { data, error } = await query;
     if (error) return res.status(500).json({ error: error.message });
     
-    const mapped = data.map(p => ({
-        ...p,
-        imgUrl: p.imgurl,
-        originalPrice: p.originalprice
-    }));
-    res.json(mapped);
+    res.json(data);
 });
 
 module.exports = router;

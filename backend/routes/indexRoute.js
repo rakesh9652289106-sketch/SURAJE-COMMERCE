@@ -81,12 +81,7 @@ router.post('/coupons/validate', async (req, res) => {
 router.get('/categories', async (req, res) => {
     const { data, error } = await supabase.from('categories').select('*');
     if (error) return res.status(500).json({ error: error.message });
-    // Map iconurl -> iconUrl
-    const mapped = data.map(cat => ({
-        ...cat,
-        iconUrl: cat.iconurl
-    }));
-    res.json(mapped);
+    res.json(data);
 });
 
 router.get('/brands', async (req, res) => {
@@ -98,13 +93,7 @@ router.get('/brands', async (req, res) => {
 router.get('/banners', async (req, res) => {
     const { data, error } = await supabase.from('banners').select('*');
     if (error) return res.status(500).json({ error: error.message });
-    // Map imgurl -> imgUrl, btntext -> btnText
-    const mapped = data.map(b => ({
-        ...b,
-        imgUrl: b.imgurl,
-        btnText: b.btntext
-    }));
-    res.json(mapped);
+    res.json(data);
 });
 
 router.get('/special-offers', async (req, res) => {

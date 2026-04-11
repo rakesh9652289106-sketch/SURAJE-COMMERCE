@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 
 // Replace these with your Supabase URL and keys sent by the user
