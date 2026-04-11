@@ -232,7 +232,7 @@
         </div>
     </footer>
 
-    <script>
+    <script type="module">
         async function loadSupportPage() {
             try {
                 const res = await fetch('/api/settings');
@@ -314,7 +314,7 @@
         </a>
     </div>
 
-    <script>
+    <script type="module">
         // Bind bottom cart button to open cart overlay
         document.getElementById('mobileBottomCartBtn').addEventListener('click', function(e) {
             e.preventDefault();
