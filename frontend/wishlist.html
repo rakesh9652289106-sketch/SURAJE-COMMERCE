@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Wishlist - SURAJ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="cart-styles.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="/" class="brand-logo">
+                <i class="ph ph-basket"></i> SURAJ
+            </a>
+            <div class="nav-actions">
+                <a href="/" class="nav-link"><i class="ph ph-arrow-left"></i> Back to Store</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="product-listing">
+            <div class="section-header">
+                <h3 class="section-title">My Wishlist <i class="ph-fill ph-heart" style="color: #EF4444;"></i></h3>
+            </div>
+            
+            <div id="emptyWishlistMsg" style="display: none; text-align: center; padding: 4rem; color: var(--text-muted);">
+                <i class="ph ph-heart-break" style="font-size: 4rem; margin-bottom: 1rem;"></i>
+                <h4>Your wishlist is empty</h4>
+                <p>Add items you love to your wishlist to easily find them later.</p>
+                <a href="/" class="btn btn-primary" style="margin-top: 1rem;">Go Shopping</a>
+            </div>
+
+            <div class="product-grid" id="wishlistGrid">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+    </main>
+
+    <script src="toast.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const wishlistJSON = localStorage.getItem('wishlist');
+            const wishlist = wishlistJSON ? JSON.parse(wishlistJSON) : [];
+            const grid = document.getElementById("wishlistGrid");
+            const emptyMsg = document.getElementById("emptyWishlistMsg");
+
+            // Load existing cart
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+            if (wishlist.length === 0) {
+                emptyMsg.style.display = "block";
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/products');
+                const products = await res.json();
+                
+                // Filter products that are in the wishlist
+                const wishlistProducts = products.filter(p => wishlist.includes(p.id));
+                
+                if (wishlistProducts.length === 0) {
+                    emptyMsg.style.display = "block";
+                    return;
+                }
+
+                window.removeFromWishlist = function(e, prodId) {
+                    const prod = wishlistProducts.find(p => p.id == prodId);
+                    const prodName = prod ? prod.name : "Product";
+                    if (!confirm(`Remove ${prodName} from wishlist?`)) return;
+                    const idx = wishlist.indexOf(parseInt(prodId));
+                    if (idx > -1) {
+                        wishlist.splice(idx, 1);
+                        localStorage.setItem('wishlist', JSON.stringify(wishlist));
+                        Toast.show(`${prodName} removed`, 'info');
+                        renderWishlist();
+                        updateWishlistBadge();
+                    }
+                }
+
+                window.gridChangeQty = function(prodName, delta) {
+                    const prod = wishlistProducts.find(p => p.name === prodName);
+                    if (!prod) return;
+
+                    const cartItem = cart.find(item => item.name === prod.name);
+                    if (cartItem) {
+                        cartItem.quantity += delta;
+                        if (cartItem.quantity <= 0) {
+                            cart = cart.filter(item => item.name !== prod.name);
+                        }
+                        localStorage.setItem('cart', JSON.stringify(cart));
+                        updateCartBadgeLocal();
+                        refreshWishlistButtons();
+                    }
+                }
+
+                window.addToCartDirectly = function(prodName) {
+                    const prod = wishlistProducts.find(p => p.name === prodName);
+                    if (prod) {
+                        const existing = cart.find(item => item.name === prod.name);
+                        if (existing) {
+                            existing.quantity += 1;
+                        } else {
+                            cart.push({ ...prod, quantity: 1 });
+                        }
+                        localStorage.setItem('cart', JSON.stringify(cart));
+                        Toast.show("Added to cart", "success");
+                        updateCartBadgeLocal();
+                        refreshWishlistButtons();
+                    }
+                }
+
+                function refreshWishlistButtons() {
+                    const containers = document.querySelectorAll('.product-action-container');
+                    containers.forEach(container => {
+                        const prodName = container.dataset.name;
+                        const cartItem = cart.find(item => item.name === prodName);
+                        
+                        if (cartItem && cartItem.quantity > 0) {
+                            container.innerHTML = `
+                                <div class="qty-toggle-sm" style="display: flex; align-items: center; gap: 0.75rem; background: var(--primary); color: white; padding: 4px 8px; border-radius: 20px;">
+                                    <button onclick="gridChangeQty('${prodName.replace(/'/g, "\\'")}', -1)" style="background:none; border:none; color:white; cursor:pointer;"><i class="ph ph-minus"></i></button>
+                                    <span style="font-weight: 600; font-size: 0.9rem; min-width: 15px; text-align: center;">${cartItem.quantity}</span>
+                                    <button onclick="gridChangeQty('${prodName.replace(/'/g, "\\'")}', 1)" style="background:none; border:none; color:white; cursor:pointer;"><i class="ph ph-plus"></i></button>
+                                </div>
+                            `;
+                        } else {
+                            container.innerHTML = `<button class="btn btn-outline btn-sm" onclick="addToCartDirectly('${prodName.replace(/'/g, "\\'")}')">Add to Cart</button>`;
+                        }
+                    });
+                }
+
+                function renderWishlist() {
+                    if (wishlist.length === 0) {
+                        grid.innerHTML = "";
+                        emptyMsg.style.display = "block";
+                        return;
+                    }
+                    emptyMsg.style.display = "none";
+                    grid.innerHTML = wishlistProducts.filter(p => wishlist.includes(p.id)).map(prod => {
+                        const escapedName = prod.name.replace(/'/g, "&apos;");
+                        return `
+                            <div class="product-card">
+                                <i class="ph-fill ph-heart" style="position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; color: #EF4444; z-index: 2; cursor: pointer;" onclick="removeFromWishlist(event, '${prod.id}')"></i>
+                                ${prod.discount ? '<span class="discount-badge">' + prod.discount + '</span>' : ''}
+                                <img src="${prod.imgUrl}" alt="${prod.name}" class="product-img" onerror="this.src='https://via.placeholder.com/200/F8FAFC/94A3B8?text=Product'">
+                                <div class="product-info">
+                                    <span class="product-weight">${prod.weight}</span>
+                                    <h4 class="product-title">${prod.name}</h4>
+                                    <div class="product-rating">
+                                        <i class="ph-fill ph-star"></i>
+                                        <span>${prod.rating} (${prod.reviews})</span>
+                                    </div>
+                                    <div class="product-bottom">
+                                        <div class="price">
+                                            <span class="current-price">₹${prod.price}</span>
+                                            <span class="old-price">₹${prod.originalPrice}</span>
+                                        </div>
+                                        <div class="product-action-container" data-name="${escapedName}">
+                                            <!-- Hydrated by refreshWishlistButtons -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    refreshWishlistButtons();
+                }
+
+                function updateCartBadgeLocal() {
+                    const badge = document.getElementById('cartBadge');
+                    if (badge) {
+                        const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+                        badge.textContent = count;
+                        badge.style.display = count > 0 ? 'flex' : 'none';
+                    }
+                }
+
+                function updateWishlistBadge() {
+                    const badge = document.getElementById('wishlistBadge');
+                    if (badge) {
+                        // User previous request: remove notification numbering for wishlist
+                        // If you want it on this specific page ONLY, you could set it here
+                        // but to stay consistent with your request to remove it, we'll keep it hidden
+                        badge.style.display = 'none';
+                    }
+                }
+
+                renderWishlist();
+                updateCartBadgeLocal();
+                updateWishlistBadge();
+
+            } catch(e) {
+                console.error("Failed to fetch products for wishlist", e);
+                grid.innerHTML = "<p>Couldn't load wishlist. Is the server running?</p>";
+            }
+        });
+    </script>
+
+    <!-- Floating Support Symbol -->
+    <a href="support.html" class="support-fixed-container" id="supportSymbol">
+        <div class="support-symbol">
+            <i class="ph ph-headset"></i>
+        </div>
+    </a>
+    <!-- Mobile Bottom Navigation (Visible only on mobile) -->
+    <div class="mobile-bottom-nav">
+        <a href="/" class="nav-item">
+            <i class="ph-fill ph-house"></i>
+            <span>Home</span>
+        </a>
+        <a href="category.html?name=All" class="nav-item">
+            <i class="ph ph-squares-four"></i>
+            <span>Categories</span>
+        </a>
+        <a href="wishlist.html" class="nav-item active" style="position: relative;">
+            <i class="ph ph-heart"></i>
+            <span class="badge" id="bottomWishlistBadge" style="position: absolute; top: -5px; right: 10px; background-color: #EF4444; color: white; width: 16px; height: 16px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold;">0</span>
+            <span>Wishlist</span>
+        </a>
+        <a href="#" class="nav-item cart-btn-mobile" id="mobileBottomCartBtn" style="position: relative;">
+            <i class="ph ph-shopping-cart"></i>
+            <span class="badge" id="bottomCartBadge" style="position: absolute; top: -5px; right: 10px; background-color: var(--primary); color: white; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold;">0</span>
+            <span>Cart</span>
+        </a>
+        <a href="#" class="nav-item" id="mobileBottomProfileBtn">
+            <i class="ph ph-user"></i>
+            <span>Profile</span>
+        </a>
+    </div>
+
+    <script>
+        // Bind bottom cart button to open cart overlay
+        document.getElementById('mobileBottomCartBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (document.getElementById('cartSidebar')) {
+                document.getElementById('cartSidebar').classList.add('active');
+                if (document.getElementById('cartOverlay')) document.getElementById('cartOverlay').classList.add('active');
+                document.body.style.overflow = 'hidden';
+                if (typeof renderCart === 'function') renderCart();
+            } else {
+                window.location.href = '/'; 
+            }
+        });
+        
+        // Link bottom profile btn
+        document.getElementById('mobileBottomProfileBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'profile.html';
+        });
+    </script>
+</body>
+</html>

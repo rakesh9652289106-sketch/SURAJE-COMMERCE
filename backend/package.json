@@ -1,0 +1,19 @@
+{
+  "name": "suraj-backend",
+  "version": "1.0.0",
+  "description": "Full-stack SURAJ E-Commerce application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.103.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "jsdom": "^29.0.1",
+    "puppeteer": "^24.3.0",
+    "sqlite3": "^6.0.1",
+    "dotenv": "^16.4.7"
+  }
+}

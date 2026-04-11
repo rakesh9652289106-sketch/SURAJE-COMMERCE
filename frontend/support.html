@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Support - SURAJ</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .support-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        .support-hero {
+            width: 100%;
+            height: 400px;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 40px;
+            position: relative;
+        }
+        .support-hero img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .support-hero-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 40px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+            color: white;
+        }
+        .support-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .support-card-page {
+            background: white;
+            padding: 30px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+            transition: transform 0.3s;
+            border: 1px solid var(--border);
+        }
+        .support-card-page:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+        .support-card-page i {
+            font-size: 40px;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+        .support-card-page h3 {
+            margin-bottom: 10px;
+            color: var(--text-main);
+        }
+        .support-card-page p {
+            color: var(--text-soft);
+            font-size: 1.1rem;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .contact-section {
+            margin-top: 60px;
+            background: white;
+            padding: 40px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+        }
+        .contact-section h2 {
+            margin-bottom: 10px;
+            color: var(--text-main);
+        }
+        .contact-section p {
+            color: var(--text-soft);
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-main);
+            font-size: 0.9rem;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .btn-send {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+        .btn-send:hover {
+            background: var(--primary-dark);
+        }
+        .message-status {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            display: none;
+            text-align: center;
+            font-weight: 600;
+        }
+        .message-status.success {
+            background: #DCFCE7;
+            color: #166534;
+            display: block;
+        }
+        .message-status.error {
+            background: #FEE2E2;
+            color: #991B1B;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <a href="/" class="logo">
+                    <i class="ph ph-shopping-basket"></i>
+                    SURAJ
+                </a>
+                <div class="nav-right">
+                    <a href="/" class="back-link"><i class="ph ph-arrow-left"></i> Back to Store</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="support-container">
+        <a href="/" class="back-link"><i class="ph ph-arrow-left"></i> Back to Shopping</a>
+        
+        <div class="support-hero">
+            <img id="shopHeroImage" src="https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200" alt="Our Shop">
+            <div class="support-hero-overlay">
+                <h1>Customer Support</h1>
+                <p>We're here to help you with your grocery needs.</p>
+            </div>
+        </div>
+
+        <div class="support-grid">
+            <div class="support-card-page">
+                <i class="ph ph-envelope"></i>
+                <h3>Email Us</h3>
+                <p id="pEmail">support@suraj.com</p>
+            </div>
+            <div class="support-card-page">
+                <i class="ph ph-phone"></i>
+                <h3>Call Us</h3>
+                <p id="pPhone">+91 98765 43210</p>
+            </div>
+            <div class="support-card-page">
+                <i class="ph ph-map-pin"></i>
+                <h3>Visit Us</h3>
+                <p id="pAddress">123 Grocery Avenue, Mumbai, MH</p>
+            </div>
+            <div class="support-card-page">
+                <i class="ph ph-code"></i>
+                <h3>Developed By</h3>
+                <p style="font-weight: 600; color: var(--primary);">P RAKESH KUMAR</p>
+            </div>
+        </div>
+
+        <section class="contact-section">
+            <h2>Send us a Message</h2>
+            <p>Have a specific question or feedback? Fill out the form below and our team will get back to you within 24 hours.</p>
+            
+            <form id="contactForm">
+                <div class="form-group">
+                    <label for="cName">Your Name</label>
+                    <input type="text" id="cName" required placeholder="Enter your full name">
+                </div>
+                <div class="form-group">
+                    <label for="cEmail">Email Address</label>
+                    <input type="email" id="cEmail" required placeholder="Enter your email address">
+                </div>
+                <div class="form-group">
+                    <label for="cSubject">Subject</label>
+                    <input type="text" id="cSubject" placeholder="What is this about?">
+                </div>
+                <div class="form-group">
+                    <label for="cMessage">Message</label>
+                    <textarea id="cMessage" rows="5" required placeholder="Tell us more about your inquiry..."></textarea>
+                </div>
+                <button type="submit" class="btn-send">Send Message</button>
+            </form>
+            <div id="formStatus" class="message-status"></div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 SURAJ. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        async function loadSupportPage() {
+            try {
+                const res = await fetch('/api/settings');
+                const data = await res.json();
+                if (data) {
+                    if (data.shop_email) document.getElementById('pEmail').innerText = data.shop_email;
+                    if (data.shop_phone) document.getElementById('pPhone').innerText = data.shop_phone;
+                    if (data.shop_address) document.getElementById('pAddress').innerText = data.shop_address;
+                    if (data.shop_image) document.getElementById('shopHeroImage').src = data.shop_image;
+                }
+            } catch(e) {
+                console.error("Failed to load support data", e);
+            }
+        }
+
+        const contactForm = document.getElementById('contactForm');
+        const formStatus = document.getElementById('formStatus');
+
+        contactForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            formStatus.className = 'message-status';
+            formStatus.innerText = 'Sending...';
+            formStatus.style.display = 'block';
+
+            const payload = {
+                name: document.getElementById('cName').value,
+                email: document.getElementById('cEmail').value,
+                subject: document.getElementById('cSubject').value,
+                message: document.getElementById('cMessage').value
+            };
+
+            try {
+                const res = await fetch('/api/support/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    formStatus.classList.add('success');
+                    formStatus.innerText = data.message;
+                    contactForm.reset();
+                } else {
+                    formStatus.classList.add('error');
+                    formStatus.innerText = data.error || 'Failed to send message.';
+                }
+            } catch(err) {
+                formStatus.classList.add('error');
+                formStatus.innerText = 'Connection error. Please try again later.';
+            }
+        });
+
+        loadSupportPage();
+    </script>
+    <!-- Mobile Bottom Navigation (Visible only on mobile) -->
+    <div class="mobile-bottom-nav">
+        <a href="/" class="nav-item">
+            <i class="ph-fill ph-house"></i>
+            <span>Home</span>
+        </a>
+        <a href="category.html?name=All" class="nav-item">
+            <i class="ph ph-squares-four"></i>
+            <span>Categories</span>
+        </a>
+        <a href="wishlist.html" class="nav-item" style="position: relative;">
+            <i class="ph ph-heart"></i>
+            <span class="badge" id="bottomWishlistBadge" style="position: absolute; top: -5px; right: 10px; background-color: #EF4444; color: white; width: 16px; height: 16px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold;">0</span>
+            <span>Wishlist</span>
+        </a>
+        <a href="#" class="nav-item cart-btn-mobile" id="mobileBottomCartBtn" style="position: relative;">
+            <i class="ph ph-shopping-cart"></i>
+            <span class="badge" id="bottomCartBadge" style="position: absolute; top: -5px; right: 10px; background-color: var(--primary); color: white; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold;">0</span>
+            <span>Cart</span>
+        </a>
+        <a href="#" class="nav-item" id="mobileBottomProfileBtn">
+            <i class="ph ph-user"></i>
+            <span>Profile</span>
+        </a>
+    </div>
+
+    <script>
+        // Bind bottom cart button to open cart overlay
+        document.getElementById('mobileBottomCartBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (document.getElementById('cartSidebar')) {
+                document.getElementById('cartSidebar').classList.add('active');
+                if (document.getElementById('cartOverlay')) document.getElementById('cartOverlay').classList.add('active');
+                document.body.style.overflow = 'hidden';
+                if (typeof renderCart === 'function') renderCart();
+            } else {
+                window.location.href = '/'; 
+            }
+        });
+        
+        // Link bottom profile btn
+        document.getElementById('mobileBottomProfileBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'profile.html';
+        });
+    </script>
+</body>
+</html>

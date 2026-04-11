@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Account - SURAJ</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="cart-styles.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="translations.js"></script>
+    <style>
+        .dashboard-wrapper {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        /* Dashboard Sidebar Nav */
+        .dash-nav {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+            box-shadow: var(--shadow-sm);
+            height: fit-content;
+        }
+        .dash-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.85rem 1rem;
+            color: var(--text-main);
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 0.25rem;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        .dash-nav-item:hover {
+            background: var(--bg-main);
+            color: var(--primary);
+        }
+        .dash-nav-item.active {
+            background: var(--primary-light);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Content Area */
+        .dash-content {
+            min-height: 500px;
+        }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Overview Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+        }
+        .stat-card i { font-size: 2rem; color: var(--primary); margin-bottom: 0.5rem; }
+        .stat-card h3 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+        .stat-card p { color: var(--text-soft); font-size: 0.9rem; }
+
+        /* Generic Card Styling */
+        .dash-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        .dash-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* Address Grid */
+        .address-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .address-card {
+            border: 1px solid var(--border);
+            padding: 1.25rem;
+            border-radius: 12px;
+            position: relative;
+        }
+        .address-card.default { border-color: var(--primary); background: var(--primary-light); }
+        .address-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--primary);
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        /* Form Styling */
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.9rem; }
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+        .form-control:focus { border-color: var(--primary); outline: none; }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .dashboard-wrapper { grid-template-columns: 1fr; }
+            .dash-nav { display: flex; overflow-x: auto; gap: 1rem; padding: 0.5rem; border-radius: 0; }
+            .dash-nav-item { margin-bottom: 0; white-space: nowrap; width: auto; }
+        }
+    </style>
+</head>
+<body>
+    <header class="navbar">
+        <div class="nav-container">
+            <div style="display:flex; align-items:center; gap: 1.2rem;">
+                <button class="nav-menu-btn" id="navMenuBtn">
+                    <i class="ph ph-list"></i>
+                </button>
+                <a href="/" class="brand-logo">
+                    <i class="ph ph-basket"></i> SURAJ
+                </a>
+            </div>
+            <div class="nav-actions">
+                <a href="/" class="nav-link"><i class="ph ph-arrow-left"></i> <span data-i18n="view_all">Back to Store</span></a>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-wrapper">
+        <!-- Sidebar Nav -->
+        <aside class="dash-nav">
+            <button class="dash-nav-item" data-tab="overview">
+                <i class="ph ph-layout"></i> Overview
+            </button>
+            <button class="dash-nav-item active" data-tab="orders">
+                <i class="ph ph-package"></i> My Orders
+            </button>
+            <button class="dash-nav-item" data-tab="wishlist">
+                <i class="ph ph-heart"></i> My Wishlist
+            </button>
+            <button class="dash-nav-item" data-tab="addresses">
+                <i class="ph ph-map-pin"></i> Saved Addresses
+            </button>
+            <button class="dash-nav-item" data-tab="coupons">
+                <i class="ph ph-ticket"></i> My Coupons
+            </button>
+            <button class="dash-nav-item" data-tab="profile">
+                <i class="ph ph-user-circle"></i> Edit Profile
+            </button>
+            <button class="dash-nav-item" data-tab="inquiries">
+                <i class="ph ph-chat-circle-dots"></i> My Inquiries
+            </button>
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+                <button class="dash-nav-item" style="color: #EF4444;" onclick="logoutUser()">
+                    <i class="ph ph-sign-out"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            
+            <!-- OVERVIEW TAB -->
+            <div class="tab-content" id="overview">
+                <div class="dash-card">
+                    <div style="display:flex; align-items:center; gap:1.5rem;">
+                        <div class="profile-avatar" id="profileAvatarInitial" style="width:70px; height:70px; background:var(--primary-light); color:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.75rem; font-weight:700;">U</div>
+                        <div>
+                            <h2 id="welcomeName">Welcome!</h2>
+                            <p id="userStatusLabel" style="color:var(--text-soft);">SURAJ Premium Member</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <i class="ph ph-shopping-bag"></i>
+                        <h3 id="statOrdersCount">0</h3>
+                        <p>Total Orders</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="ph ph-heart"></i>
+                        <h3 id="statWishlistCount">0</h3>
+                        <p>Favorites</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="ph ph-map-pin-line"></i>
+                        <h3 id="statAddressCount">0</h3>
+                        <p>Saved Addresses</p>
+                    </div>
+                </div>
+
+                <div class="dash-card" style="margin-top: 1.5rem;">
+                    <h3 style="margin-bottom: 1rem;"><i class="ph ph-clock-counter-clockwise"></i> Recent Activity</h3>
+                    <div id="recentActivityList">
+                        <p style="color:var(--text-soft); font-size:0.9rem;">Loading recent activity...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ORDERS TAB -->
+            <div class="tab-content active" id="orders">
+                <h2 style="margin-bottom:1.5rem;">My Order History</h2>
+                <div id="orderList">
+                    <p style="text-align:center; padding: 3rem; color:var(--text-soft);">Fetching orders...</p>
+                </div>
+            </div>
+
+            <!-- WISHLIST TAB -->
+            <div class="tab-content" id="wishlist">
+                <h2 style="margin-bottom:1.5rem;">My Wishlist</h2>
+                <div id="wishlistGrid" class="product-grid">
+                    <p style="text-align:center; padding: 3rem; color:var(--text-soft);">Fetching your favorites...</p>
+                </div>
+            </div>
+
+            <!-- ADDRESSES TAB -->
+            <div class="tab-content" id="addresses">
+                <div class="dash-card-header">
+                    <h2>Saved Addresses</h2>
+                    <button class="btn btn-primary" onclick="openAddressModal()">+ Add New</button>
+                </div>
+                <div id="addressGrid" class="address-grid">
+                    <!-- Address cards here -->
+                </div>
+            </div>
+
+            <!-- COUPONS TAB -->
+            <div class="tab-content" id="coupons">
+                <h2 style="margin-bottom:1.5rem;">My Coupons & Offers</h2>
+                <div id="couponList" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                    <!-- Coupons here -->
+                </div>
+            </div>
+
+            <!-- PROFILE EDIT TAB -->
+            <div class="tab-content" id="profile">
+                <div class="dash-card">
+                    <h2 style="margin-bottom:1.5rem;">Edit Personal Details</h2>
+                    <form id="profileForm">
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
+                            <div class="form-group">
+                                <label>Full Name</label>
+                                <input type="text" class="form-control" name="full_name" placeholder="Enter your full name">
+                            </div>
+                            <div class="form-group">
+                                <label>Email Address</label>
+                                <input type="email" class="form-control" name="email" placeholder="email@example.com">
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
+                            <div class="form-group">
+                                <label>Phone Number</label>
+                                <input type="text" class="form-control" name="phone" placeholder="+91 XXXXX XXXXX">
+                            </div>
+                            <div class="form-group">
+                                <label>Alternate Phone</label>
+                                <input type="text" class="form-control" name="alternate_phone" placeholder="Alternative contact number">
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
+                            <div class="form-group">
+                                <label>Gender</label>
+                                <select class="form-control" name="gender" style="height: 48px;">
+                                    <option value="" disabled selected>Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                    <option value="Prefer not to say">Prefer not to say</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Date of Birth</label>
+                                <input type="date" class="form-control" name="dob">
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns: 1fr; gap:1.5rem;">
+                            <div class="form-group">
+                                <label>Profile Picture URL</label>
+                                <input type="text" class="form-control" name="profile_pic" placeholder="Link to your avatar">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="margin-top:1rem;">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- INQUIRIES TAB -->
+            <div class="tab-content" id="inquiries">
+                <div class="dash-card-header">
+                    <h2>My Inquiries & Support</h2>
+                    <a href="/support.html" class="btn btn-primary">+ New Inquiry</a>
+                </div>
+                <div id="inquiryList">
+                    <p style="text-align:center; padding: 3rem; color:var(--text-soft);">Loading support history...</p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Add/Edit Address Modal -->
+    <div class="feature-modal-overlay" id="addressModalOverlay">
+        <div class="feature-modal" style="max-width: 500px;">
+            <div class="feature-modal-header">
+                <h3>Add New Address</h3>
+                <button class="close-feature-modal" id="closeAddressModal"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="feature-modal-content">
+                <form id="addressForm">
+                    <div class="form-group">
+                        <label>Label</label>
+                        <select class="form-control" name="label">
+                            <option value="Home">Home</option>
+                            <option value="Work">Work</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Full Address</label>
+                        <textarea class="form-control" name="address_line" rows="3" placeholder="House No, Street, Landmark..."></textarea>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                        <div class="form-group">
+                            <label>City</label>
+                            <input type="text" class="form-control" name="city">
+                        </div>
+                        <div class="form-group">
+                            <label>Pincode</label>
+                            <input type="text" class="form-control" name="pincode">
+                        </div>
+                    </div>
+                    <div class="form-group" style="display:flex; align-items:center; gap:0.5rem;">
+                        <input type="checkbox" name="is_default" id="defAddr">
+                        <label for="defAddr" style="margin:0;">Set as default address</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width:100%;">Save Address</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reuse Sidebar same as Home -->
+    <div class="nav-overlay" id="navOverlay"></div>
+    <aside class="nav-sidebar" id="navSidebar">
+        <div class="nav-sidebar-header">
+            <div class="user-profile-brief">
+                <div class="user-avatar-circle">
+                    <i class="ph ph-user"></i>
+                </div>
+                <div class="user-info-text">
+                    <h4 id="sidebarUsername">Guest User</h4>
+                    <p>Welcome to SURAJ</p>
+                </div>
+            </div>
+            <button class="close-nav" id="closeNavBtn"><i class="ph ph-x"></i></button>
+        </div>
+        
+        <div class="nav-sidebar-content">
+            <div class="nav-section">
+                <h5 data-i18n="sidebar_section_account">My Account</h5>
+                <a href="profile.html?tab=orders" class="nav-item" id="nav-orders"><i class="ph ph-package"></i> <span data-i18n="sidebar_my_orders">My Orders</span></a>
+                <a href="profile.html?tab=orders" class="nav-item" id="nav-tracking"><i class="ph ph-truck"></i> <span>Order Tracking</span></a>
+                <a href="wishlist.html" class="nav-item" id="nav-wishlist"><i class="ph ph-heart"></i> <span data-i18n="sidebar_my_wishlist">My Wishlist</span></a>
+                <a href="profile.html?tab=coupons" class="nav-item" id="nav-coupons"><i class="ph ph-ticket"></i> <span data-i18n="sidebar_my_coupons">My Coupons</span></a>
+                <a href="profile.html?tab=profile" class="nav-item" id="nav-profile"><i class="ph ph-user-circle"></i> <span data-i18n="sidebar_edit_profile">Edit Profile</span></a>
+                <a href="profile.html?tab=addresses" class="nav-item" id="nav-addresses"><i class="ph ph-map-pin"></i> <span data-i18n="sidebar_saved_addresses">Saved Addresses</span></a>
+            </div>
+            
+            <div class="nav-divider"></div>
+            
+            <div class="nav-section">
+                <h5 data-i18n="sidebar_section_store">Store Features</h5>
+                <a href="#" class="nav-item" onclick="openLanguageModal()"><i class="ph ph-translate"></i> <span data-i18n="sidebar_language">Language</span></a>
+            </div>
+            
+            <div class="nav-divider"></div>
+            
+            <a href="#" class="nav-item logout-item" id="sidebarLogout" style="display:none; color:#dc2626;">
+                <i class="ph ph-sign-out"></i> <span data-i18n="sidebar_logout">Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <script src="toast.js"></script>
+    <script src="profile-script.js"></script>
+    <!-- Mobile Bottom Navigation (Visible only on mobile) -->
+    <div class="mobile-bottom-nav">
+        <a href="/" class="nav-item">
+            <i class="ph-fill ph-house"></i>
+            <span>Home</span>
+        </a>
+        <a href="category.html?name=All" class="nav-item">
+            <i class="ph ph-squares-four"></i>
+            <span>Categories</span>
+        </a>
+        <a href="wishlist.html" class="nav-item" style="position: relative;">
+            <i class="ph ph-heart"></i>
+            <span class="badge" id="bottomWishlistBadge" style="position: absolute; top: -5px; right: 10px; background-color: #EF4444; color: white; width: 16px; height: 16px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold;">0</span>
+            <span>Wishlist</span>
+        </a>
+        <a href="#" class="nav-item cart-btn-mobile" id="mobileBottomCartBtn" style="position: relative;">
+            <i class="ph ph-shopping-cart"></i>
+            <span class="badge" id="bottomCartBadge" style="position: absolute; top: -5px; right: 10px; background-color: var(--primary); color: white; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold;">0</span>
+            <span>Cart</span>
+        </a>
+        <a href="#" class="nav-item active" id="mobileBottomProfileBtn">
+            <i class="ph ph-user"></i>
+            <span>Profile</span>
+        </a>
+    </div>
+
+    <script>
+        // Bind bottom cart button to open cart overlay
+        document.getElementById('mobileBottomCartBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (document.getElementById('cartSidebar')) {
+                document.getElementById('cartSidebar').classList.add('active');
+                if (document.getElementById('cartOverlay')) document.getElementById('cartOverlay').classList.add('active');
+                document.body.style.overflow = 'hidden';
+                if (typeof renderCart === 'function') renderCart();
+            } else {
+                window.location.href = '/'; 
+            }
+        });
+        
+        // Link bottom profile btn
+        document.getElementById('mobileBottomProfileBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'profile.html';
+        });
+    </script>
+</body>
+</html>

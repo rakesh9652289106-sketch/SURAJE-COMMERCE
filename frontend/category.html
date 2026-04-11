@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catalog - SURAJ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="cart-styles.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="translations.js"></script>
+    <style>
+        .hero-banner-static {
+            background: linear-gradient(135deg, var(--primary) 0%, #059669 100%);
+            padding: 3rem 1rem;
+            text-align: center;
+            color: white;
+            margin-bottom: 2rem;
+            border-radius: var(--radius-lg);
+            display: none; /* Only show in trending mode */
+        }
+    </style>
+</head>
+<body>
+    <header class="navbar">
+        <div class="nav-container">
+            <div style="display:flex; align-items:center; gap: 1.2rem;">
+                <button class="nav-menu-btn" id="navMenuBtn">
+                    <i class="ph ph-list"></i>
+                </button>
+                <a href="/" class="brand-logo">
+                    <i class="ph ph-basket"></i> SURAJ
+                </a>
+            </div>
+            <div class="nav-actions">
+                <a href="/" class="nav-link"><i class="ph ph-arrow-left"></i> <span data-i18n="view_all">Back to Store</span></a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content" style="max-width: 1200px; margin: 0 auto; padding: 0 1rem 4rem 1rem;">
+        
+        <!-- Trending Hero (Hidden by default) -->
+        <div id="trendingHero" class="hero-banner-static">
+            <i class="ph-fill ph-fire-simple" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+            <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;" data-i18n="section_trending_title">Trending Near You</h1>
+            <p style="font-size: 1.1rem; opacity: 0.9;">Handpicked favorites loved by your neighborhood.</p>
+        </div>
+
+        <section class="product-listing">
+            <div class="section-header" style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-bottom: 2rem; padding-top: 1rem;">
+                <div id="breadcrumb" style="display: none; align-self: flex-start; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-soft);">
+                   <a href="#" onclick="goBackToCategories(event)" style="color: var(--primary); text-decoration: none; font-weight: 600;"><i class="ph ph-arrow-left"></i> All Categories</a> / <span id="currentCatName">Category</span>
+                </div>
+                <h3 class="section-title" id="categoryTitle" style="font-size: 2.25rem; font-weight: 700; color: var(--text-main); margin: 0;">Loading...</h3>
+                <div class="search-bar" id="catSearchWrapper" style="width: 100%; max-width: 500px; position: relative; display: none;">
+                    <i class="ph ph-magnifying-glass" style="position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%); color: var(--text-soft); font-size: 1.25rem;"></i>
+                    <input type="text" id="catSearchInput" autocomplete="new-password" placeholder="Search in this category..." style="width: 100%; padding: 1rem 1.5rem 1rem 3.5rem; border: 1px solid var(--border); border-radius: 50px; background: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); font-size: 1.1rem; outline: none; transition: border-color 0.2s, box-shadow 0.2s;">
+                </div>
+            </div>
+
+            <!-- Category Selection View -->
+            <div id="categoryGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+                <!-- Populated by JS -->
+            </div>
+            
+            <div id="emptyMsg" style="display: none; text-align: center; padding: 5rem 2rem; color: var(--text-soft);">
+                <i class="ph ph-package" style="font-size: 4rem; margin-bottom: 1rem;"></i>
+                <h4>No products found in this selection.</h4>
+                <a href="#" onclick="goBackToCategories(event)" class="btn btn-primary" style="margin-top: 1.5rem;">Back to Categories</a>
+            </div>
+
+            <div class="product-grid" id="mainGrid">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Navigation Sidebar -->
+    <div class="nav-overlay" id="navOverlay"></div>
+    <aside class="nav-sidebar" id="navSidebar">
+        <div class="nav-sidebar-header">
+            <div class="user-profile-brief">
+                <div class="user-avatar-circle"> <i class="ph ph-user"></i> </div>
+                <div class="user-info-text">
+                    <h4 id="sidebarUsername">Guest User</h4>
+                    <p>Welcome to SURAJ</p>
+                </div>
+            </div>
+            <button class="close-nav" id="closeNavBtn"><i class="ph ph-x"></i></button>
+        </div>
+        
+        <div class="nav-sidebar-content">
+            <div class="nav-section">
+                <h5 data-i18n="sidebar_section_account">My Account</h5>
+                <a href="#" class="nav-item" id="nav-orders"><i class="ph ph-package"></i> <span data-i18n="sidebar_my_orders">My Orders</span></a>
+                <a href="#" class="nav-item" id="nav-wishlist"><i class="ph ph-heart"></i> <span data-i18n="sidebar_my_wishlist">My Wishlist</span></a>
+                <a href="#" class="nav-item" id="nav-coupons"><i class="ph ph-ticket"></i> <span data-i18n="sidebar_my_coupons">My Coupons</span></a>
+                <a href="#" class="nav-item" id="nav-profile"><i class="ph ph-user-circle"></i> <span data-i18n="sidebar_edit_profile">Edit Profile</span></a>
+                <a href="#" class="nav-item" id="nav-addresses"><i class="ph ph-map-pin"></i> <span data-i18n="sidebar_saved_addresses">Saved Addresses</span></a>
+            </div>
+            
+            <div class="nav-divider"></div>
+            <div class="nav-section">
+                <h5 data-i18n="sidebar_section_settings">Settings & Activity</h5>
+                <a href="#" class="nav-item" id="nav-language"><i class="ph ph-translate"></i> <span data-i18n="sidebar_app_language">App Language</span></a>
+                <a href="#" class="nav-item" id="nav-notifications"><i class="ph ph-bell-ringing"></i> <span data-i18n="sidebar_notification_settings">Notifications</span></a>
+                <a href="#" class="nav-item" id="nav-privacy"><i class="ph ph-shield-check"></i> <span data-i18n="sidebar_privacy_center">Privacy</span></a>
+            </div>
+        </div>
+    </aside>
+
+    <div class="feature-modal-overlay" id="featureModalOverlay">
+        <div class="feature-modal">
+            <div class="feature-modal-header">
+                <h3 id="featureModalTitle">Settings</h3>
+                <button class="close-feature-modal" id="closeFeatureModal"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="feature-modal-content" id="featureModalContent"></div>
+        </div>
+    </div>
+
+    <script src="toast.js"></script>
+    <script>
+        // State
+        let allProducts = [];
+        let categoriesList = [];
+        let wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+
+        document.addEventListener("DOMContentLoaded", () => {
+            initCatalog();
+        });
+
+        async function initCatalog() {
+            setupNavMenu();
+            const urlParams = new URLSearchParams(window.location.search);
+            const type = urlParams.get('type');
+            const catName = urlParams.get('name');
+
+            try {
+                const titleEl = document.getElementById('categoryTitle');
+                
+                if (type === 'trending') {
+                    const res = await fetch('/api/products');
+                    const products = (await res.json()).filter(p => p.is_trending === 1);
+                    titleEl.innerText = "Trending Near You";
+                    document.getElementById('trendingHero').style.display = 'block';
+                    document.getElementById('catSearchWrapper').style.display = 'block';
+                    document.getElementById('categoryGrid').style.display = 'none';
+                    document.getElementById('breadcrumb').style.display = 'none';
+                    allProducts = products;
+                    renderProducts(products);
+                } else if (!catName || catName === 'All') {
+                    showCategorySelector();
+                } else {
+                    await selectCategory(catName, false);
+                }
+
+                // Search logic
+                document.getElementById('catSearchInput').addEventListener('input', (e) => {
+                    const term = e.target.value.toLowerCase();
+                    const filtered = allProducts.filter(p => p.name.toLowerCase().includes(term));
+                    renderProducts(filtered);
+                });
+
+                window.addEventListener('popstate', () => {
+                    const newParams = new URLSearchParams(window.location.search);
+                    const newCat = newParams.get('name');
+                    if (!newCat || newCat === 'All') showCategorySelector();
+                    else selectCategory(newCat, false);
+                });
+
+            } catch (e) {
+                console.error(e);
+                document.getElementById('mainGrid').innerHTML = '<p>Something went wrong. Please refresh.</p>';
+            }
+        }
+
+        async function showCategorySelector() {
+            document.getElementById('categoryTitle').innerText = "Explore Categories";
+            document.getElementById('catSearchWrapper').style.display = 'none';
+            document.getElementById('mainGrid').innerHTML = '';
+            document.getElementById('categoryGrid').style.display = 'grid';
+            document.getElementById('breadcrumb').style.display = 'none';
+            document.getElementById('emptyMsg').style.display = 'none';
+            await fetchAndRenderCategories();
+        }
+
+        function goBackToCategories(e) {
+            e.preventDefault();
+            const url = new URL(window.location);
+            url.searchParams.set('name', 'All');
+            window.history.pushState({}, '', url);
+            showCategorySelector();
+        }
+
+        async function fetchAndRenderCategories() {
+            const grid = document.getElementById('categoryGrid');
+            if (grid.children.length > 2) return; // Already loaded
+            
+            grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">Loading categories...</p>';
+            try {
+                const res = await fetch('/api/categories');
+                categoriesList = await res.json();
+                
+                const icons = {
+                    'Fresh Vegetables': 'ph-leaf',
+                    'Fruits': 'ph-orange',
+                    'Snacks & Drinks': 'ph-cookie',
+                    'Household Care': 'ph-house-line',
+                    'Dairy & Bakery': 'ph-cheese',
+                    'Atta, Rice & Dal': 'ph-bowl-food',
+                    'Oil, Ghee & Masala': 'ph-flask',
+                    'Default': 'ph-package'
+                };
+
+                grid.innerHTML = categoriesList.map(c => `
+                    <div class="category-card" onclick="selectCategory('${c.name}')" style="min-width: unset; width: 100%; border-radius: 16px; padding: 1.5rem 1rem;">
+                        <div class="cat-icon-circle" style="width: 70px; height: 70px; background: var(--primary-light-alpha); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 0.75rem;">
+                            <i class="ph-fill ${icons[c.name] || icons['Default']}"></i>
+                        </div>
+                        <span style="font-size: 1rem; font-weight: 600; color: var(--text-main);">${c.name}</span>
+                    </div>
+                `).join('');
+            } catch (err) {
+                grid.innerHTML = '<p>Failed to load categories.</p>';
+            }
+        }
+
+        async function selectCategory(catName, updateHistory = true) {
+            if (updateHistory) {
+                const url = new URL(window.location);
+                url.searchParams.set('name', catName);
+                window.history.pushState({}, '', url);
+            }
+            
+            document.getElementById('categoryTitle').innerText = catName;
+            document.getElementById('currentCatName').innerText = catName;
+            document.getElementById('catSearchWrapper').style.display = 'block';
+            
+            // Highlight active category card
+            const cards = document.querySelectorAll('.category-card');
+            cards.forEach(card => {
+                if (card.querySelector('span').innerText === catName) {
+                    card.style.borderColor = 'var(--primary)';
+                    card.style.background = 'var(--primary-light-alpha)';
+                } else {
+                    card.style.borderColor = 'var(--border)';
+                    card.style.background = 'var(--card-bg)';
+                }
+            });
+
+            document.getElementById('breadcrumb').style.display = 'block';
+            
+            await loadCategoryProducts(catName);
+            
+            // Scroll to product grid for better mobile experience
+            document.getElementById('mainGrid').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        async function loadCategoryProducts(catName) {
+            const res = await fetch('/api/products/category/' + encodeURIComponent(catName));
+            allProducts = await res.json();
+            renderProducts(allProducts);
+        }
+
+        function renderProducts(list) {
+            const grid = document.getElementById('mainGrid');
+            const empty = document.getElementById('emptyMsg');
+            grid.innerHTML = '';
+            
+            if (list.length === 0) {
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+
+            grid.innerHTML = list.map(p => {
+                const cartItem = cart.find(c => c.name === p.name);
+                const isWish = wishlist.includes(p.id);
+                
+                let btnHtml = '';
+                if (p.is_available === 0) {
+                    btnHtml = '<span style="color:#EF4444; font-weight:600; font-size:0.85rem;">Out of Stock</span>';
+                } else if (cartItem) {
+                    btnHtml = `<div class="qty-selector mini">
+                        <button onclick="updateQty('${p.name}', -1)">-</button>
+                        <span>${cartItem.quantity}</span>
+                        <button onclick="updateQty('${p.name}', 1)">+</button>
+                    </div>`;
+                } else {
+                    btnHtml = `<button class="btn btn-outline btn-sm" onclick="addToCart('${p.name}')">Add to Cart</button>`;
+                }
+
+                return `
+                    <div class="product-card hover-lift" style="${p.is_available === 0 ? 'opacity:0.6; filter:grayscale(0.8);' : ''}">
+                        <button class="wishlist-btn ${isWish ? 'active' : ''}" style="position: absolute; top: 1rem; right: 1rem; z-index: 2; background: none; border: none; padding: 0; cursor: pointer;" onclick="toggleWish(event, ${p.id})">
+                            <i class="${isWish ? 'ph-fill' : 'ph'} ph-heart ripple-effect" style="font-size:1.5rem; color:#EF4444;"></i>
+                        </button>
+                        ${p.discount && p.discount !== '0% OFF' ? `<span class="discount-badge">${p.discount}</span>` : ''}
+                        <img src="${p.imgUrl}" alt="${p.name}" class="product-img">
+                        <div class="product-info">
+                            <span class="product-weight">${p.weight}</span>
+                            <h4 class="product-title">${p.name}</h4>
+                            <div class="product-rating"><i class="ph-fill ph-star"></i> ${p.rating} (${p.reviews})</div>
+                            <div class="product-bottom">
+                                <div class="price">
+                                    <span class="current-price">₹${p.price}</span>
+                                    ${p.originalPrice ? `<span class="old-price">₹${p.originalPrice}</span>` : ''}
+                                </div>
+                                ${btnHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Shared Logic (Simplified from script.js)
+        async function addToCart(name) {
+            const prod = allProducts.find(p => p.name === name);
+            if (!prod) return;
+            cart.push({ ...prod, quantity: 1 });
+            localStorage.setItem('cart', JSON.stringify(cart));
+            renderProducts(allProducts);
+            Toast.show("Added to cart", "success");
+        }
+
+        function updateQty(name, delta) {
+            const idx = cart.findIndex(c => c.name === name);
+            if (idx > -1) {
+                cart[idx].quantity += delta;
+                if (cart[idx].quantity <= 0) cart.splice(idx, 1);
+                localStorage.setItem('cart', JSON.stringify(cart));
+                renderProducts(allProducts);
+            }
+        }
+
+        async function toggleWish(e, id) {
+            e.stopPropagation();
+            const icon = e.currentTarget.querySelector('i');
+            const isActive = icon.classList.contains('ph-fill');
+            const user_id = getCookie('user_id');
+
+            if (isActive) {
+                icon.classList.replace('ph-fill', 'ph');
+                if (user_id) await fetch(`/api/user/wishlist/${id}`, { method: 'DELETE' });
+            } else {
+                icon.classList.replace('ph', 'ph-fill');
+                if (user_id) await fetch('/api/user/wishlist', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({product_id:id}) });
+            }
+
+            const idx = wishlist.indexOf(id);
+            if (idx > -1) wishlist.splice(idx, 1);
+            else wishlist.push(id);
+            localStorage.setItem('wishlist', JSON.stringify(wishlist));
+            renderProducts(allProducts);
+        }
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        function setupNavMenu() {
+            const navBtn = document.getElementById('navMenuBtn');
+            const sidebar = document.getElementById('navSidebar');
+            const overlay = document.getElementById('navOverlay');
+            const closeBtn = document.getElementById('closeNavBtn');
+            
+            navBtn.onclick = () => { sidebar.classList.add('active'); overlay.classList.add('active'); };
+            closeBtn.onclick = () => { sidebar.classList.remove('active'); overlay.classList.remove('active'); };
+            overlay.onclick = closeBtn.onclick;
+
+            // Dashboard Wiring
+            const dashTabs = ['orders', 'wishlist', 'coupons', 'addresses', 'profile'];
+            dashTabs.forEach(tab => {
+                const link = document.getElementById('nav-' + tab);
+                if (link) link.onclick = () => location.href = `profile.html?tab=${tab}`;
+            });
+        }
+    </script>
+    <!-- Mobile Bottom Navigation (Visible only on mobile) -->
+    <div class="mobile-bottom-nav">
+        <a href="/" class="nav-item">
+            <i class="ph-fill ph-house"></i>
+            <span>Home</span>
+        </a>
+        <a href="category.html?name=All" class="nav-item active">
+            <i class="ph ph-squares-four"></i>
+            <span>Categories</span>
+        </a>
+        <a href="wishlist.html" class="nav-item" style="position: relative;">
+            <i class="ph ph-heart"></i>
+            <span class="badge" id="bottomWishlistBadge" style="position: absolute; top: -5px; right: 10px; background-color: #EF4444; color: white; width: 16px; height: 16px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold;">0</span>
+            <span>Wishlist</span>
+        </a>
+        <a href="#" class="nav-item cart-btn-mobile" id="mobileBottomCartBtn" style="position: relative;">
+            <i class="ph ph-shopping-cart"></i>
+            <span class="badge" id="bottomCartBadge" style="position: absolute; top: -5px; right: 10px; background-color: var(--primary); color: white; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold;">0</span>
+            <span>Cart</span>
+        </a>
+        <a href="#" class="nav-item" id="mobileBottomProfileBtn">
+            <i class="ph ph-user"></i>
+            <span>Profile</span>
+        </a>
+    </div>
+
+    <script>
+        // Bind bottom cart button to open cart overlay
+        document.getElementById('mobileBottomCartBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (document.getElementById('cartSidebar')) {
+                document.getElementById('cartSidebar').classList.add('active');
+                if (document.getElementById('cartOverlay')) document.getElementById('cartOverlay').classList.add('active');
+                document.body.style.overflow = 'hidden';
+                if (typeof renderCart === 'function') renderCart();
+            } else {
+                window.location.href = '/'; 
+            }
+        });
+        
+        // Link bottom profile btn
+        document.getElementById('mobileBottomProfileBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'profile.html';
+        });
+    </script>
+</body>
+</html>

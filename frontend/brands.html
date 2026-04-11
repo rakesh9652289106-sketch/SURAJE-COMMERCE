@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Brands - SURAJ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="cart-styles.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="translations.js"></script>
+</head>
+<body>
+    <!-- Header Notification (Static Promo Bar) -->
+    <div class="top-notification" id="staticPromoBanner" style="background: #059669; color: white; padding: 0.5rem; text-align: center; font-weight: 600; font-size: 0.85rem; letter-spacing: 0.5px;">
+        <marquee behavior="scroll" direction="left" scrollamount="6">⚡ FREE Delivery on orders above ₹500 | 🍎 Fresh Groceries delivered in 15-45 minutes! | 🎁 Use code WELCOME10 for 10% OFF!</marquee>
+    </div>
+
+    <header class="navbar">
+        <div class="nav-container">
+            <div style="display:flex; align-items:center; gap: 1.2rem;">
+                <button class="nav-menu-btn" id="navMenuBtn" style="background:none; border:none; color:var(--text-main); font-size:1.75rem; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0.25rem;">
+                    <i class="ph ph-list"></i>
+                </button>
+                <a href="/" class="brand-logo">
+                    <i class="ph ph-basket"></i> SURAJ
+                </a>
+            </div>
+            <div class="nav-actions">
+                <a href="/" class="nav-link"><i class="ph ph-arrow-left"></i> <span data-i18n="view_all">Back to Store</span></a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="brands-catalog">
+            <h3 class="section-title" data-i18n="section_brands_title">Our Partner Brands</h3>
+            <div class="brands-grid" id="allBrandsGrid" style="margin-bottom: 2rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1.5rem;">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+
+        <!-- Brand Specific Products Section -->
+        <section id="brandProductsSection" style="display: none; padding-top: 2rem; border-top: 1px solid var(--border); margin-top: 2rem;">
+            <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 class="section-title" id="brandResultsTitle">Products from Brand</h3>
+                <button onclick="document.getElementById('brandProductsSection').style.display='none'; window.scrollTo({top: 0, behavior: 'smooth'});" class="btn btn-outline btn-sm">Clear Selection</button>
+            </div>
+            <div class="product-grid" id="brandProductGrid">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer same as index.html -->
+    <footer class="app-footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <a href="/" class="brand-logo footer-logo">
+                    <i class="ph ph-basket"></i> SURAJ
+                </a>
+                <p data-i18n="footer_desc">Bringing fresh groceries to your doorstep in 15 minutes.</p>
+            </div>
+        </div>
+        <div class="copy-right">
+            <p>&copy; 2026 SURAJ. <span data-i18n="footer_rights">All rights reserved.</span></p>
+        </div>
+    </footer>
+
+    <!-- Navigation Sidebar (Hamburger Menu) -->
+    <div class="nav-overlay" id="navOverlay"></div>
+    <aside class="nav-sidebar" id="navSidebar">
+        <div class="nav-sidebar-header">
+            <div class="user-profile-brief">
+                <div class="user-avatar-circle"> <i class="ph ph-user"></i> </div>
+                <div class="user-info-text">
+                    <h4 id="sidebarUsername">Guest User</h4>
+                    <p>Welcome to SURAJ</p>
+                </div>
+            </div>
+            <button class="close-nav" id="closeNavBtn"><i class="ph ph-x"></i></button>
+        </div>
+        
+        <div class="nav-sidebar-content">
+            <div class="nav-section">
+                <h5 data-i18n="sidebar_section_account">My Account</h5>
+                <a href="profile.html" class="nav-item"><i class="ph ph-package"></i> <span data-i18n="sidebar_my_orders">My Orders</span></a>
+                <a href="wishlist.html" class="nav-item"><i class="ph ph-heart"></i> <span data-i18n="sidebar_my_wishlist">My Wishlist</span></a>
+                <a href="#" class="nav-item"><i class="ph ph-ticket"></i> <span data-i18n="sidebar_my_coupons">My Coupons</span></a>
+                <a href="profile.html" class="nav-item"><i class="ph ph-user-circle"></i> <span data-i18n="sidebar_edit_profile">Edit Profile</span></a>
+                <a href="#" class="nav-item"><i class="ph ph-map-pin"></i> <span data-i18n="sidebar_saved_addresses">Saved Addresses</span></a>
+            </div>
+            
+            <div class="nav-divider"></div>
+            
+            <div class="nav-section">
+                <h5 data-i18n="sidebar_section_settings">Settings & Privacy</h5>
+                <a href="#" class="nav-item" id="nav-language"><i class="ph ph-translate"></i> <span data-i18n="sidebar_app_language">App Language</span></a>
+                <a href="#" class="nav-item" id="nav-notifications"><i class="ph ph-bell-ringing"></i> <span data-i18n="sidebar_notification_settings">Notification Settings</span></a>
+                <a href="#" class="nav-item" id="nav-privacy"><i class="ph ph-shield-check"></i> <span data-i18n="sidebar_privacy_center">Privacy Center</span></a>
+                <a href="#" class="nav-item" id="nav-activity"><i class="ph ph-clock-counter-clockwise"></i> <span data-i18n="sidebar_my_activity">My Activity</span></a>
+            </div>
+
+            <div class="nav-divider"></div>
+            
+            <div class="nav-section">
+                <h5 data-i18n="sidebar_section_others">Others</h5>
+                <a href="#" class="nav-item" style="color: var(--secondary); font-weight: 700;"><i class="ph ph-gift"></i> <span data-i18n="sidebar_refer_earn">Refer & Earn</span></a>
+                <a href="support.html" class="nav-item"><i class="ph ph-info"></i> <span data-i18n="sidebar_help_support">Help & Support</span></a>
+                <a href="#" class="nav-item" id="sidebarLogout" style="display: none;"><i class="ph ph-sign-out"></i> <span data-i18n="sidebar_logout">Logout</span></a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Unified Feature Modal -->
+    <div class="feature-modal-overlay" id="featureModalOverlay">
+        <div class="feature-modal">
+            <div class="feature-modal-header">
+                <h3 id="featureModalTitle" data-i18n="modal_settings">Settings</h3>
+                <button class="close-feature-modal" id="closeFeatureModal"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="feature-modal-content" id="featureModalContent">
+                <!-- Populated dynamically by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script src="toast.js"></script>
+    <script src="brands-script.js"></script>
+    <!-- Mobile Bottom Navigation (Visible only on mobile) -->
+    <div class="mobile-bottom-nav">
+        <a href="/" class="nav-item">
+            <i class="ph-fill ph-house"></i>
+            <span>Home</span>
+        </a>
+        <a href="category.html?name=All" class="nav-item">
+            <i class="ph ph-squares-four"></i>
+            <span>Categories</span>
+        </a>
+        <a href="wishlist.html" class="nav-item" style="position: relative;">
+            <i class="ph ph-heart"></i>
+            <span class="badge" id="bottomWishlistBadge" style="position: absolute; top: -5px; right: 10px; background-color: #EF4444; color: white; width: 16px; height: 16px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold;">0</span>
+            <span>Wishlist</span>
+        </a>
+        <a href="#" class="nav-item cart-btn-mobile" id="mobileBottomCartBtn" style="position: relative;">
+            <i class="ph ph-shopping-cart"></i>
+            <span class="badge" id="bottomCartBadge" style="position: absolute; top: -5px; right: 10px; background-color: var(--primary); color: white; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold;">0</span>
+            <span>Cart</span>
+        </a>
+        <a href="#" class="nav-item" id="mobileBottomProfileBtn">
+            <i class="ph ph-user"></i>
+            <span>Profile</span>
+        </a>
+    </div>
+
+    <script>
+        // Bind bottom cart button to open cart overlay
+        document.getElementById('mobileBottomCartBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (document.getElementById('cartSidebar')) {
+                document.getElementById('cartSidebar').classList.add('active');
+                if (document.getElementById('cartOverlay')) document.getElementById('cartOverlay').classList.add('active');
+                document.body.style.overflow = 'hidden';
+                if (typeof renderCart === 'function') renderCart();
+            } else {
+                window.location.href = '/'; 
+            }
+        });
+        
+        // Link bottom profile btn
+        document.getElementById('mobileBottomProfileBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'profile.html';
+        });
+    </script>
+</body>
+</html>
