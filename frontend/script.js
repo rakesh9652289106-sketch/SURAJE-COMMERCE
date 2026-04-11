@@ -711,7 +711,7 @@ function setupLocation() {
     const savedPin = localStorage.getItem('userPincode');
     if (savedPin && locSelector) {
         const strong = locSelector.querySelector('strong');
-        strong.innerHTML = `New Delhi ${savedPin} <i class="ph ph-caret-down"></i>`;
+        strong.innerHTML = `Nellore ${savedPin} <i class="ph ph-caret-down"></i>`;
     }
 
     if (locSelector && locModal) {
@@ -752,7 +752,7 @@ function setupLocation() {
                     localStorage.setItem('userPincode', pin);
                     if (locSelector) {
                         const strong = locSelector.querySelector('strong');
-                        if (strong) strong.innerHTML = `New Delhi ${pin} <i class="ph ph-caret-down"></i>`;
+                        if (strong) strong.innerHTML = `Nellore ${pin} <i class="ph ph-caret-down"></i>`;
                     }
                     locModal.classList.remove('active');
                     Toast.show(`Location updated to ${pin}`, 'success');
