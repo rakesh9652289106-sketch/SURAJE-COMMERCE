@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin: 'http://localhost:5173', // Vite default port
+    origin: process.env.ALLOWED_ORIGIN || 'http://localhost:5173', // Vite default port
     credentials: true 
 }));
 
