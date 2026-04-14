@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SURAJ - Fast Grocery Delivery</title>
     <meta name="description" content="Shop for fresh groceries, pulses, snacks and household essentials. Delivered in minutes.">
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://snapbasket.com/">
+    <meta property="og:title" content="SURAJ - Fast Grocery Delivery">
+    <meta property="og:description" content="Shop for fresh groceries, pulses, snacks and household essentials. Delivered in minutes.">
+    <meta property="og:image" content="https://snapbasket.com/assets/og-image.jpg">
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://snapbasket.com/">
+    <meta property="twitter:title" content="SURAJ - Fast Grocery Delivery">
+    <meta property="twitter:description" content="Shop for fresh groceries, pulses, snacks and household essentials. Delivered in minutes.">
+    <meta property="twitter:image" content="https://snapbasket.com/assets/og-image.jpg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -153,20 +165,30 @@
             </div>
         </section>
 
-        <!-- Product Grid Listing -->
+        <!-- Category Results (Shown when a category is selected) -->
+        <section class="category-results-section" id="categoryResultsSection" style="display: none; padding-top: 2rem;">
+            <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h3 class="section-title" id="selectedCategoryTitle">Category Results</h3>
+                <button class="btn btn-outline" onclick="window.clearCategoryFilter()" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Clear Filter</button>
+            </div>
+            <div class="product-grid" id="categoryProductGrid">
+                <!-- Populated by JS -->
+            </div>
+            <div style="text-align: center; margin-top: 2rem;">
+                <a href="category.html" id="viewAllInCat" class="btn btn-primary">Explore All in Category</a>
+            </div>
+        </section>
+
+        <!-- Product Grid Listing (Daily Essentials) -->
         <section class="product-listing">
             <div class="section-header">
                 <h3 class="section-title">Daily Essentials</h3>
-                <a href="category.html?name=All" class="view-all">View All <i class="ph ph-caret-right"></i></a>
+                <a href="category.html?type=daily-essentials" class="view-all">View All <i class="ph ph-caret-right"></i></a>
             </div>
             <div class="product-grid" id="productGrid">
                 <!-- Populated by JS -->
             </div>
         </section>
-
-        <!-- Dedicated Morning Fresh Banner Section -->
-        <section id="morningFreshSection" class="banner-section" style="margin: 2rem 0;"></section>
-
 
         <section class="brands-section">
             <div class="section-header">
@@ -285,24 +307,50 @@
     <!-- Checkout Modal -->
     <div class="checkout-modal-overlay" id="checkoutModal">
         <div class="checkout-modal" style="max-width: 450px;">
-            <div id="checkoutStepAddress">
+            <div id="checkoutStepDelivery" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <button class="close-cart" id="backToCartBtn" title="Back to Cart" style="background: var(--bg-color); border: none; cursor: pointer; color: var(--primary); font-size: 1.25rem; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="ph ph-arrow-left"></i></button>
+                        <h3 style="font-size: 1.3rem; margin: 0;">How would you like your order?</h3>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+                    <label class="delivery-option-card active" id="optionHome" onclick="selectDeliveryType('Home Delivery', this)" style="cursor: pointer; border: 2px solid var(--primary); border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; background: #EEF2FF;">
+                        <i class="ph ph-house" style="font-size: 2rem; color: var(--primary);"></i>
+                        <span style="font-weight: 700; font-size: 0.9rem;">Home Delivery</span>
+                        <p style="font-size: 0.7rem; color: var(--text-soft); text-align: center;">Delivery to your door in 30 mins</p>
+                    </label>
+                    <label class="delivery-option-card" id="optionPickup" onclick="selectDeliveryType('Pickup from Shop', this)" style="cursor: pointer; border: 2px solid #E2E8F0; border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                        <i class="ph ph-storefront" style="font-size: 2rem; color: #64748B;"></i>
+                        <span style="font-weight: 700; font-size: 0.9rem;">Pickup from Shop</span>
+                        <p style="font-size: 0.7rem; color: var(--text-soft); text-align: center;">Pick up from our store yourself</p>
+                    </label>
+                </div>
+
+                <button class="btn btn-primary" id="deliveryNextBtn" style="width: 100%;">Continue to Details</button>
+            </div>
+
+            <div id="checkoutStepAddress" style="display: none;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);">
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <button class="close-cart" id="closeModalBtn" title="Back to Cart" style="background: var(--bg-color); border: none; cursor: pointer; color: var(--primary); font-size: 1.25rem; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="ph ph-arrow-left"></i></button>
+                        <button class="close-cart" onclick="showCheckoutStep('delivery')" title="Back" style="background: var(--bg-color); border: none; cursor: pointer; color: var(--primary); font-size: 1.25rem; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="ph ph-arrow-left"></i></button>
                         <h3 style="font-size: 1.3rem; margin: 0;">Delivery Details</h3>
                     </div>
-                    <span style="font-size: 0.7rem; color: var(--text-soft); font-weight: 700; text-transform: uppercase; background: var(--bg-color); padding: 2px 8px; border-radius: 4px;">Step 1 of 2</span>
                 </div>
-                <p class="text-muted" style="margin-bottom: 1.5rem;">Who and where are we delivering to?</p>
+                <p class="text-muted" style="margin-bottom: 1.5rem;">Please provide your delivery details.</p>
                 
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label style="display: block; font-size: 0.85rem; color: var(--text-soft); margin-bottom: 0.4rem;">Full Name</label>
-                    <input type="text" id="checkoutName" placeholder="e.g. John Doe" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm);">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div class="form-group">
+                        <label style="display: block; font-size: 0.85rem; color: var(--text-soft); margin-bottom: 0.4rem;">Recipient Name</label>
+                        <input type="text" id="checkoutName" placeholder="Full Name" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm);">
+                    </div>
+                    <div class="form-group">
+                        <label style="display: block; font-size: 0.85rem; color: var(--text-soft); margin-bottom: 0.4rem;">Mobile Number</label>
+                        <input type="text" id="checkoutPhone" placeholder="10-digit Number" maxlength="10" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm);">
+                    </div>
                 </div>
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label style="display: block; font-size: 0.85rem; color: var(--text-soft); margin-bottom: 0.4rem;">Phone Number</label>
-                    <input type="tel" id="checkoutPhone" placeholder="e.g. 9876543210" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '');" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm);">
-                </div>
+                
                 <div class="form-group" style="margin-bottom: 1rem;">
                     <label style="display: block; font-size: 0.85rem; color: var(--text-soft); margin-bottom: 0.4rem;">House / Flat Number</label>
                     <input type="text" id="checkoutHouse" placeholder="e.g. 402, 4th Floor" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm);">
@@ -316,27 +364,35 @@
                     <input type="text" id="checkoutPincode" placeholder="e.g. 524004" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm);">
                 </div>
 
-                <!-- Checkout Coupon Application -->
-                <div class="checkout-coupon-section" style="margin-bottom: 1.5rem; padding: 1rem; background: #F8FAFC; border: 1px dashed var(--border); border-radius: var(--radius-md);">
-                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;"><i class="ph ph-ticket" style="color: var(--secondary);"></i> Apply Coupon</label>
-                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
-                        <input type="text" id="checkoutCouponInput" placeholder="Enter coupon (e.g. SAVE10)" style="flex: 1; padding: 0.6rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem;">
-                        <button id="checkoutCouponBtn" class="btn btn-outline btn-sm" style="width: auto; padding: 0 1rem; background: white;">Apply</button>
+
+                <button class="btn btn-primary" id="addressNextBtn" style="width: 100%;">Next: Payment Method</button>
+            </div>
+
+            <div id="checkoutStepPayment" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <button class="close-cart" id="paymentBackBtn" title="Back" style="background: var(--bg-color); border: none; cursor: pointer; color: var(--primary); font-size: 1.25rem; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="ph ph-arrow-left"></i></button>
+                        <h3 style="font-size: 1.3rem; margin: 0;">Payment Method</h3>
                     </div>
-                    
-                    <div id="availableCouponsCheckout" style="display: none; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #E2E8F0;">
-                        <p style="font-size: 0.7rem; color: var(--text-soft); margin-bottom: 0.3rem; font-weight: 600; text-transform: uppercase;">Available Coupons:</p>
-                        <div id="couponsListCheckout" style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
-                            <!-- Populated by JS -->
-                        </div>
-                    </div>
-                    
-                    <div id="checkoutCouponMsg" style="font-size: 0.75rem; margin-top: 0.3rem;"></div>
                 </div>
                 
-                <!-- Order Summary (Added as per user request) -->
-                <div id="checkoutOrderSummary" style="margin-bottom: 1.5rem; padding: 1rem; background: #EEF2FF; border-radius: var(--radius-md); border: 1px solid #C3DAFE;">
-                    <h4 style="font-size: 0.9rem; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem;"><i class="ph ph-shopping-cart" style="color: var(--primary);"></i> Order Summary</h4>
+                <div id="checkoutPaymentCouponSection" style="margin: 1rem 0; padding: 1rem; background: #F8FAFC; border: 1px solid var(--border); border-radius: var(--radius-md);">
+                    <h4 style="font-size: 0.9rem; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem;"><i class="ph ph-ticket" style="color: var(--primary);"></i> Have a Coupon?</h4>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.8rem;">
+                        <input type="text" id="checkoutCouponInput" placeholder="Enter Coupon Code" style="flex: 1; padding: 0.6rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem;">
+                        <button id="checkoutCouponBtn" class="btn btn-primary btn-sm" style="width: auto; padding: 0 1rem; border-radius: 4px;">Apply</button>
+                    </div>
+                    <div id="checkoutCouponMsg" style="font-size: 0.75rem; margin-bottom: 0.8rem;"></div>
+                    
+                    <div id="availableCouponsCheckout" style="display: none;">
+                        <p style="font-size: 0.7rem; color: var(--text-soft); margin-bottom: 0.4rem; font-weight: 600; text-transform: uppercase;">Available Coupons:</p>
+                        <div id="couponsListCheckout" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+                    </div>
+                </div>
+
+                <!-- Order Summary Integrated into Payment Step -->
+                <div id="checkoutOrderSummary" style="margin: 1.5rem 0; padding: 1rem; background: #EEF2FF; border-radius: var(--radius-md); border: 1px solid #C3DAFE;">
+                    <h4 style="font-size: 0.9rem; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem;"><i class="ph ph-receipt" style="color: var(--primary);"></i> Order Total</h4>
                     <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem;">
                         <div style="display: flex; justify-content: space-between;">
                             <span style="color: var(--text-soft);">Subtotal</span>
@@ -346,23 +402,13 @@
                             <span>Coupon Discount</span>
                             <span id="modalDiscount">-₹0</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; border-top: 1px dashed #CBD5E1; padding-top: 0.5rem; margin-top: 0.2rem; font-weight: 700; font-size: 1rem; color: var(--text-main);">
-                            <span>Total to Pay</span>
+                        <div style="display: flex; justify-content: space-between; border-top: 1px dashed #CBD5E1; padding-top: 0.5rem; margin-top: 0.2rem; font-weight: 700; font-size: 1.1rem; color: var(--text-main);">
+                            <span>Final Total</span>
                             <span id="modalFinalTotal">₹0</span>
                         </div>
                     </div>
                 </div>
-                
-                <button class="btn btn-primary" id="addressNextBtn" style="width: 100%;">Next: Payment Method</button>
-            </div>
 
-            <div id="checkoutStepPayment" style="display: none;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                    <h3 style="font-size: 1.5rem; margin: 0;">Select Payment Method</h3>
-                    <button class="close-checkout-btn" title="Back to Cart" style="background: none; border: none; cursor: pointer; color: var(--text-soft); font-size: 1.5rem;"><i class="ph ph-x"></i></button>
-                </div>
-                <p class="text-muted">Choose your preferred way to pay.</p>
-                
                 <div class="payment-methods">
                     <div class="payment-option" onclick="selectPayment('card', this)">
                         <i class="ph ph-credit-card"></i>
@@ -375,7 +421,7 @@
                         <i class="ph ph-qr-code"></i>
                         <div class="payment-details">
                             <strong>UPI</strong>
-                            <span>GPay, PhonePe, Paytm, Any App</span>
+                            <span>GPay, PhonePe, Paytm</span>
                         </div>
                     </div>
                     <div class="payment-option" onclick="selectPayment('cash', this)">
@@ -387,18 +433,37 @@
                     </div>
                 </div>
                 
-                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-                    <button class="btn btn-outline" id="paymentBackBtn" style="flex: 1;">Back</button>
-                    <button class="btn btn-primary" id="confirmOrderBtn" style="flex: 2;" disabled>Confirm Order</button>
-                </div>
+                <button class="btn btn-primary" id="confirmOrderBtn" style="width: 100%; margin-top: 1.5rem;" disabled>Confirm & Place Order</button>
             </div>
             
-            <div id="checkoutStepSuccess" style="display: none;">
-                <i class="ph ph-check-circle" style="font-size: 4rem; color: var(--primary); margin-bottom: 1rem;"></i>
-                <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Order Placed!</h3>
-                <p class="text-muted">Thank you for shopping with SURAJ. Your fresh groceries will arrive in 15 minutes.</p>
-                <button class="btn btn-primary" id="closeSuccessBtn" style="margin-top: 1.5rem; width: 100%;">Continue Shopping</button>
+            <div id="checkoutStepSuccess" style="display: none; flex-direction: column; align-items: center; text-align: center;">
+                <div class="success-check-icon shadow-lg">
+                    <i class="ph ph-check-circle-fill"></i>
+                </div>
+                <h3 style="font-size: 1.85rem; color: var(--text-main); margin-bottom: 0.5rem; font-family: 'Outfit';">Order Placed!</h3>
+                <p style="color: var(--text-soft); margin-bottom: 2rem; line-height: 1.5; font-size: 1rem;">Thank you for shopping with SURAJ. Your order is being processed.</p>
+                
+                <div class="order-receipt-card">
+                    <div class="receipt-item">
+                        <span>Order Number</span>
+                        <strong id="successOrderId">#0</strong>
+                    </div>
+                    <div class="receipt-item">
+                        <span>Payment Method</span>
+                        <strong id="successMethod">COD</strong>
+                    </div>
+                    <div class="receipt-divider"></div>
+                    <div class="receipt-total">
+                        <span>Total Paid</span>
+                        <span id="successTotalAmount" class="amount">₹0</span>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="closeSuccessBtn">
+                    <i class="ph ph-shopping-bag"></i> Continue Shopping
+                </button>
             </div>
+
         </div>
     </div>
 
@@ -407,7 +472,7 @@
         <div class="checkout-modal" style="width: 90%; max-width: 400px;">
             <button class="close-cart" id="closeAuthBtn" style="position: absolute; top: 1rem; right: 1rem;"><i class="ph ph-x"></i></button>
             <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;" id="authTitle">Sign In</h3>
-            <p class="text-muted" style="margin-bottom: 1.5rem;" id="authDesc">Welcome back to SURAJ</p>
+            <p class="text-muted" style="margin-bottom: 1.5rem;" id="authDesc">Sign in to your SURAJ account</p>
             
             <div id="authFields">
                 <!-- Mobile Number (Required for Login & Register) -->
@@ -429,12 +494,12 @@
                 </div>
 
                 <div style="position: relative; margin-bottom: 1rem;">
-                    <input type="password" id="passwordInput" placeholder="Password" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 1rem;">
+                    <input type="password" id="passwordInput" placeholder="Password" autocomplete="new-password" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 1rem;">
                     <i class="ph ph-eye password-toggle" onclick="togglePasswordVisibility('passwordInput', this)" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-soft); font-size: 1.1rem;"></i>
                 </div>
                 
                 <div id="confirmPasswordField" style="display: none; position: relative; margin-bottom: 1rem;">
-                    <input type="password" id="confirmPasswordInput" placeholder="Confirm Password" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 1rem;">
+                    <input type="password" id="confirmPasswordInput" placeholder="Confirm Password" autocomplete="new-password" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 1rem;">
                     <i class="ph ph-eye password-toggle" onclick="togglePasswordVisibility('confirmPasswordInput', this)" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-soft); font-size: 1.1rem;"></i>
                 </div>
                 
@@ -464,9 +529,16 @@
 
                 <!-- Recovery Questions (for Forgot Password) -->
                 <div id="recoverySection" style="display: none; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem;">
-                    <p id="recoveryStepLabel" style="font-size: 0.75rem; color: var(--primary); font-weight: 700; text-transform: uppercase; margin-bottom: 0.25rem;">Step 1: Security Verification</p>
-                    <p id="recoveryQuestionLabel" style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 0.5rem; font-weight: 600;"></p>
-                    <input type="text" id="recoveryAnswerInput" placeholder="Your Answer" autocomplete="off" style="width: 100%; padding: 0.75rem; margin-bottom: 1rem; border: 2px solid var(--primary); border-radius: var(--radius-sm); font-size: 1rem;">
+                    <p id="recoveryStepLabel" style="font-size: 0.75rem; color: var(--primary); font-weight: 700; text-transform: uppercase; margin-bottom: 0.25rem;">Security Verification</p>
+                    <div id="recoveryQ1Container" style="margin-bottom: 1rem;">
+                        <p id="recoveryQ1Label" style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 0.4rem; font-weight: 600;"></p>
+                        <input type="text" id="recoveryA1Input" placeholder="Your Answer to Question 1" autocomplete="off" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 1rem;">
+                    </div>
+                    <div id="recoveryQ2Container" style="margin-bottom: 1rem;">
+                        <p id="recoveryQ2Label" style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 0.4rem; font-weight: 600;"></p>
+                        <input type="text" id="recoveryA2Input" placeholder="Your Answer to Question 2" autocomplete="off" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 1rem;">
+                    </div>
+                    <p style="font-size: 0.7rem; color: var(--text-soft); font-style: italic;">Answer either question to verify your identity.</p>
                 </div>
             </div>
             
@@ -476,7 +548,7 @@
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
-                <a href="#" id="toggleAuthMode" style="color: var(--primary); text-decoration: underline; font-weight: 500;">Register Account</a>
+                <a href="#" id="toggleAuthMode" style="color: var(--primary); text-decoration: underline; font-weight: 500;">Sign Up</a>
                 <a href="#" id="forgotPassBtn" style="color: var(--text-soft); text-decoration: none;">Forgot Password?</a>
             </div>
             
@@ -637,7 +709,7 @@
         </a>
     </div>
 
-    <script type="module" src="script.js"></script>
+    <script src="script.js"></script>
     <script>
         // Bind bottom cart button to open cart overlay
         document.getElementById('mobileBottomCartBtn').addEventListener('click', function(e) {

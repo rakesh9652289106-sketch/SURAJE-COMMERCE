@@ -9,9 +9,8 @@ function checkAdminAuth(req, res, next) {
 }
 
 router.get('/check-setup', async (req, res) => {
-    const { count, error } = await supabase.from('admin_users').select('*', { count: 'exact', head: true });
-    if (error) return res.status(500).json({ error: error.message });
-    res.json({ setupRequired: count === 0 });
+    // Lock removed: setup is never required
+    res.json({ setupRequired: false });
 });
 
 router.post('/setup', async (req, res) => {
@@ -34,12 +33,9 @@ router.post('/setup', async (req, res) => {
     res.json({ message: "Admin account setup successfully." });
 });
 
-router.get('/check-session', (req, res) => {
-    if (req.cookies.admin_auth === 'true') {
-        res.json({ authenticated: true });
-    } else {
-        res.json({ authenticated: false });
-    }
+router.get('/check-session', async (req, res) => {
+    // Lock removed: always authenticated
+    res.json({ authenticated: true, exists: true });
 });
 
 router.post('/login', async (req, res) => {
@@ -59,6 +55,23 @@ router.post('/login', async (req, res) => {
     } else {
         res.status(401).json({ error: "Invalid password." });
     }
+});
+
+router.post('/recovery/initiate', async (req, res) => {
+    const { name, phone } = req.body;
+    const { data: user, error } = await supabase.from('admin_users').select('full_name, security_q1, security_q2').eq('phone', phone).single();
+    
+    if (error || !user) return res.status(404).json({ error: "Admin phone not found." });
+    
+    if (!name || user.full_name.toLowerCase().trim() !== name.toLowerCase().trim()) {
+        return res.status(401).json({ error: "Name and Phone combination is incorrect." });
+    }
+    
+    if (!user.security_q1 || !user.security_q2) {
+        return res.status(400).json({ error: "No security questions set. Please contact system owner." });
+    }
+    
+    res.json({ questions: [user.security_q1, user.security_q2] });
 });
 
 router.post('/verify-security', async (req, res) => {
@@ -94,13 +107,18 @@ router.post('/logout', (req, res) => {
 
 router.get('/dashboard/stats', checkAdminAuth, async (req, res) => {
     try {
-        const stats = { totalOrders: 0, totalRevenue: 0, totalProducts: 0, totalReviews: 0, unreadInquiries: 0 };
-        
-        const [ordersData, productsCount, reviewsCount, messagesCount] = await Promise.all([
+        const stats = { totalOrders: 0, totalRevenue: 0, totalProducts: 0, totalReviews: 0, unreadInquiries: 0, ordersToday: 0, ordersDelivered: 0 };
+        const today = new Date().toISOString().split('T')[0];
+        const start = `${today}T00:00:00.000Z`;
+        const end = `${today}T23:59:59.999Z`;
+
+        const [ordersData, productsCount, reviewsCount, messagesCount, todayStatus, deliveredStatus] = await Promise.all([
             supabase.from('orders').select('total'),
             supabase.from('products').select('*', { count: 'exact', head: true }),
             supabase.from('reviews').select('*', { count: 'exact', head: true }),
-            supabase.from('support_messages').select('*', { count: 'exact', head: true }).eq('status', 'unread')
+            supabase.from('support_messages').select('*', { count: 'exact', head: true }).eq('status', 'unread'),
+            supabase.from('orders').select('*', { count: 'exact', head: true }).gte('created_at', start).lte('created_at', end),
+            supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'delivered')
         ]);
 
         stats.totalOrders = ordersData.data?.length || 0;
@@ -108,21 +126,26 @@ router.get('/dashboard/stats', checkAdminAuth, async (req, res) => {
         stats.totalProducts = productsCount.count || 0;
         stats.totalReviews = reviewsCount.count || 0;
         stats.unreadInquiries = messagesCount.count || 0;
+        stats.ordersToday = todayStatus.count || 0;
+        stats.ordersDelivered = deliveredStatus.count || 0;
 
-        res.json(stats);
+        res.json({ success: true, stats });
     } catch(err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
 // --- SUPPORT MESSAGES (Moved from server.js) ---
 router.get('/support-messages', async (req, res) => {
-    const { date } = req.query;
+    const { date, search } = req.query;
     let query = supabase.from('support_messages').select('*');
     if (date) {
         const start = `${date}T00:00:00.000Z`;
         const end = `${date}T23:59:59.999Z`;
         query = query.gte('created_at', start).lte('created_at', end);
+    }
+    if (search) {
+        query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,subject.ilike.%${search}%,message.ilike.%${search}%`);
     }
     const { data, error } = await query.order('created_at', { ascending: false });
     if (error) return res.status(500).json({ error: error.message });
@@ -169,6 +192,13 @@ router.get('/notifications/history', async (req, res) => {
     res.json(data);
 });
 
+router.delete('/notifications/:id', async (req, res) => {
+    const { id } = req.params;
+    const { error } = await supabase.from('notifications').delete().eq('id', id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ message: "Notification deleted" });
+});
+
 router.delete('/notifications/history', async (req, res) => {
     const { error } = await supabase.from('notifications').delete().neq('id', 0);
     if (error) return res.status(500).json({ error: error.message });
@@ -179,14 +209,15 @@ router.delete('/notifications/history', async (req, res) => {
 router.use(checkAdminAuth);
 
 router.get('/reviews', async (req, res) => {
-    const { date } = req.query;
+    const { date, search } = req.query;
     let query = supabase.from('reviews').select(`*, products!inner(name)`);
-    // Supabase JS SDK doesn't natively support Date() filtering without explicit ranges
-    // For simplicity we will fetch all and filter in memory if date is provided, or use gte/lte
     if (date) {
         const start = `${date}T00:00:00.000Z`;
         const end = `${date}T23:59:59.999Z`;
         query = query.gte('created_at', start).lte('created_at', end);
+    }
+    if (search) {
+        query = query.or(`comment.ilike.%${search}%,products.name.ilike.%${search}%`);
     }
     const { data, error } = await query.order('created_at', { ascending: false });
     if (error) return res.status(500).json({ error: error.message });
@@ -227,18 +258,26 @@ router.patch('/settings/password', async (req, res) => {
 });
 
 router.get('/orders', async (req, res) => {
-    const { date } = req.query;
-    let query = supabase.from('orders').select(`*, users!inner(username, email, phone)`);
+    const { date, search } = req.query;
+    let query = supabase.from('orders').select(`*, users!inner(username, email, phone, full_name)`);
     if (date) {
         const start = `${date}T00:00:00.000Z`;
         const end = `${date}T23:59:59.999Z`;
         query = query.gte('created_at', start).lte('created_at', end);
     }
+    if (search) {
+        // Search by order ID (convert to string for ilike) or user name/phone
+        query = query.or(`id.eq.${!isNaN(search)?search:-1},users.username.ilike.%${search}%,users.phone.ilike.%${search}%,address.ilike.%${search}%`);
+    }
     const { data, error } = await query.order('id', { ascending: false });
     if (error) return res.status(500).json({ error: error.message });
     
     const formattedData = data.map(o => ({
-        ...o, username: o.users?.username, email: o.users?.email, phone: o.users?.phone
+        ...o, 
+        username: o.users?.username, 
+        full_name: o.users?.full_name || 'Guest User',
+        email: o.users?.email, 
+        phone: o.users?.phone
     }));
     res.json(formattedData);
 });
@@ -272,6 +311,29 @@ router.delete('/orders/:id', async (req, res) => {
     const { error } = await supabase.from('orders').delete().eq('id', id);
     if (error) return res.status(500).json({ error: error.message });
     res.json({ message: "Order deleted successfully" });
+});
+
+router.get('/payments', async (req, res) => {
+    const { date } = req.query;
+    let query = supabase.from('orders').select(`*, users!inner(username, full_name, phone)`);
+    if (date) {
+        const start = `${date}T00:00:00.000Z`;
+        const end = `${date}T23:59:59.999Z`;
+        query = query.gte('created_at', start).lte('created_at', end);
+    }
+    const { data, error } = await query.order('id', { ascending: false });
+    if (error) return res.status(500).json({ error: error.message });
+    
+    const formatted = data.map(o => ({
+        order_id: o.id,
+        username: o.users?.username || 'Guest',
+        full_name: o.users?.full_name || 'Guest User',
+        phone: o.users?.phone || '',
+        amount: o.total,
+        method: o.payment_method,
+        created_at: o.created_at
+    }));
+    res.json(formatted);
 });
 
 router.patch('/orders/:id/payment-status', async (req, res) => {
@@ -313,6 +375,12 @@ router.patch('/products/:id/:field', async (req, res) => {
     res.json({ message: `Product ${field} status updated` });
 });
 
+router.get('/settings', async (req, res) => {
+    const { data, error } = await supabase.from('settings').select('*').eq('id', 1).single();
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
+});
+
 router.patch('/settings', async (req, res) => {
     const data = { ...req.body };
     if (Object.keys(data).length === 0) return res.status(400).json({ error: "No fields to update" });
@@ -348,17 +416,17 @@ router.put('/special-offers/:id', async (req, res) => {
 
 // Category Management
 router.post('/categories', async (req, res) => {
-    const { name, iconUrl } = req.body;
+    const { name, iconurl } = req.body;
     if (!name) return res.status(400).json({ error: "Category name required" });
-    const { data: newRow, error } = await supabase.from('categories').insert([{ name, iconUrl }]).select().single();
+    const { data: newRow, error } = await supabase.from('categories').insert([{ name, iconurl }]).select().single();
     if (error) return res.status(500).json({ error: error.message });
     res.status(201).json({ message: "Category added!", category: newRow });
 });
 
 router.put('/categories/:id', async (req, res) => {
     const { id } = req.params;
-    const { name, iconUrl } = req.body;
-    const { error } = await supabase.from('categories').update({ name, iconUrl }).eq('id', id);
+    const { name, iconurl } = req.body;
+    const { error } = await supabase.from('categories').update({ name, iconurl }).eq('id', id);
     if (error) return res.status(500).json({ error: error.message });
     res.json({ message: "Category updated successfully" });
 });
@@ -371,6 +439,12 @@ router.delete('/categories/:id', async (req, res) => {
 });
 
 // Brand Management
+router.get('/brands', async (req, res) => {
+    const { data, error } = await supabase.from('brands').select('*').order('name', { ascending: true });
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
+});
+
 router.post('/brands', async (req, res) => {
     const { name } = req.body;
     if (!name) return res.status(400).json({ error: "Brand name required" });
@@ -443,6 +517,39 @@ router.delete('/coupons/:id', async (req, res) => {
     const { error } = await supabase.from('coupons').delete().eq('id', req.params.id);
     if (error) return res.status(500).json({ error: error.message });
     res.json({ message: "Coupon deleted successfully" });
+});
+
+// --- SUPPORT MESSAGES ---
+router.get('/support-messages', async (req, res) => {
+    const { data, error } = await supabase.from('support_messages').select('*').order('created_at', { ascending: false });
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
+});
+
+router.get('/support-messages/:id', async (req, res) => {
+    const { data, error } = await supabase.from('support_messages').select('*').eq('id', req.params.id).single();
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
+});
+
+router.patch('/support-messages/:id/read', async (req, res) => {
+    const { error } = await supabase.from('support_messages').update({ status: 'read' }).eq('id', req.params.id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ message: "Marked as read" });
+});
+
+router.patch('/support-messages/:id/reply', async (req, res) => {
+    const { reply } = req.body;
+    if (!reply) return res.status(400).json({ error: "Reply content required" });
+    const { error } = await supabase.from('support_messages').update({ reply, status: 'replied' }).eq('id', req.params.id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ message: "Reply sent successfully" });
+});
+
+router.delete('/support-messages/:id', async (req, res) => {
+    const { error } = await supabase.from('support_messages').delete().eq('id', req.params.id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ message: "Message deleted" });
 });
 
 // --- USER MANAGEMENT ---

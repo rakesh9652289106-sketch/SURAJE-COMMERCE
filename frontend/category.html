@@ -19,6 +19,28 @@
             border-radius: var(--radius-lg);
             display: none; /* Only show in trending mode */
         }
+        
+        /* Compact Category Scroll for active filtering */
+        .category-scroll-active {
+            display: flex !important;
+            overflow-x: auto;
+            gap: 1rem;
+            padding: 0.5rem 0.25rem;
+            margin-bottom: 2rem !important;
+            scrollbar-width: none; /* Firefox */
+        }
+        .category-scroll-active::-webkit-scrollbar {
+            display: none; /* Chrome/Safari */
+        }
+        .category-scroll-active .category-card {
+            flex: 0 0 120px;
+            padding: 1rem 0.5rem !important;
+        }
+        .category-scroll-active .cat-icon-circle {
+            width: 50px !important;
+            height: 50px !important;
+            font-size: 1.5rem !important;
+        }
     </style>
 </head>
 <body>
@@ -33,6 +55,11 @@
                 </a>
             </div>
             <div class="nav-actions">
+                <div id="dynamicAuthContent" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600;">
+                    <a href="#" class="nav-link" data-i18n="nav_sign_in">Sign In</a>
+                    <span class="divider">|</span>
+                    <a href="#" class="nav-link" data-i18n="nav_log_in">Log In</a>
+                </div>
                 <a href="/" class="nav-link"><i class="ph ph-arrow-left"></i> <span data-i18n="view_all">Back to Store</span></a>
             </div>
         </div>
@@ -131,7 +158,64 @@
         document.addEventListener("DOMContentLoaded", () => {
             initCatalog();
             fetchUserWishlist(); // Sync wishlist from backend
+            updateAuthUI();
         });
+
+        function updateAuthUI(name) {
+            const authContent = document.getElementById('dynamicAuthContent');
+            if (!authContent) return;
+            
+            const userFullName = name || getCookie('full_name') || localStorage.getItem('user_full_name');
+            const username = getCookie('username') || localStorage.getItem('user_username');
+
+            const isMobile = window.innerWidth <= 768;
+
+            if (userFullName && userFullName !== 'undefined' && userFullName !== 'null') {
+                const displayName = decodeURIComponent(userFullName).toUpperCase();
+                
+                if (isMobile) {
+                    authContent.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(5, 150, 105, 0.05); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(5, 150, 105, 0.1);">
+                            <span style="color: var(--primary); font-weight: 700; font-size: 0.75rem; white-space: nowrap;">HI, ${displayName.split(' ')[0]}</span>
+                            <span style="color: var(--border);">|</span>
+                            <a href="#" class="logout-trigger" style="color: var(--text-soft); font-weight: 600; font-size: 0.75rem; text-decoration: none;">LOGOUT</a>
+                        </div>
+                    `;
+                } else {
+                    authContent.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 0.8rem; background: rgba(5, 150, 105, 0.05); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(5, 150, 105, 0.1);">
+                            <a href="profile.html" class="nav-link" style="color: var(--primary); font-weight: 700; letter-spacing: 0.5px; display: flex; align-items: center; gap: 0.4rem; text-decoration: none;">
+                                <i class="ph-fill ph-user-circle" style="font-size: 1.2rem;"></i> HI, ${displayName}
+                            </a>
+                            <span style="color: var(--border); font-weight: 300;">|</span>
+                            <a href="#" class="nav-link logout-trigger" style="color: var(--text-soft); font-weight: 500; text-decoration: none;">Log Out</a>
+                        </div>
+                    `;
+                }
+                
+                authContent.querySelector('.logout-trigger')?.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    if (confirm("Are you sure you want to log out?")) {
+                        await fetch('/api/auth/logout', { method: 'POST' });
+                        document.cookie = "full_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                        document.cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                        document.cookie = "user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                        localStorage.removeItem('user_full_name');
+                        localStorage.removeItem('user_username');
+                        localStorage.removeItem('user_id');
+                        location.reload();
+                    }
+                });
+                const sidebarName = document.getElementById('sidebarUsername');
+                if (sidebarName) sidebarName.innerText = decodeURIComponent(displayName);
+            } else {
+                authContent.innerHTML = `
+                    <a href="/?login=true" class="nav-link">Sign In</a>
+                    <span class="divider">|</span>
+                    <a href="/?login=true" class="nav-link">Log In</a>
+                `;
+            }
+        }
 
         async function fetchUserWishlist() {
             const user_id = getCookie('user_id');
@@ -156,6 +240,9 @@
             try {
                 const titleEl = document.getElementById('categoryTitle');
                 
+                // Always fetch categories to ensure the picker is available
+                await fetchAndRenderCategories();
+
                 if (type === 'trending') {
                     const res = await fetch('/api/products');
                     const products = (await res.json()).filter(p => p.is_trending === 1);
@@ -166,9 +253,20 @@
                     document.getElementById('breadcrumb').style.display = 'none';
                     allProducts = products;
                     renderProducts(products);
+                } else if (type === 'daily-essentials') {
+                    const res = await fetch('/api/products');
+                    const products = (await res.json()).filter(p => p.is_daily_essential === 1);
+                    titleEl.innerText = "Daily Essentials";
+                    document.getElementById('catSearchWrapper').style.display = 'block';
+                    document.getElementById('categoryGrid').style.display = 'none';
+                    document.getElementById('breadcrumb').style.display = 'block';
+                    allProducts = products;
+                    renderProducts(products);
                 } else if (!catName || catName === 'All') {
+                    document.title = "Explore Catalog - SURAJ";
                     showCategorySelector();
                 } else {
+                    document.title = `${catName} - SURAJ`;
                     await selectCategory(catName, false);
                 }
 
@@ -186,6 +284,9 @@
                     else selectCategory(newCat, false);
                 });
 
+                // Periodic Auth Check in case it changes
+                setInterval(updateAuthUI, 10000);
+
             } catch (e) {
                 console.error(e);
                 document.getElementById('mainGrid').innerHTML = '<p>Something went wrong. Please refresh.</p>';
@@ -197,9 +298,9 @@
             document.getElementById('catSearchWrapper').style.display = 'none';
             document.getElementById('mainGrid').innerHTML = '';
             document.getElementById('categoryGrid').style.display = 'grid';
+            document.getElementById('categoryGrid').classList.remove('category-scroll-active');
             document.getElementById('breadcrumb').style.display = 'none';
             document.getElementById('emptyMsg').style.display = 'none';
-            await fetchAndRenderCategories();
         }
 
         function goBackToCategories(e) {
@@ -254,15 +355,19 @@
             document.getElementById('currentCatName').innerText = catName;
             document.getElementById('catSearchWrapper').style.display = 'block';
             
+            // Switch grid to compact scroll for better focus
+            const grid = document.getElementById('categoryGrid');
+            grid.style.display = 'flex';
+            grid.classList.add('category-scroll-active');
+            
             // Highlight active category card
             const cards = document.querySelectorAll('.category-card');
             cards.forEach(card => {
-                if (card.querySelector('span').innerText === catName) {
-                    card.style.borderColor = 'var(--primary)';
-                    card.style.background = 'var(--primary-light-alpha)';
+                const nameSpan = card.querySelector('span');
+                if (nameSpan && nameSpan.innerText === catName) {
+                    card.classList.add('active');
                 } else {
-                    card.style.borderColor = 'var(--border)';
-                    card.style.background = 'var(--card-bg)';
+                    card.classList.remove('active');
                 }
             });
 
@@ -380,7 +485,11 @@
         function getCookie(name) {
             const value = `; ${document.cookie}`;
             const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
+            if (parts.length === 2) {
+                const val = parts.pop().split(';').shift();
+                return (val === 'undefined' ? null : val);
+            }
+            return null;
         }
 
         function setupNavMenu() {

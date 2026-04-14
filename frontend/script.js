@@ -232,37 +232,36 @@ window.toggleWishlist = async function(e, productId) {
     const isLogged = !!getCookie('user_id');
     const pid = Number(productId);
     
-    // UI Feedback immediately
-    const icon = e.target;
-    const isActive = icon.classList.contains('ph-fill');
+    // Normalize existing wishlist to numbers
+    wishlist = wishlist.map(id => Number(id));
+    const isActive = wishlist.includes(pid);
 
     if (isActive) {
-        icon.classList.replace('ph-fill', 'ph');
+        const index = wishlist.indexOf(pid);
+        if (index > -1) wishlist.splice(index, 1);
         if (isLogged) {
-            await fetch(`/api/user/wishlist/${pid}`, { method: 'DELETE' });
+            try { await fetch(`/api/user/wishlist/${pid}`, { method: 'DELETE' }); } catch(err) {}
         }
     } else {
-        icon.classList.replace('ph', 'ph-fill');
+        wishlist.push(pid);
         if (isLogged) {
-            await fetch('/api/user/wishlist', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ product_id: pid })
-            });
+            try {
+                await fetch('/api/user/wishlist', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ product_id: pid })
+                });
+            } catch(err) {}
         }
     }
 
-    // Local backup for badge updates - Ensure wishlist contains numbers
-    // Normalize existing wishlist to numbers just in case
-    wishlist = wishlist.map(id => Number(id));
-    
-    const index = wishlist.indexOf(pid);
-    if (index > -1) wishlist.splice(index, 1);
-    else wishlist.push(pid);
-    
     localStorage.setItem('wishlist', JSON.stringify(wishlist));
     updateWishlistBadge();
-    Toast.show(isActive ? "Removed from wishlist" : "Added to wishlist", "info");
+    refreshWishlistIcons(); // This ensures ALL hearts for this product update
+    
+    if (window.Toast) {
+        window.Toast.show(isActive ? "Removed from wishlist" : "Added to wishlist", isActive ? "info" : "success");
+    }
 }
 
 async function fetchUserWishlist() {
@@ -313,6 +312,11 @@ function setupNotifications() {
 
     if (!toggle || !dropdown) return;
 
+    // Request native notification permission on first interaction or meaningful moment
+    if (window.Notification && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+
     toggle.addEventListener('click', (e) => {
         e.stopPropagation();
         const isVisible = dropdown.style.display === 'block';
@@ -347,7 +351,21 @@ function setupNotifications() {
             
             // Fix: Store the highest ID from history before filtering
             if (list && history.length > 0) {
-                list.dataset.lastId = history[0].id; // history[0] is latest due to backend sort
+                const latestId = history[0].id;
+                const prevLastId = list.dataset.lastId;
+                list.dataset.lastId = latestId;
+
+                // Push Notification Logic: If there is a NEW notification that we haven't seen in this session
+                if (prevLastId && latestId > parseInt(prevLastId)) {
+                    const newMsg = history[0].message;
+                    if (window.Notification && Notification.permission === 'granted') {
+                        new Notification("SnapBasket Alert", {
+                            body: newMsg,
+                            icon: "/assets/logo-small.png" // Fallback if available
+                        });
+                    }
+                    if (window.Toast) Toast.show("New Store Message Received!", "info");
+                }
             }
 
             const lastClearedId = parseInt(localStorage.getItem('lastClearedNotifId') || '0');
@@ -942,30 +960,51 @@ function setupAuth() {
     const securityA2 = document.getElementById('securityA2');
     const recoverySection = document.getElementById('recoverySection');
     const recoveryStepLabel = document.getElementById('recoveryStepLabel');
-    const recoveryQuestionLabel = document.getElementById('recoveryQuestionLabel');
-    const recoveryAnswerInput = document.getElementById('recoveryAnswerInput');
+    const recoveryQ1Label = document.getElementById('recoveryQ1Label');
+    const recoveryA1Input = document.getElementById('recoveryA1Input');
+    const recoveryQ2Label = document.getElementById('recoveryQ2Label');
+    const recoveryA2Input = document.getElementById('recoveryA2Input');
 
     let currMode = 'login'; // 'login', 'register', 'forgot'
     let recoveryQuestions = [];
     let currentRecoveryStep = 0; // 0: Initiate, 1: Q1, 2: Q2, 3: Reset
     let userRecoveryAnswers = [];
 
+    // Prevent duplicate security question selection
+    function updateSecurityOptions() {
+        const q1Val = securityQ1.value;
+        const q2Val = securityQ2.value;
+
+        Array.from(securityQ1.options).forEach(opt => {
+            if (opt.value && opt.value === q2Val) opt.disabled = true;
+            else opt.disabled = false;
+        });
+        Array.from(securityQ2.options).forEach(opt => {
+            if (opt.value && opt.value === q1Val) opt.disabled = true;
+            else opt.disabled = false;
+        });
+    }
+
+    securityQ1?.addEventListener('change', updateSecurityOptions);
+    securityQ2?.addEventListener('change', updateSecurityOptions);
+
     // Handle Header Clicks (Event delegation)
-    document.querySelector('.auth-links')?.addEventListener('click', async (e) => {
-        if (e.target.classList.contains('nav-link')) {
+    document.querySelector('.auth-links')?.addEventListener('click', (e) => {
+        const link = e.target.closest('.nav-link');
+        if (!link) return;
+
+        const action = link.innerText.trim();
+        if (action === 'Log Out' || link.classList.contains('logout-trigger')) {
             e.preventDefault();
-            const action = e.target.innerText;
-            if (action === 'Log Out') {
-                await fetch('/api/auth/logout', { method: 'POST' });
-                updateAuthUI(null);
-                location.reload(); // Refresh to clear state
-                return;
-            }
-            if (action === 'Sign In' || action === 'Log In') {
-                currMode = action === 'Sign In' ? 'register' : 'login';
-                updateModalState();
-                authModal.classList.add('active');
-            }
+            window.logoutUser();
+            return;
+        }
+        
+        if (action === 'Sign Up' || action === 'Sign In' || action === 'Log In') {
+            e.preventDefault();
+            currMode = (action === 'Sign Up') ? 'register' : 'login';
+            updateModalState();
+            authModal.classList.add('active');
         }
     });
 
@@ -1006,7 +1045,6 @@ function setupAuth() {
                 if (res.ok) {
                     recoveryQuestions = data.questions;
                     currentRecoveryStep = 1;
-                    userRecoveryAnswers = [];
                     updateModalState();
                 } else {
                     showAuthError(data.error);
@@ -1034,8 +1072,7 @@ function setupAuth() {
         const name = fullNameInput.value.trim();
         const user = usernameInput.value.trim();
         const pass = passwordInput.value;
-        
-        if (!name || !user || !pass) return showAuthError("Name, Mobile Number, and Password are required.");
+        if (!name || !user || !pass) return showAuthError("Full Name, Mobile Number and Password are required.");
         if (!isValidIndianPhone(user)) return showAuthError("Please enter a valid 10-digit mobile number.");
 
         try {
@@ -1046,6 +1083,15 @@ function setupAuth() {
             });
             const data = await res.json();
             if (res.ok) {
+                // Return data contains .token which is the user ID
+                const actualId = data.user_id || data.token || data.id;
+                if (actualId) localStorage.setItem('token', actualId);
+                
+                // Set localStorage fallback for persistence
+                localStorage.setItem('user_full_name', data.full_name || name);
+                localStorage.setItem('user_username', data.username || user);
+                localStorage.setItem('user_id', actualId);
+
                 Toast.show(`Welcome back, ${data.full_name || data.username}!`, "success");
                 authModal.classList.remove('active');
                 updateAuthUI(data.full_name || data.username);
@@ -1089,51 +1135,54 @@ function setupAuth() {
             });
             const data = await res.json();
             if (res.ok) {
-                Toast.show("Registration successful! Please log in.", "success");
-                currMode = 'login';
-                updateModalState();
-                usernameInput.value = phone; // Autofill
+                const actualId = data.user_id || data.token || data.id;
+                if (actualId) localStorage.setItem('token', actualId);
+                
+                // Set localStorage fallback for persistence
+                localStorage.setItem('user_full_name', data.full_name || name);
+                localStorage.setItem('user_username', data.username || phone);
+                localStorage.setItem('user_id', actualId);
+
+                Toast.show("Registration successful! Welcome to SURAJ.", "success");
+                authModal.classList.remove('active');
+                updateAuthUI(data.full_name || data.username);
+                setTimeout(() => location.reload(), 1500);
             } else {
                 showAuthError(data.error);
             }
         } catch(e) { showAuthError("Registration failed"); }
     }
 
+
     async function handleReset() {
         const phone = phoneInput.value;
         const pass = passwordInput.value;
         const confirmPass = document.getElementById('confirmPasswordInput')?.value;
-        const answer = recoveryAnswerInput.value;
+        const a1 = recoveryA1Input.value.trim();
+        const a2 = recoveryA2Input.value.trim();
 
-        if (currentRecoveryStep === 1 || currentRecoveryStep === 2) {
-            if (!answer) return showAuthError("Please provide an answer.");
+        if (currentRecoveryStep === 1) {
+            if (!a1 || !a2) return showAuthError("Please provide answers to both security questions.");
             
             try {
-                const res = await fetch('/api/auth/recovery/verify-answer', {
+                const res = await fetch('/api/auth/recovery/verify-all', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone, questionIndex: currentRecoveryStep - 1, answer })
+                    body: JSON.stringify({ phone, security_a1: a1, security_a2: a2 })
                 });
                 
                 if (res.ok) {
-                    // Success! Store the answer
-                    userRecoveryAnswers[currentRecoveryStep - 1] = answer;
-                    
-                    if (currentRecoveryStep === 1) {
-                        Toast.show("Question 1 verified! Please answer the second question.", "success");
-                        currentRecoveryStep = 2;
-                    } else {
-                        Toast.show("Identity verified! You can now reset your password.", "success");
-                        currentRecoveryStep = 3;
-                    }
-                    recoveryAnswerInput.value = '';
+                    userRecoveryAnswers = [a1, a2];
+                    Toast.show("Verification successful! Set your new password now.", "success");
+                    currentRecoveryStep = 2;
                     updateModalState();
                 } else {
                     const data = await res.json();
-                    showAuthError(data.error || "Incorrect answer. Please try again.");
+                    showAuthError(data.error || "Incorrect security answers.");
                 }
             } catch(e) { showAuthError("Verification failed"); }
-        } else if (currentRecoveryStep === 3) {
+        } else if (currentRecoveryStep === 2) {
+
             if (!pass) return showAuthError("New password required.");
             if (pass !== confirmPass) return showAuthError("Passwords do not match.");
 
@@ -1143,12 +1192,12 @@ function setupAuth() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         phone, password: pass, 
-                        security_a1: userRecoveryAnswers[0], 
-                        security_a2: userRecoveryAnswers[1] 
+                        security_a1: userRecoveryAnswers[0],
+                        security_a2: userRecoveryAnswers[1]
                     })
                 });
                 if (res.ok) {
-                    Toast.show("Password updated! Please log in.", "success");
+                    Toast.show("Password updated successfully! Please log in.", "success");
                     currMode = 'login';
                     currentRecoveryStep = 0;
                     userRecoveryAnswers = [];
@@ -1172,17 +1221,25 @@ function setupAuth() {
         recoverySection.style.display = 'none';
         passwordInput.style.display = 'block';
         
+        // Ensure password fields are cleared when switching modes or opening to prevent admin pre-fills
+        passwordInput.value = '';
+        const confirmPass = document.getElementById('confirmPasswordInput');
+        if (confirmPass) confirmPass.value = '';
+        
         if (currMode === 'register') {
             authTitle.innerText = "Register Account";
             authDesc.innerText = "Create your SURAJ profile";
             submitAuthBtn.innerText = "Register";
+            submitAuthBtn.style.display = 'block';
             toggleAuthMode.innerText = "Back to Login";
-            regNameField.style.display = 'block';
-            phoneField.style.display = 'block';
-            loginIdentifierField.style.display = 'none';
+            if (document.getElementById('nameField')) document.getElementById('nameField').style.display = 'block';
+            if (document.getElementById('phoneField')) document.getElementById('phoneField').style.display = 'block';
+            if (document.getElementById('loginIdentifierField')) document.getElementById('loginIdentifierField').style.display = 'none';
+            if (document.getElementById('confirmPasswordInput')) document.getElementById('confirmPasswordInput').parentElement.style.display = 'block';
             sendOtpBtn.style.display = 'none';
             regSecurityFields.style.display = 'block';
             passwordInput.placeholder = "Set Password";
+            updateSecurityOptions();
         } else if (currMode === 'forgot') {
             authTitle.innerText = "Reset Password";
             toggleAuthMode.innerText = "Back to Login";
@@ -1191,30 +1248,34 @@ function setupAuth() {
 
             if (currentRecoveryStep === 0) {
                 authDesc.innerText = "Enter your name and mobile number to begin recovery";
-                regNameField.style.display = 'block';
-                phoneField.style.display = 'block';
+                if (fullNameInput.parentElement) fullNameInput.parentElement.style.display = 'block';
+                if (document.getElementById('phoneField')) document.getElementById('phoneField').style.display = 'block';
                 passwordInput.style.display = 'none';
+                if (document.getElementById('confirmPasswordInput')) document.getElementById('confirmPasswordInput').parentElement.style.display = 'none';
                 sendOtpBtn.style.display = 'block';
-                sendOtpBtn.innerText = "Verify Identity";
+                sendOtpBtn.innerText = "Fetch Security Challenge";
                 submitAuthBtn.style.display = 'none';
                 recoverySection.style.display = 'none';
-            } else if (currentRecoveryStep === 1 || currentRecoveryStep === 2) {
-                authDesc.innerText = "Identity verification via security questions";
-                regNameField.style.display = 'none';
-                phoneField.style.display = 'none';
+            } else if (currentRecoveryStep === 1) {
+                authDesc.innerText = "Answer your security question to verify your identity";
+                if (fullNameInput.parentElement) fullNameInput.parentElement.style.display = 'none';
+                if (document.getElementById('phoneField')) document.getElementById('phoneField').style.display = 'none';
                 passwordInput.style.display = 'none';
+                if (document.getElementById('confirmPasswordInput')) document.getElementById('confirmPasswordInput').parentElement.style.display = 'none';
                 sendOtpBtn.style.display = 'none';
                 submitAuthBtn.style.display = 'block';
                 submitAuthBtn.innerText = "Verify Answer";
                 recoverySection.style.display = 'block';
-                recoveryStepLabel.innerText = `Step ${currentRecoveryStep} of 2: Verification`;
-                recoveryQuestionLabel.innerText = recoveryQuestions[currentRecoveryStep - 1] || "Security Question";
-            } else {
-                authDesc.innerText = "Set your new account password";
-                regNameField.style.display = 'none';
-                phoneField.style.display = 'none';
+                recoveryStepLabel.innerText = `Identity Challenge`;
+                recoveryQ1Label.innerText = recoveryQuestions[0] || "Security Question 1";
+                recoveryQ2Label.innerText = recoveryQuestions[1] || "Security Question 2";
+            } else if (currentRecoveryStep === 2) {
+                authDesc.innerText = "Verification complete! Set your new account password";
+                if (fullNameInput.parentElement) fullNameInput.parentElement.style.display = 'none';
+                if (document.getElementById('phoneField')) document.getElementById('phoneField').style.display = 'none';
                 passwordInput.style.display = 'block';
                 passwordInput.placeholder = "New Password";
+                if (document.getElementById('confirmPasswordInput')) document.getElementById('confirmPasswordInput').parentElement.style.display = 'block';
                 sendOtpBtn.style.display = 'none';
                 submitAuthBtn.style.display = 'block';
                 submitAuthBtn.innerText = "Update Password";
@@ -1227,50 +1288,23 @@ function setupAuth() {
             submitAuthBtn.style.display = 'block';
             toggleAuthMode.innerText = "Register Account";
             
-            // For login, we now show Name and Phone Number
+            // For login, we now show Full Name, Mobile Number, and Password
             if (fullNameInput.parentElement) fullNameInput.parentElement.style.display = 'block';
             if (usernameInput.parentElement) usernameInput.parentElement.style.display = 'block';
+            if (document.getElementById('confirmPasswordInput')) document.getElementById('confirmPasswordInput').parentElement.style.display = 'none';
             
             // Hide other fields
-            phoneField.style.display = 'none';
+            if (document.getElementById('phoneField')) document.getElementById('phoneField').style.display = 'none';
             sendOtpBtn.style.display = 'none';
             passwordInput.placeholder = "Password";
             currentRecoveryStep = 0; // Reset recovery state when returning to login
+            userRecoveryAnswers = [];
         }
     }
 }
     
 function isValidIndianPhone(phone) {
     return /^[6-9]\d{9}$/.test(phone);
-}
-
-function updateAuthUI() {
-    const dynamicAuthContent = document.getElementById('dynamicAuthContent');
-    if (!dynamicAuthContent) return;
-
-    const username = getCookie('full_name') || getCookie('username');
-
-    if (username) {
-        const displayName = getCookie('full_name') ? decodeURIComponent(getCookie('full_name')) : decodeURIComponent(username);
-        dynamicAuthContent.innerHTML = `
-            <a href="profile.html" style="font-weight: 600; color: var(--primary); text-decoration: none;">Hi, ${displayName}</a>
-            <span class="divider">|</span>
-            <a href="#" class="nav-link text-muted">Log Out</a>
-        `;
-    } else {
-        dynamicAuthContent.innerHTML = `
-            <a href="#" class="nav-link">Sign In</a>
-            <span class="divider">|</span>
-            <a href="#" class="nav-link">Log In</a>
-        `;
-    }
-}
-
-function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-    return null;
 }
 
 function setupSearchFunctionality() {
@@ -1302,20 +1336,16 @@ function setupSearchFunctionality() {
     searchInput.addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase().trim();
         const grid = document.getElementById("productGrid");
-        const trendingSection = document.querySelector('.trending-section');
-        const specialOffers = document.querySelector('.special-offers');
-
+        
         if (query === "") {
             resultCountEl.style.display = 'none';
-            if (trendingSection) trendingSection.style.display = 'block';
-            if (specialOffers) specialOffers.style.display = 'block';
+            toggleHomeSections(true); // Show everything again
             populateProducts("productGrid", products);
             return;
         }
 
-        // Hide other sections to focus on results
-        if (trendingSection) trendingSection.style.display = 'none';
-        if (specialOffers) specialOffers.style.display = 'none';
+        // Hide home sections to focus on results
+        toggleHomeSections(false);
 
         // Filter products based on search query
         const filteredProducts = products.filter(product => {
@@ -1323,11 +1353,15 @@ function setupSearchFunctionality() {
             const discount = (product.discount || '').toLowerCase();
             const weight = (product.weight || '').toLowerCase();
             const category = (product.category || '').toLowerCase();
+            const description = (product.description || '').toLowerCase();
+            const brand = (product.brand_name || '').toLowerCase();
 
             return name.includes(query) || 
                    discount.includes(query) ||
                    weight.includes(query) ||
-                   category.includes(query);
+                   category.includes(query) ||
+                   description.includes(query) ||
+                   brand.includes(query);
         });
 
         resultCountEl.style.display = 'block';
@@ -1401,13 +1435,72 @@ async function setupCartInteractions() {
         document.body.style.overflow = '';
     };
 
+    const backToCart = () => {
+        if (checkoutModal) checkoutModal.classList.remove('active');
+        document.body.classList.remove('no-scroll');
+        openCart();
+        updateCartTotal(); // Ensure totals are fresh
+    };
+
+    window.backToCart = backToCart;
+
     if (cartBtn) cartBtn.onclick = (e) => { e.preventDefault(); openCart(); };
     if (closeBtn) closeBtn.onclick = closeCart;
     if (cartOverlay) cartOverlay.onclick = closeCart;
     if (startShoppingBtn) startShoppingBtn.onclick = closeCart;
 
+    // Delivery Selection Functionality
+    window.selectedDeliveryType = 'Home Delivery';
+    window.selectDeliveryType = function(type, el) {
+        window.selectedDeliveryType = type;
+        document.querySelectorAll('.delivery-option-card').forEach(card => {
+            card.classList.remove('active');
+            card.style.border = '2px solid #E2E8F0';
+            card.style.background = 'transparent';
+            card.querySelector('i').style.color = '#64748B';
+        });
+        el.classList.add('active');
+        el.style.border = '2px solid var(--primary)';
+        el.style.background = '#EEF2FF';
+        el.querySelector('i').style.color = 'var(--primary)';
+        
+        const btn = document.getElementById('deliveryNextBtn');
+        if (type === 'Pickup from Shop') {
+            btn.innerText = "Continue to Payment";
+        } else {
+            btn.innerText = "Continue to Details";
+        }
+    };
+
+    window.showCheckoutStep = function(stepId) {
+        const steps = ['checkoutStepDelivery', 'checkoutStepAddress', 'checkoutStepPayment', 'checkoutStepSuccess'];
+        steps.forEach(s => {
+            const el = document.getElementById(s);
+            if (el) el.style.display = 'none';
+        });
+        
+        const targetMap = {
+            'delivery': 'checkoutStepDelivery',
+            'address': 'checkoutStepAddress',
+            'payment': 'checkoutStepPayment',
+            'success': 'checkoutStepSuccess'
+        };
+        
+        const target = targetMap[stepId];
+        if (target && document.getElementById(target)) {
+            document.getElementById(target).style.display = (target === 'checkoutStepSuccess' ? 'flex' : 'block');
+        }
+    };
+
     // Coupon Logic (Shared)
     async function applyCoupon(code, messageEl) {
+        // Fix: Use a more robust check for user session
+        const userId = getCookie('user_id');
+        if (!userId || userId === 'undefined') {
+            Toast.show("Please login to use coupons!", "warning");
+            openAuthModal();
+            return;
+        }
         if (!code) return;
         const parsePrice = (p) => typeof p === 'string' ? parseFloat(p.replace(/[^0-9.]/g, '')) : Number(p);
         let subtotal = cart.reduce((sum, item) => sum + (parsePrice(item.price) * item.quantity), 0);
@@ -1420,16 +1513,17 @@ async function setupCartInteractions() {
             const data = await res.json();
             if (res.ok) {
                 window.appliedCoupon = data;
-                // backend returns discount_value, frontend was using discountValue
                 const discountVal = data.discount_value;
                 messageEl.innerText = `Success! -₹${discountVal} Applied`;
                 messageEl.style.color = "#10B981";
                 updateCartSidebar();
+                if (typeof updateCheckoutTotals === 'function') updateCheckoutTotals();
             } else {
                 window.appliedCoupon = null;
                 messageEl.innerText = data.error || "Invalid coupon.";
                 messageEl.style.color = "#EF4444";
                 updateCartSidebar();
+                if (typeof updateCheckoutTotals === 'function') updateCheckoutTotals();
             }
         } catch(e) {
             messageEl.innerText = "Error validating coupon.";
@@ -1478,6 +1572,7 @@ async function setupCartInteractions() {
         if (modalFinalTotal) modalFinalTotal.innerText = `₹${Math.round(finalTotal)}`;
     };
 
+
     const checkoutCouponBtn = document.getElementById('checkoutCouponBtn');
     if (checkoutCouponBtn) {
         checkoutCouponBtn.onclick = () => {
@@ -1489,23 +1584,33 @@ async function setupCartInteractions() {
         };
     }
 
+    const backToCartBtn = document.getElementById('backToCartBtn');
+    if (backToCartBtn) backToCartBtn.onclick = backToCart;
+
     async function fetchCouponsForCheckout() {
-        const list = document.getElementById('couponsListCheckout');
-        const container = document.getElementById('availableCouponsCheckout');
-        if (!list) return;
+        const listCheckout = document.getElementById('couponsListCheckout');
+        const containerCheckout = document.getElementById('availableCouponsCheckout');
+        
         try {
             const res = await fetch('/api/products/coupons/active');
             const coupons = await res.json();
+            
             if (coupons && coupons.length > 0) {
-                container.style.display = 'block';
-                list.innerHTML = coupons.map(c => `
+                const couponHTML = coupons.map(c => `
                     <div onclick="document.getElementById('checkoutCouponInput').value='${c.code}'; document.getElementById('checkoutCouponBtn').click();" 
-                         style="background: white; border: 1px solid var(--secondary); color: var(--secondary); padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; cursor: pointer; border-style: dashed;">
+                         style="background: white; border: 1px solid var(--secondary); color: var(--secondary); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; border-style: dashed; transition: all 0.2s;"
+                         onmouseover="this.style.background='var(--secondary-light-alpha)'" 
+                         onmouseout="this.style.background='white'">
                         ${c.code}
                     </div>
                 `).join('');
+
+                if (listCheckout) {
+                    containerCheckout.style.display = 'block';
+                    listCheckout.innerHTML = couponHTML;
+                }
             } else {
-                container.style.display = 'none';
+                if (containerCheckout) containerCheckout.style.display = 'none';
             }
         } catch(e) { console.error("Error fetching coupons:", e); }
     }
@@ -1513,18 +1618,34 @@ async function setupCartInteractions() {
     if (checkoutBtn) {
         checkoutBtn.onclick = () => {
             if (cart.length === 0) return;
-            // When going from cart to checkout, we keep the background scroll locked
             closeCart();
             document.body.classList.add('no-scroll');
             
             const supportSymbol = document.getElementById('supportSymbol');
             if (supportSymbol) supportSymbol.style.display = 'none';
-            document.getElementById('checkoutStepAddress').style.display = 'block';
-            document.getElementById('checkoutStepPayment').style.display = 'none';
-            document.getElementById('checkoutStepSuccess').style.display = 'none';
+            
+            // Show Delivery Step first
+            showCheckoutStep('delivery');
             if (checkoutModal) checkoutModal.classList.add('active');
-            updateCheckoutTotals(); // Initial total load
+            updateCheckoutTotals();
             fetchCouponsForCheckout();
+
+            // Pre-fill Name & Phone if available
+            const name = getCookie('full_name');
+            const phone = getCookie('username');
+            if (name) document.getElementById('checkoutName').value = decodeURIComponent(name);
+            if (phone) document.getElementById('checkoutPhone').value = phone;
+        };
+    }
+
+    const deliveryNextBtn = document.getElementById('deliveryNextBtn');
+    if (deliveryNextBtn) {
+        deliveryNextBtn.onclick = () => {
+            if (window.selectedDeliveryType === 'Pickup from Shop') {
+                showCheckoutStep('payment');
+            } else {
+                showCheckoutStep('address');
+            }
         };
     }
 
@@ -1595,21 +1716,23 @@ async function setupCartInteractions() {
 
     if (confirmOrderBtn) {
         confirmOrderBtn.onclick = async () => {
+            if (!getCookie('user_id')) {
+                Toast.show("Please login to place an order!", "warning");
+                openAuthModal();
+                return;
+            }
             if (!selectedPaymentMethod) return;
             confirmOrderBtn.innerText = "Processing...";
             confirmOrderBtn.disabled = true;
 
-            const name = document.getElementById('checkoutName').value.trim();
-            const phone = document.getElementById('checkoutPhone').value.trim();
-            const house = document.getElementById('checkoutHouse').value.trim();
-            const street = document.getElementById('checkoutStreet').value.trim();
-            
             const orderData = {
-                name, phone,
-                address: `${house}, ${street}`,
+                name: document.getElementById('checkoutName').value.trim() || 'Pickup Order',
+                phone: document.getElementById('checkoutPhone').value.trim() || 'N/A',
+                address: window.selectedDeliveryType === 'Pickup from Shop' ? 'Store Pickup' : `${house}, ${street}`,
                 paymentMethod: selectedPaymentMethod,
                 items: cart,
-                couponId: window.appliedCoupon ? window.appliedCoupon.id : null
+                couponId: window.appliedCoupon ? window.appliedCoupon.id : null,
+                deliveryType: window.selectedDeliveryType
             };
 
             try {
@@ -1618,18 +1741,27 @@ async function setupCartInteractions() {
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(orderData)
                 });
+                
+                const data = await res.json().catch(() => ({ error: "Server returned an invalid response." }));
+                
                 if (res.ok) {
                     Toast.show("Order placed successfully!", "success");
-                    document.getElementById('checkoutStepPayment').style.display = 'none';
-                    document.getElementById('checkoutStepSuccess').style.display = 'flex';
+                    showCheckoutStep('success');
+                    
+                    if (document.getElementById('successOrderId')) document.getElementById('successOrderId').innerText = `#${data.orderId || '0000'}`;
+                    if (document.getElementById('successMethod')) document.getElementById('successMethod').innerText = selectedPaymentMethod === 'cash' ? 'Cash on Delivery' : selectedPaymentMethod.toUpperCase();
+                    if (document.getElementById('successTotalAmount')) document.getElementById('successTotalAmount').innerText = document.getElementById('modalFinalTotal').innerText;
+
                     cart = [];
                     localStorage.removeItem('cart');
                     updateCartSidebar();
                 } else {
-                    const err = await res.json();
-                    Toast.show(err.error || "Order failed.", "error");
+                    Toast.show(data.error || "Order failed.", "error");
                 }
-            } catch(e) { console.error(e); alert("Connection error."); }
+            } catch(e) { 
+                console.error(e); 
+                Toast.show("Connection error. Please try again.", "error"); 
+            }
             finally {
                 confirmOrderBtn.innerText = "Confirm Order";
                 confirmOrderBtn.disabled = false;
@@ -1660,9 +1792,8 @@ async function fetchBanners() {
         const res = await fetch('/api/banners');
         const banners = await res.json();
         
-        // Filter out "MORNING FRESH" from top slider
+        // Exclude banner id 2 (Farm Fresh) to remove it entirely from UI
         const sliderBanners = banners.filter(b => b.id !== 2);
-        const morningFresh = banners.find(b => b.id === 2);
 
         const slider = document.getElementById('bannerSlider');
         if (slider && sliderBanners.length > 0) {
@@ -1672,35 +1803,18 @@ async function fetchBanners() {
                 slide.className = 'banner-slide slide-1';
                 slide.innerHTML = `
                     <div class="banner-content">
-                        <span class="badge">${b.badge}</span>
-                        <h2>${b.title}</h2>
-                        <p>${b.description}</p>
-                        <button class="btn btn-primary" onclick="navigateToBannerCategory('${b.target_category || 'All'}')">${b.btnText}</button>
+                        <span class="badge">${b.badge || ''}</span>
+                        <h2>${b.title || ''}</h2>
+                        <p>${b.description || ''}</p>
+                        <button class="btn btn-primary" onclick="navigateToBannerCategory('${b.target_category || 'All'}')">${b.btnText || b.btntext || 'Shop Now'}</button>
                     </div>
-                    <img src="${b.imgUrl}" alt="Promo Banner" class="banner-image">
+                    <img src="${b.imgurl || b.imgurl}" alt="Promo Banner" class="banner-image" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200'">
                 `;
                 slider.appendChild(slide);
             });
         }
 
-        // Populate dedicated Morning Fresh section if it exists
-        const mfSection = document.getElementById('morningFreshSection');
-        if (mfSection && morningFresh) {
-            mfSection.style.display = 'block';
-            mfSection.innerHTML = `
-                <div class="banner-slide" style="flex: 1; min-height: 250px; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 1px solid #bbf7d0; border-radius: var(--radius-lg); overflow: hidden; display: flex; align-items: center; position: relative;">
-                    <div class="banner-content" style="z-index: 2; padding: 2rem; max-width: 60%; position: relative;">
-                        <span class="badge" style="background: var(--primary); color: white; margin-bottom: 1rem;">${morningFresh.badge}</span>
-                        <h2 style="font-size: 2rem; margin-bottom: 1rem; color: #064e3b;">${morningFresh.title}</h2>
-                        <p style="color: #065f46; margin-bottom: 1.5rem; font-size: 1.1rem;">${morningFresh.description}</p>
-                        <button class="btn btn-primary" onclick="navigateToBannerCategory('${morningFresh.target_category || 'All'}')">${morningFresh.btnText}</button>
-                    </div>
-                    <img src="${morningFresh.imgUrl}" alt="Morning Fresh" style="position: absolute; right: 0; top: 0; height: 100%; width: 45%; object-fit: cover; mask-image: linear-gradient(to left, black 70%, transparent 100%);">
-                </div>
-            `;
-        } else if (mfSection) {
-            mfSection.style.display = 'none';
-        }
+
     } catch(err) { console.error(err); }
 }
 
@@ -1737,12 +1851,12 @@ function populateCategories() {
     grid.innerHTML = '';
     categories.forEach(cat => {
         const html = `
-            <a href="category.html?name=${encodeURIComponent(cat.name)}" class="category-link">
-                <div class="category-card">
+            <div class="category-link" style="cursor: pointer;" onclick="window.filterByCategory('${cat.name}')">
+                <div class="category-card ${activeFilter.type === 'category' && activeFilter.value === cat.name ? 'active' : ''}">
                     <i class="ph ${cat.iconUrl || 'ph-package'}"></i>
                     <span class="category-name">${cat.name}</span>
                 </div>
-            </a>
+            </div>
         `;
         grid.innerHTML += html;
     });
@@ -1750,6 +1864,89 @@ function populateCategories() {
     // Re-run arrow check since content changed
     setupCarousels();
 }
+
+/**
+ * Toggle visibility of homepage-only sections to focus on results
+ */
+function toggleHomeSections(show) {
+    const isSearching = document.getElementById('mainSearchInput')?.value.trim() !== '';
+    
+    const sections = [
+        '.banner-section',
+        '.special-offers',
+        '.trending-section',
+        '.brands-section',
+        '.testimonials-section'
+    ];
+    
+    sections.forEach(selector => {
+        const el = document.querySelector(selector);
+        if (el) {
+            el.style.display = show ? 'block' : 'none';
+        }
+    });
+
+    // Handle .product-listing (Daily Essentials / Search Results)
+    const productListing = document.querySelector('.product-listing');
+    if (productListing) {
+        // If we are showing everything, show it.
+        // If we are hiding home sections but searching, KEEP productListing visible for results!
+        if (show || isSearching) {
+            productListing.style.display = 'block';
+            
+            // Hide the 'Daily Essentials' header when searching to keep focus on results
+            const sectionHeader = productListing.querySelector('.section-header');
+            if (sectionHeader) {
+                sectionHeader.style.display = isSearching ? 'none' : 'flex';
+            }
+        } else {
+            productListing.style.display = 'none';
+        }
+    }
+
+    // Handle scroll to top when hiding home sections to focus on results
+    if (!show) {
+        window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+}
+
+window.filterByCategory = function(catName) {
+    const resultsSection = document.getElementById('categoryResultsSection');
+    const resultsGrid = document.getElementById('categoryProductGrid');
+    const resultsTitle = document.getElementById('selectedCategoryTitle');
+    const viewAllBtn = document.getElementById('viewAllInCat');
+
+    if (!resultsSection || !resultsGrid) return;
+
+    // Filter products
+    const filtered = products.filter(p => p.category === catName);
+    
+    // Toggle Homepage Sections OFF
+    toggleHomeSections(false);
+    
+    // Update UI
+    resultsTitle.innerText = `Results for "${catName}"`;
+    resultsSection.style.display = 'block';
+    if (viewAllBtn) viewAllBtn.href = `category.html?name=${encodeURIComponent(catName)}`;
+    
+    populateProducts("categoryProductGrid", filtered);
+
+    // Scroll to results header
+    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+window.clearCategoryFilter = function() {
+    const resultsSection = document.getElementById('categoryResultsSection');
+    if (resultsSection) resultsSection.style.display = 'none';
+    
+    // Toggle Homepage Sections BACK ON
+    toggleHomeSections(true);
+    
+    // Clear active card states
+    document.querySelectorAll('.category-card').forEach(c => c.classList.remove('active'));
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
 function populateProducts(containerId, items) {
     console.log(`Populating container: ${containerId} with ${items.length} items.`);
@@ -1769,22 +1966,25 @@ function populateProducts(containerId, items) {
         
         // Variant Check
         const hasVariants = prod.variants && Array.isArray(prod.variants) && prod.variants.length > 0;
+        const imgurl = prod.imgurl || prod.imgUrl || "";
+        const originalprice = prod.originalprice || prod.originalPrice || 0;
+
         let weightDisplay = `<span class="product-weight" id="weight-${prod.id}">${prod.weight}</span>`;
         let priceDisplay = `
             <span class="current-price" id="currPrice-${prod.id}">₹${prod.price}</span>
-            <span class="old-price" id="oldPrice-${prod.id}">₹${prod.originalPrice}</span>
+            <span class="old-price" id="oldPrice-${prod.id}">${originalprice ? '₹' + originalprice : ''}</span>
         `;
 
         if (hasVariants) {
             weightDisplay = `
                 <select class="variant-select" onchange="window.updateVariantPrice(this, '${prod.id}', '${safeName}')" style="width: 100%; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.8rem; background: var(--bg-color); color: var(--text-main); margin-bottom: 0.5rem; cursor: pointer;">
-                    ${prod.variants.map((v, idx) => `<option value="${idx}" data-price="${v.price}" data-old-price="${v.originalPrice}" data-weight="${v.weight}">${v.weight}</option>`).join('')}
+                    ${prod.variants.map((v, idx) => `<option value="${idx}" data-price="${v.price}" data-old-price="${v.originalprice || v.originalPrice || v.price}" data-weight="${v.weight}">${v.weight}</option>`).join('')}
                 </select>
             `;
             // Set initial price to first variant
             priceDisplay = `
                 <span class="current-price" id="currPrice-${prod.id}">₹${prod.variants[0].price}</span>
-                <span class="old-price" id="oldPrice-${prod.id}">₹${prod.variants[0].originalPrice}</span>
+                <span class="old-price" id="oldPrice-${prod.id}">${(prod.variants[0].originalprice || prod.variants[0].originalprice) ? '₹' + (prod.variants[0].originalprice || prod.variants[0].originalprice) : ''}</span>
             `;
         }
 
@@ -1805,7 +2005,7 @@ function populateProducts(containerId, items) {
             <div class="product-card" style="${!isAvailable ? 'opacity: 0.6; filter: grayscale(1);' : ''}">
                 <i class="${isWishlisted ? 'ph-fill' : 'ph'} ph-heart" style="position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; color: #EF4444; z-index: 2; cursor: pointer;" onclick="toggleWishlist(event, '${prod.id}')"></i>
                 ${prod.discount ? `<span class="discount-badge">${prod.discount}</span>` : ''}
-                <img src="${prod.imgUrl}" alt="${prod.name}" class="product-img" onerror="this.src='https://via.placeholder.com/200/F8FAFC/94A3B8?text=Product'">
+                <img src="${imgurl}" alt="${prod.name}" class="product-img" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&text=Product'">
                 <div class="product-info">
                     ${weightDisplay}
                     <h4 class="product-title">${prod.name}</h4>
@@ -1824,8 +2024,18 @@ function populateProducts(containerId, items) {
                 </div>
             </div>
         `;
-        container.innerHTML += html;
+        if (isAvailable) {
+            container.innerHTML += html;
+        } else {
+            // Keep out of stock items at the end
+            container.insertAdjacentHTML('beforeend', html);
+        }
     });
+
+    // Final check: if container is still empty (e.g. all filtered out), show empty message
+    if (!container.innerHTML.trim()) {
+        container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--text-soft);">No items available in this category.</div>`;
+    }
 }
 
 window.updateVariantPrice = function(select, prodId, productName) {
@@ -1842,7 +2052,7 @@ function addToCart(product, selectedVariant = null) {
     
     const weight = selectedVariant ? selectedVariant.weight : product.weight;
     const price = selectedVariant ? selectedVariant.price : product.price;
-    const originalPrice = selectedVariant ? selectedVariant.originalPrice : product.originalPrice;
+    const originalprice = selectedVariant ? selectedVariant.originalprice : product.originalprice;
 
     // check if it exists in cart with same weight
     const existing = cart.find(item => item.id === product.id && item.weight === weight);
@@ -1853,7 +2063,7 @@ function addToCart(product, selectedVariant = null) {
             ...product, 
             weight: weight,
             price: price,
-            originalPrice: originalPrice,
+            originalprice: originalprice,
             quantity: 1, 
             category: product.category || 'General' 
         });
@@ -1897,7 +2107,7 @@ function updateCartSidebar() {
             itemHTML.style.borderBottom = '1px solid var(--border)';
             
             itemHTML.innerHTML = `
-                <img src="${item.imgUrl}" style="width: 50px; height: 50px; object-fit: contain; background: var(--bg-color); border-radius: 8px;">
+                <img src="${item.imgurl}" style="width: 50px; height: 50px; object-fit: contain; background: var(--bg-color); border-radius: 8px;">
                 <div style="flex: 1;">
                     <h5 style="font-size: 0.9rem; margin-bottom: 0.2rem;">${item.name}</h5>
                     <span style="font-size: 0.8rem; color: var(--text-soft);">${item.weight}</span>
@@ -1931,7 +2141,8 @@ function updateCartSidebar() {
     if (window.appliedCoupon) {
         let discount = 0;
         if (window.appliedCoupon.discount_type === 'percent') {
-            discount = Math.round(subtotal * (window.appliedCoupon.discount_value / 100));
+            const percent = window.appliedCoupon.original_value || window.appliedCoupon.discount_value;
+            discount = Math.round(subtotal * (percent / 100));
         } else {
             discount = window.appliedCoupon.discount_value;
         }
@@ -2004,7 +2215,7 @@ window.addToCartByGrid = function(productName, prodId) {
             selectedVariant = {
                 weight: opt.getAttribute('data-weight'),
                 price: Number(opt.getAttribute('data-price')),
-                originalPrice: Number(opt.getAttribute('data-old-price'))
+                originalprice: Number(opt.getAttribute('data-old-price'))
             };
         }
         
@@ -2155,6 +2366,13 @@ window.applyFilter = function(type, value) {
         activeFilter = { type: null, value: null };
     } else {
         activeFilter = { type, value };
+        // Scroll to product grid for better visibility when a filter is applied
+        const gridSection = document.querySelector('.product-listing');
+        if (gridSection) {
+            const offset = 80;
+            const top = gridSection.getBoundingClientRect().top + window.pageYOffset - offset;
+            window.scrollTo({ top, behavior: 'smooth' });
+        }
     }
 
     // Update UI
@@ -2246,37 +2464,141 @@ function updateAuthUI(name) {
     const authContent = document.getElementById('dynamicAuthContent');
     if (!authContent) return;
     
-    // Check cookies if name not provided
-    const userFullName = name || getCookie('full_name');
-    const username = getCookie('username');
+    const userFullName = name || getCookie('full_name') || localStorage.getItem('user_full_name');
+    const isMobile = window.innerWidth <= 768;
 
-    if (userFullName || username) {
+    if (userFullName && userFullName !== 'undefined' && userFullName !== 'null') {
+        const displayName = decodeURIComponent(userFullName).toUpperCase();
+        const firstName = displayName.split(' ')[0];
+        
+        // Premium Dropdown Layout
         authContent.innerHTML = `
-            <a href="profile.html" class="nav-link" style="color: var(--primary); font-weight: 600;">
-                <i class="ph-fill ph-user-circle"></i> HI, ${(userFullName || username).toUpperCase()}
-            </a>
-            <span class="divider">|</span>
-            <a href="#" class="nav-link logout-trigger">Log Out</a>
+            <div class="user-profile-wrapper">
+                <div class="premium-user-badge" id="userMenuTrigger" style="display: flex; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.8); padding: 6px 14px; border-radius: 30px; border: 1.5px solid var(--primary); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.08);">
+                    <div class="avatar-circle" style="width: 28px; height: 28px; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 900; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);">
+                        ${displayName.charAt(0)}
+                    </div>
+                    <span style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--primary); font-size: 0.9rem; letter-spacing: 0.5px;">HI, ${isMobile ? firstName : displayName}</span>
+                    <i class="ph ph-caret-down" style="font-size: 0.8rem; color: var(--primary);"></i>
+                </div>
+
+                <div class="user-dropdown" id="userDropdownMenu">
+                    <a href="profile.html" class="user-dropdown-item">
+                        <i class="ph ph-user-circle"></i> My Profile
+                    </a>
+                    <a href="profile.html?tab=orders" class="user-dropdown-item">
+                        <i class="ph ph-shopping-bag"></i> My Orders
+                    </a>
+                    <a href="wishlist.html" class="user-dropdown-item">
+                        <i class="ph ph-heart"></i> Wishlist
+                    </a>
+                    <div class="user-dropdown-footer">
+                        <a href="#" class="user-dropdown-item logout logout-trigger">
+                            <i class="ph ph-sign-out"></i> Log Out
+                        </a>
+                    </div>
+                </div>
+            </div>
         `;
         
-        // Re-attach logout listener
-        authContent.querySelector('.logout-trigger')?.addEventListener('click', async (e) => {
+        // Re-attach dropdown toggle logic
+        const trigger = document.getElementById('userMenuTrigger');
+        const dropdown = document.getElementById('userDropdownMenu');
+        
+        if (trigger && dropdown) {
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle('active');
+            });
+
+            // Close when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!trigger.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.classList.remove('active');
+                }
+            });
+        }
+
+        // Re-attach logout listener - Use the centralized function
+        authContent.querySelector('.logout-trigger')?.addEventListener('click', (e) => {
             e.preventDefault();
-            await fetch('/api/auth/logout', { method: 'POST' });
-            // Clear all auth cookies explicitly for good measure
-            document.cookie = "full_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            document.cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            document.cookie = "user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            location.reload();
+            window.logoutUser();
         });
     } else {
         authContent.innerHTML = `
-            <a href="#" class="nav-link">Sign In</a>
+            <a href="#" class="nav-link" onclick="openAuthModal('login')" data-i18n="nav_sign_in">Sign In</a>
             <span class="divider">|</span>
-            <a href="#" class="nav-link">Log In</a>
+            <a href="#" class="nav-link" onclick="openAuthModal('login')" data-i18n="nav_log_in">Log In</a>
         `;
     }
 }
 // Initialize Auth UI on load
 updateAuthUI();
 
+// Global Logout Function
+window.logoutUser = async function() {
+    try {
+        const username = localStorage.getItem('user_full_name') || 'Friend';
+        const displayName = decodeURIComponent(username).split(' ')[0];
+
+        if (window.Toast) {
+            Toast.show(`Good bye, ${displayName}! See you soon. ✨`, "premium", 2500);
+        }
+        
+        // 1. Immediately update UI to prevent flicker
+        if (window.updateAuthUI) updateAuthUI(null);
+        
+        // 2. Add full screen fade out for premium feel
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0); z-index: 9999;
+            pointer-events: none; transition: background 0.8s ease;
+        `;
+        document.body.appendChild(overlay);
+        requestAnimationFrame(() => overlay.style.background = 'rgba(255,255,255,0.8)');
+
+        // 3. Attempt backend logout
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+        } catch(e) { console.warn("Backend logout failed, continuing client purge."); }
+        
+        // 4. NUCLEAR PURGE
+        const purgeKeys = ['full_name', 'username', 'user_id', 'auth_token', 'token', 'user_full_name', 'user_username', 'user_id', 'user_data', 'cart', 'wishlist'];
+        const paths = ['/', '/api', '/frontend', window.location.pathname];
+        
+        purgeKeys.forEach(ck => {
+            paths.forEach(p => {
+                document.cookie = `${ck}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${p};`;
+                document.cookie = `${ck}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${p}; domain=${window.location.hostname};`;
+            });
+            document.cookie = `${ck}=; expires=Thu, 01 Jan 1970 00:00:00 UTC;`;
+        });
+        
+        purgeKeys.forEach(k => {
+            localStorage.removeItem(k);
+            sessionStorage.removeItem(k);
+        });
+        
+        localStorage.clear();
+
+        // 5. Final redirect with delay to show the nice notification
+        setTimeout(() => {
+            window.location.href = "/?logout=success";
+        }, 1200);
+    } catch(err) {
+        console.error("Logout critical failure", err);
+        window.location.href = "/";
+    }
+};
+
+// Update sidebar logout listener to use the global function
+document.addEventListener('DOMContentLoaded', () => {
+    const sidebarLogout = document.getElementById('sidebarLogout');
+    if (sidebarLogout) {
+        sidebarLogout.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.logoutUser();
+        });
+    }
+});

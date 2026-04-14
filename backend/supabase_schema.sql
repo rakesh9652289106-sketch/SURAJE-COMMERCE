@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS public.settings (
 CREATE TABLE IF NOT EXISTS public.categories (
     id SERIAL PRIMARY KEY,
     name TEXT,
-    iconUrl TEXT
+    iconurl TEXT
 );
 
 CREATE TABLE IF NOT EXISTS public.products (
@@ -61,10 +61,10 @@ CREATE TABLE IF NOT EXISTS public.products (
     category TEXT,
     weight TEXT,
     price INTEGER,
-    originalPrice INTEGER,
+    originalprice INTEGER,
     rating TEXT,
     reviews TEXT,
-    imgUrl TEXT,
+    imgurl TEXT,
     discount TEXT,
     stock_quantity INTEGER DEFAULT 0,
     is_available INTEGER DEFAULT 1,
@@ -90,8 +90,8 @@ CREATE TABLE IF NOT EXISTS public.banners (
     badge TEXT,
     title TEXT,
     description TEXT,
-    btnText TEXT,
-    imgUrl TEXT,
+    btntext TEXT,
+    imgurl TEXT,
     target_category TEXT
 );
 
@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS public.special_offers (
     id SERIAL PRIMARY KEY,
     title TEXT,
     description TEXT,
-    colorClass TEXT,
+    colorclass TEXT,
     target_category TEXT
 );
 
@@ -113,6 +113,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
     status TEXT DEFAULT 'pending',
     payment_status TEXT DEFAULT 'pending',
     discount_amount INTEGER DEFAULT 0,
+    delivery_type TEXT DEFAULT 'Home Delivery',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 

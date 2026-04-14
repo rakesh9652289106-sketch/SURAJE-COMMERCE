@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,6 +25,7 @@
             box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
             min-width: 60px;
         }
+
         .status-btn-off {
             background: #94A3B8;
             color: white;
@@ -37,15 +39,24 @@
             text-transform: uppercase;
             min-width: 60px;
         }
-        .status-btn-on:hover { background: #059669; transform: translateY(-1px); }
-        .status-btn-off:hover { background: #64748B; transform: translateY(-1px); }
-        
+
+        .status-btn-on:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .status-btn-off:hover {
+            background: #64748B;
+            transform: translateY(-1px);
+        }
+
         .section-header-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 2rem;
         }
+
         .global-date-filter {
             display: flex;
             align-items: center;
@@ -54,14 +65,16 @@
             padding: 0.5rem 1rem;
             border-radius: 8px;
             border: 1px solid #E2E8F0;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
+
         .global-date-filter label {
             font-size: 0.8rem;
             font-weight: 600;
             color: #64748B;
             text-transform: uppercase;
         }
+
         .global-date-filter input {
             border: 1px solid #CBD5E1;
             padding: 0.35rem 0.5rem;
@@ -69,6 +82,7 @@
             font-size: 0.85rem;
             color: #1E293B;
         }
+
         /* Status Badges */
         .status-badge {
             padding: 4px 12px;
@@ -83,48 +97,84 @@
             width: 100px;
             text-align: center;
         }
-        .status-badge.active-live { background: #DCFCE7; color: #16A34A; border: 1px solid #BBF7D0; }
-        .status-badge.active-trending { background: #F3E8FF; color: #9333EA; border: 1px solid #E9D5FF; }
-        .status-badge.active-essential { background: #FEF3C7; color: #D97706; border: 1px solid #FDE68A; }
-        .status-badge.inactive { background: #F1F5F9; color: #64748B; border: 1px solid #E2E8F0; }
-        .status-badge:hover { transform: translateY(-1px); filter: brightness(0.95); }
+
+        .status-badge.active-live {
+            background: #DCFCE7;
+            color: #16A34A;
+            border: 1px solid #BBF7D0;
+        }
+
+        .status-badge.active-trending {
+            background: #F3E8FF;
+            color: #9333EA;
+            border: 1px solid #E9D5FF;
+        }
+
+        .status-badge.active-essential {
+            background: #FEF3C7;
+            color: #D97706;
+            border: 1px solid #FDE68A;
+        }
+
+        .status-badge.inactive {
+            background: #F1F5F9;
+            color: #64748B;
+            border: 1px solid #E2E8F0;
+        }
+
+        .status-badge:hover {
+            transform: translateY(-1px);
+            filter: brightness(0.95);
+        }
     </style>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
+
 <body>
-    <div class="admin-layout" id="adminLayoutMain" style="display: none;">
+    <div class="admin-layout" id="adminLayoutMain" style="display: flex;">
         <!-- Mobile Header -->
         <div class="mobile-admin-header" id="mobileAdminHeader">
             <!-- Logo / Title removed as per user request -->
             <button id="adminMobileMenuBtn" onclick="toggleAdminSidebar()"><i class="ph ph-list"></i></button>
         </div>
         <!-- Sidebar Overlay -->
-        <div id="adminSidebarOverlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 995;" onclick="toggleAdminSidebar()"></div>
+        <div id="adminSidebarOverlay"
+            style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 995;"
+            onclick="toggleAdminSidebar()"></div>
 
         <!-- Sidebar -->
         <aside class="admin-sidebar" id="adminSidebar">
             <div class="sidebar-header">
-            <!-- Header text removed as per user request -->
-                <button id="closeAdminSidebarBtn" onclick="toggleAdminSidebar()" style="display: none; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; float: right; margin-top: -30px;"><i class="ph ph-x"></i></button>
+                <!-- Header text removed as per user request -->
+                <button id="closeAdminSidebarBtn" onclick="toggleAdminSidebar()"
+                    style="display: none; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; float: right; margin-top: -30px;"><i
+                        class="ph ph-x"></i></button>
             </div>
             <ul class="sidebar-menu">
-                <li class="active" onclick="showSection('view-dashboard')"><i class="ph ph-chart-pie"></i> Dashboard Overview</li>
+                <li class="active" onclick="showSection('view-dashboard')"><i class="ph ph-chart-pie"></i> Dashboard
+                    Overview</li>
                 <li onclick="showSection('view-orders')"><i class="ph ph-receipt"></i> Recent Orders</li>
-                <li onclick="showSection('view-payment')"><i class="ph ph-currency-circle-dollar"></i> Payment Tracking</li>
+                <li onclick="showSection('view-payment')"><i class="ph ph-currency-circle-dollar"></i> Payment Tracking
+                </li>
                 <li onclick="showSection('view-categories')"><i class="ph ph-list-bullets"></i> Product Categories</li>
                 <li onclick="showSection('view-brands')"><i class="ph ph-copyright"></i> Brand Partners</li>
                 <li onclick="showSection('view-products')"><i class="ph ph-package"></i> Manage Products</li>
                 <li onclick="showSection('view-notifications')"><i class="ph ph-bell"></i> Push Notifications</li>
                 <li onclick="showSection('view-promo')"><i class="ph ph-presentation"></i> Promotional Ads</li>
                 <li onclick="showSection('view-orders', true)"><i class="ph ph-truck"></i> Manage Delivery</li>
-                <li onclick="showSection('view-inquiries')"><i class="ph ph-chat-circle-text"></i> Customer Inquiries</li>
+                <li onclick="showSection('view-inquiries')"><i class="ph ph-chat-circle-text"></i> Customer Inquiries
+                </li>
                 <li onclick="showSection('view-reviews')"><i class="ph ph-star-half"></i> Product Reviews</li>
                 <li onclick="showSection('view-users')"><i class="ph ph-users"></i> Manage Users</li>
                 <li onclick="showSection('view-coupons')"><i class="ph ph-ticket"></i> Coupon Codes</li>
                 <li onclick="showSection('view-settings')"><i class="ph ph-gear"></i> App Settings</li>
-                <li><a href="/" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.5rem;"><i class="ph ph-storefront"></i> View Store</a></li>
-                <li onclick="adminLogout()" style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem; color: #FDA4AF;"><i class="ph ph-sign-out"></i> Admin Logout</li>
+                <li><a href="/"
+                        style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.5rem;"><i
+                            class="ph ph-storefront"></i> View Store</a></li>
+                <li onclick="adminLogout()"
+                    style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem; color: #FDA4AF;">
+                    <i class="ph ph-sign-out"></i> Admin Logout</li>
             </ul>
         </aside>
 
@@ -133,10 +183,13 @@
             <!-- Dashboard Overview -->
             <section id="view-dashboard" class="content-section active">
                 <h1 class="page-title">Dashboard Overview</h1>
-                
-                <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-                    <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
-                        <div style="background: #E0E7FF; color: #4F46E5; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+
+                <div class="stats-grid"
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                    <div class="stat-card"
+                        style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
+                        <div
+                            style="background: #E0E7FF; color: #4F46E5; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
                             <i class="ph ph-currency-circle-dollar"></i>
                         </div>
                         <div>
@@ -145,33 +198,58 @@
                         </div>
                     </div>
                     <!-- ... Other stat cards matching previous logic ... -->
-                    <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
-                        <div style="background: #DCFCE7; color: #16A34A; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;"><i class="ph ph-shopping-bag"></i></div>
-                        <div><p style="font-size: 0.85rem; color: #64748B; font-weight: 600;">Total Orders</p><h3 id="statOrders" style="font-size: 1.5rem; color: #0F172A;">0</h3></div>
+                    <div class="stat-card"
+                        style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
+                        <div
+                            style="background: #DCFCE7; color: #16A34A; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                            <i class="ph ph-shopping-bag"></i></div>
+                        <div>
+                            <p style="font-size: 0.85rem; color: #64748B; font-weight: 600;">Total Orders</p>
+                            <h3 id="statOrders" style="font-size: 1.5rem; color: #0F172A;">0</h3>
+                        </div>
                     </div>
-                    <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
-                        <div style="background: #FEF3C7; color: #D97706; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;"><i class="ph ph-package"></i></div>
-                        <div><p style="font-size: 0.85rem; color: #64748B; font-weight: 600;">Products Live</p><h3 id="statProducts" style="font-size: 1.5rem; color: #0F172A;">0</h3></div>
+                    <div class="stat-card"
+                        style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
+                        <div
+                            style="background: #FEF3C7; color: #D97706; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                            <i class="ph ph-package"></i></div>
+                        <div>
+                            <p style="font-size: 0.85rem; color: #64748B; font-weight: 600;">Products Live</p>
+                            <h3 id="statProducts" style="font-size: 1.5rem; color: #0F172A;">0</h3>
+                        </div>
                     </div>
-                    <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
-                        <div style="background: #FEE2E2; color: #DC2626; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;"><i class="ph ph-chat-circle-dots"></i></div>
-                        <div><p style="font-size: 0.85rem; color: #64748B; font-weight: 600;">Support Inquiries</p><h3 id="statMessages" style="font-size: 1.5rem; color: #0F172A;">0</h3></div>
+                    <div class="stat-card"
+                        style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
+                        <div
+                            style="background: #FEE2E2; color: #DC2626; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                            <i class="ph ph-chat-circle-dots"></i></div>
+                        <div>
+                            <p style="font-size: 0.85rem; color: #64748B; font-weight: 600;">Support Inquiries</p>
+                            <h3 id="statMessages" style="font-size: 1.5rem; color: #0F172A;">0</h3>
+                        </div>
                     </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
                     <div class="form-card">
-                        <h2 style="margin-bottom: 1.5rem;"><i class="ph ph-chart-line"></i> Revenue Trend (Last 7 Days)</h2>
+                        <h2 style="margin-bottom: 1.5rem;"><i class="ph ph-chart-line"></i> Revenue Trend (Last 7 Days)
+                        </h2>
                         <div style="height: 300px; width: 100%;"><canvas id="revenueChart"></canvas></div>
                     </div>
                     <div class="form-card" style="background: #F8FAFC; border: 1px dashed #CBD5E1;">
                         <h2 style="margin-bottom: 1rem;"><i class="ph ph-monitor"></i> Store Preview</h2>
-                        <p style="font-size: 0.9rem; color: #64748B; margin-bottom: 1.5rem;">See how your store looks to customers.</p>
-                        <a href="/" target="_blank" class="btn-submit" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:0.5rem; background:#1E293B;"><i class="ph ph-arrow-square-out"></i> Go to Storefront</a>
+                        <p style="font-size: 0.9rem; color: #64748B; margin-bottom: 1.5rem;">See how your store looks to
+                            customers.</p>
+                        <a href="/" target="_blank" class="btn-submit"
+                            style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:0.5rem; background:#1E293B;"><i
+                                class="ph ph-arrow-square-out"></i> Go to Storefront</a>
                         <div style="margin-top: 2rem;">
-                             <h3 style="font-size: 1rem; margin-bottom: 1rem;">Quick Actions</h3>
-                             <button onclick="showSection('view-products')" class="btn-submit" style="margin-bottom:0.5rem; background:#38BDF8;"><i class="ph ph-plus"></i> Add Product</button>
-                             <button onclick="showSection('view-notifications')" class="btn-submit" style="background:#6366F1;"><i class="ph ph-broadcast"></i> Broadcast Alert</button>
+                            <h3 style="font-size: 1rem; margin-bottom: 1rem;">Quick Actions</h3>
+                            <button onclick="showSection('view-products')" class="btn-submit"
+                                style="margin-bottom:0.5rem; background:#38BDF8;"><i class="ph ph-plus"></i> Add
+                                Product</button>
+                            <button onclick="showSection('view-notifications')" class="btn-submit"
+                                style="background:#6366F1;"><i class="ph ph-broadcast"></i> Broadcast Alert</button>
                         </div>
                     </div>
                 </div>
@@ -188,9 +266,12 @@
                 </div>
 
                 <!-- Order Stats Boxes -->
-                <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-                    <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
-                        <div style="background: #E0E7FF; color: #4F46E5; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                <div class="stats-grid"
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                    <div class="stat-card"
+                        style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
+                        <div
+                            style="background: #E0E7FF; color: #4F46E5; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
                             <i class="ph ph-shopping-bag"></i>
                         </div>
                         <div>
@@ -198,8 +279,10 @@
                             <h3 id="statOrdersToday" style="font-size: 1.5rem; color: #0F172A;">0</h3>
                         </div>
                     </div>
-                    <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
-                        <div style="background: #DCFCE7; color: #16A34A; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                    <div class="stat-card"
+                        style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
+                        <div
+                            style="background: #DCFCE7; color: #16A34A; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
                             <i class="ph ph-truck"></i>
                         </div>
                         <div>
@@ -209,38 +292,78 @@
                     </div>
                 </div>
 
-                <h2 class="section-title" id="fulfillmentHeading" style="display:none; color:#10B981; margin-bottom:1.5rem;"><i class="ph ph-truck"></i> Manage Delivery Fulfillment</h2>
-                
-                <div class="form-card" id="deliveryPincodeSettings" style="margin-bottom: 2rem; display:none; background: #F8FAFC; border: 1px dashed #E2E8F0;">
+                <h2 class="section-title" id="fulfillmentHeading"
+                    style="display:none; color:#10B981; margin-bottom:1.5rem;"><i class="ph ph-truck"></i> Manage
+                    Delivery Fulfillment</h2>
+
+                <div class="form-card" id="deliveryPincodeSettings"
+                    style="margin-bottom: 2rem; display:none; background: #F8FAFC; border: 1px dashed #E2E8F0;">
                     <form id="adminDeliverySettingsForm">
-                        <div class="form-group" style="display:flex; align-items:center; justify-content: space-between;">
+                        <div class="form-group"
+                            style="display:flex; align-items:center; justify-content: space-between;">
                             <div>
-                                <label style="margin:0; font-size: 1rem; color: #0F172A;"><i class="ph ph-map-pin"></i> Restrict Delivery to Specific Pincodes</label>
-                                <p style="font-size: 0.8rem; color: #64748B; margin-top: 0.25rem;">If enabled, checkout will block users whose pincode is not listed below.</p>
+                                <label style="margin:0; font-size: 1rem; color: #0F172A;"><i class="ph ph-map-pin"></i>
+                                    Restrict Delivery to Specific Pincodes</label>
+                                <p style="font-size: 0.8rem; color: #64748B; margin-top: 0.25rem;">If enabled, checkout
+                                    will block users whose pincode is not listed below.</p>
                             </div>
-                            <label class="toggle-switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
-                                <input type="checkbox" id="managePincodeActive" style="opacity: 0; width: 0; height: 0;">
-                                <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px;"></span>
+                            <label class="toggle-switch"
+                                style="position: relative; display: inline-block; width: 50px; height: 24px;">
+                                <input type="checkbox" id="managePincodeActive"
+                                    style="opacity: 0; width: 0; height: 0;">
+                                <span class="slider"
+                                    style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px;"></span>
                             </label>
                         </div>
                         <div class="form-group" style="margin-top: 1rem;">
                             <label>Allowed Pincodes (Comma-separated)</label>
-                            <textarea id="manageAllowedPincodes" placeholder="e.g. 524004, 524003, 524002, 524001" style="width:100%; height:60px; padding:0.75rem; border-radius:8px; border:1px solid #CBD5E1;"></textarea>
+                            <textarea id="manageAllowedPincodes" placeholder="e.g. 524004, 524003, 524002, 524001"
+                                style="width:100%; height:60px; padding:0.75rem; border-radius:8px; border:1px solid #CBD5E1;"></textarea>
                         </div>
-                        <button type="submit" class="btn-submit" style="width: auto; padding: 0.5rem 1.5rem;">Save Delivery Area</button>
+                        <button type="submit" class="btn-submit" style="width: auto; padding: 0.5rem 1.5rem;">Save
+                            Delivery Area</button>
                     </form>
                     <style>
-                        .toggle-switch input:checked + .slider { background-color: #6366F1; }
-                        .toggle-switch input:focus + .slider { box-shadow: 0 0 1px #6366F1; }
-                        .toggle-switch .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-                        .toggle-switch input:checked + .slider:before { transform: translateX(26px); }
+                        .toggle-switch input:checked+.slider {
+                            background-color: #6366F1;
+                        }
+
+                        .toggle-switch input:focus+.slider {
+                            box-shadow: 0 0 1px #6366F1;
+                        }
+
+                        .toggle-switch .slider:before {
+                            position: absolute;
+                            content: "";
+                            height: 16px;
+                            width: 16px;
+                            left: 4px;
+                            bottom: 4px;
+                            background-color: white;
+                            transition: .4s;
+                            border-radius: 50%;
+                        }
+
+                        .toggle-switch input:checked+.slider:before {
+                            transform: translateX(26px);
+                        }
                     </style>
                 </div>
 
                 <div class="table-container">
                     <table class="admin-table">
                         <thead>
-                            <tr><th>Order ID</th><th>Customer</th><th>Total</th><th>Items</th><th>Address</th><th>Payment</th><th>Status</th><th>Date</th><th>Action</th></tr>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Total</th>
+                                <th>Items</th>
+                                <th>Address</th>
+                                <th>Payment</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
                         </thead>
                         <tbody id="ordersTableBody"></tbody>
                     </table>
@@ -259,16 +382,22 @@
                     <form id="addProductForm">
                         <div class="form-group"><label>Product Name</label><input type="text" id="pName" required></div>
                         <div class="form-row">
-                            <div class="form-group"><label>Price (₹)</label><input type="number" id="pPrice" required></div>
-                            <div class="form-group"><label>Category</label><select id="pCategory" required class="admin-input"></select></div>
+                            <div class="form-group"><label>Price (₹)</label><input type="number" id="pPrice" required>
+                            </div>
+                            <div class="form-group"><label>Category</label><select id="pCategory" required
+                                    class="admin-input"></select></div>
                         </div>
                         <div class="form-row">
-                            <div class="form-group"><label>Original Price (₹)</label><input type="number" id="pOriginalPrice" required></div>
-                            <div class="form-group"><label>Stock Quantity</label><input type="number" id="pStock" required value="0"></div>
+                            <div class="form-group"><label>Original Price (₹)</label><input type="number"
+                                    id="pOriginalPrice" required></div>
+                            <div class="form-group"><label>Stock Quantity</label><input type="number" id="pStock"
+                                    required value="0"></div>
                         </div>
                         <div class="form-row">
-                            <div class="form-group"><label>Weight / Qty</label><input type="text" id="pWeight" required></div>
-                            <div class="form-group"><label>Discount Tag</label><input type="text" id="pDiscount" required></div>
+                            <div class="form-group"><label>Weight / Qty</label><input type="text" id="pWeight" required>
+                            </div>
+                            <div class="form-group"><label>Discount Tag</label><input type="text" id="pDiscount"
+                                    required></div>
                         </div>
                         <div class="form-group"><label>Image URL</label><input type="text" id="pImageUrl"></div>
                         <div class="form-group" style="display:flex; align-items:center; gap:0.5rem;">
@@ -280,44 +409,62 @@
                 </div>
 
                 <!-- Quick Variant Manager (New Section) -->
-                <div class="form-card" style="margin-top: 2rem; border-top: 4px solid var(--primary); background: #F8FAFC;">
-                    <h2 class="section-title" style="color: var(--primary);"><i class="ph ph-lightning"></i> Quick Variant Manager (Dropdown Selection)</h2>
-                    <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1.5rem;">Select a product by name to quickly add or manage its weight variants (e.g. 500g, 1kg).</p>
-                    
+                <div class="form-card"
+                    style="margin-top: 2rem; border-top: 4px solid var(--primary); background: #F8FAFC;">
+                    <h2 class="section-title" style="color: var(--primary);"><i class="ph ph-lightning"></i> Quick
+                        Variant Manager (Dropdown Selection)</h2>
+                    <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1.5rem;">Select a product by name to
+                        quickly add or manage its weight variants (e.g. 500g, 1kg).</p>
+
                     <div class="form-group">
                         <label>Select Product Name</label>
-                        <select id="quickVariantProductSelect" class="admin-input" style="width: 100%;" onchange="loadProductForQuickVariants(this.value)">
+                        <select id="quickVariantProductSelect" class="admin-input" style="width: 100%;"
+                            onchange="loadProductForQuickVariants(this.value)">
                             <option value="" disabled selected>-- Choose a product to add variants --</option>
                         </select>
                     </div>
 
-                    <div id="quickVariantEditor" style="display: none; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed #CBD5E1;">
-                        <h4 style="margin-bottom: 1rem; color: #1E293B;">Managing Variants for: <span id="quickVariantProductName" style="color: var(--primary);"></span></h4>
-                        
+                    <div id="quickVariantEditor"
+                        style="display: none; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed #CBD5E1;">
+                        <h4 style="margin-bottom: 1rem; color: #1E293B;">Managing Variants for: <span
+                                id="quickVariantProductName" style="color: var(--primary);"></span></h4>
+
                         <div id="quickVariantList" style="margin-bottom: 1.5rem;"></div>
 
-                        <div class="form-row" style="background: white; padding: 1rem; border-radius: 10px; border: 1px solid #E2E8F0; align-items: flex-end;">
-                            <div class="form-group" style="flex: 2;"><label>Weight / Unit</label><input type="text" id="qvWeight" placeholder="e.g. 1kg"></div>
-                            <div class="form-group" style="flex: 1;"><label>Price (₹)</label><input type="number" id="qvPrice"></div>
-                            <div class="form-group" style="flex: 1;"><label>Orig. Price</label><input type="number" id="qvOriginalPrice"></div>
-                            <button type="button" class="btn-submit" onclick="addQuickVariant()" style="width: auto; padding: 0.6rem 1.5rem; margin-bottom: 1rem;">Add Variant</button>
+                        <div class="form-row"
+                            style="background: white; padding: 1rem; border-radius: 10px; border: 1px solid #E2E8F0; align-items: flex-end;">
+                            <div class="form-group" style="flex: 2;"><label>Weight / Unit</label><input type="text"
+                                    id="qvWeight" placeholder="e.g. 1kg"></div>
+                            <div class="form-group" style="flex: 1;"><label>Price (₹)</label><input type="number"
+                                    id="qvPrice"></div>
+                            <div class="form-group" style="flex: 1;"><label>Orig. Price</label><input type="number"
+                                    id="qvOriginalPrice"></div>
+                            <button type="button" class="btn-submit" onclick="addQuickVariant()"
+                                style="width: auto; padding: 0.6rem 1.5rem; margin-bottom: 1rem;">Add Variant</button>
                         </div>
 
                         <div style="margin-top: 2rem; display: flex; gap: 1rem;">
-                            <button type="button" class="btn-submit" onclick="saveQuickVariants()" style="flex: 1; background: #10B981;">Save Changes to Product</button>
-                            <button type="button" class="btn-submit" onclick="closeQuickVariantEditor()" style="width: auto; background: #94A3B8;">Cancel</button>
+                            <button type="button" class="btn-submit" onclick="saveQuickVariants()"
+                                style="flex: 1; background: #10B981;">Save Changes to Product</button>
+                            <button type="button" class="btn-submit" onclick="closeQuickVariantEditor()"
+                                style="width: auto; background: #94A3B8;">Cancel</button>
                         </div>
                     </div>
                 </div>
 
                 <!-- Product Filters Bar -->
-                <div class="filter-bar" style="background:#F8FAFC; padding:1.25rem; border-radius:12px; margin-bottom:2rem; display:flex; gap:1.5rem; align-items:center; border:1px solid #E2E8F0;">
+                <div class="filter-bar"
+                    style="background:#F8FAFC; padding:1.25rem; border-radius:12px; margin-bottom:2rem; display:flex; gap:1.5rem; align-items:center; border:1px solid #E2E8F0;">
                     <div style="flex:1; position:relative;">
-                        <i class="ph ph-magnifying-glass" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#64748B; font-size:1.1rem;"></i>
-                        <input type="text" id="adminProductSearch" placeholder="Search by name or description..." onkeyup="fetchAdminProducts()" style="width:100%; padding:0.75rem 1rem 0.75rem 2.75rem; border-radius:10px; border:1px solid #CBD5E1; font-size:0.95rem; background:white;">
+                        <i class="ph ph-magnifying-glass"
+                            style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#64748B; font-size:1.1rem;"></i>
+                        <input type="text" id="adminProductSearch" placeholder="Search by name or description..."
+                            onkeyup="fetchAdminProducts()"
+                            style="width:100%; padding:0.75rem 1rem 0.75rem 2.75rem; border-radius:10px; border:1px solid #CBD5E1; font-size:0.95rem; background:white;">
                     </div>
                     <div style="width:250px;">
-                        <select id="adminProductCategory" onchange="fetchAdminProducts()" style="width:100%; padding:0.75rem 1rem; border-radius:10px; border:1px solid #CBD5E1; font-size:0.95rem; background:white; color:#1E293B; cursor:pointer;">
+                        <select id="adminProductCategory" onchange="fetchAdminProducts()"
+                            style="width:100%; padding:0.75rem 1rem; border-radius:10px; border:1px solid #CBD5E1; font-size:0.95rem; background:white; color:#1E293B; cursor:pointer;">
                             <option value="All">All Categories</option>
                         </select>
                     </div>
@@ -325,7 +472,20 @@
 
                 <div class="table-container">
                     <table class="admin-table">
-                        <thead><tr><th>ID</th><th>Img</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Live</th><th>Trending</th><th>Essential</th><th>Action</th></tr></thead>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Img</th>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Price</th>
+                                <th>Stock</th>
+                                <th>Live</th>
+                                <th>Trending</th>
+                                <th>Essential</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
                         <tbody id="productsTableBody"></tbody>
                     </table>
                 </div>
@@ -341,7 +501,9 @@
                     </div>
                 </div>
                 <div class="form-card">
-                    <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1rem;"><strong>Tip:</strong> General push notifications appear in the user's notification bell. To change the scrolling text at the top of the site, use the "Banner Scrolling Text" form below.</p>
+                    <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1rem;"><strong>Tip:</strong> General
+                        push notifications appear in the user's notification bell. To change the scrolling text at the
+                        top of the site, use the "Banner Scrolling Text" form below.</p>
                     <form id="adminNotificationForm">
                         <div class="form-group"><label>Message</label><input type="text" id="nMessage" required></div>
                         <button type="submit" class="btn-submit">Push Notification</button>
@@ -350,62 +512,123 @@
 
                 <div class="form-card" style="margin-top: 2rem; border-top: 4px solid var(--secondary);">
                     <h3 class="section-title"><i class="ph ph-presentation"></i> Banner Scrolling Text</h3>
-                    <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1rem;">This text appears at the very top of the storefront (marquee). Decoupled from general notifications.</p>
+                    <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1rem;">This text appears at the very
+                        top of the storefront (marquee). Decoupled from general notifications.</p>
                     <form id="adminMarqueeForm">
-                        <div class="form-group"><label>Marquee Message</label><textarea id="marqueeInput" style="width:100%; height:80px; padding:0.75rem; border-radius:8px; border:1px solid #E2E8F0;"></textarea></div>
-                        <button type="submit" class="btn-submit" style="background: #EF4444; color: white; font-weight: bold; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">POST MARQUEE</button>
+                        <div class="form-group"><label>Marquee Message</label><textarea id="marqueeInput"
+                                style="width:100%; height:80px; padding:0.75rem; border-radius:8px; border:1px solid #E2E8F0;"></textarea>
+                        </div>
+                        <button type="submit" class="btn-submit"
+                            style="background: #EF4444; color: white; font-weight: bold; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">POST
+                            MARQUEE</button>
                     </form>
                 </div>
                 <div style="display:flex; justify-content: space-between; align-items: center; margin: 2rem 0 1rem;">
                     <h3 style="margin: 0;">Notification History</h3>
-                    <button class="btn-submit" onclick="clearAllNotifications()" style="width: auto; background: #EF4444; padding: 0.4rem 1rem; font-size: 0.8rem;"><i class="ph ph-trash"></i> Clear All History</button>
+                    <button class="btn-submit" onclick="clearAllNotifications()"
+                        style="width: auto; background: #EF4444; padding: 0.4rem 1rem; font-size: 0.8rem;"><i
+                            class="ph ph-trash"></i> Clear All History</button>
                 </div>
-                <div class="table-container"><table class="admin-table"><thead><tr><th>Date</th><th>Message</th><th>Action</th></tr></thead><tbody id="notifHistoryBody"></tbody></table></div>
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Message</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="notifHistoryBody"></tbody>
+                    </table>
+                </div>
             </section>
 
             <!-- Promo View -->
             <section id="view-promo" class="content-section">
                 <h1 class="page-title">Promotions</h1>
-                <div class="form-card" style="margin-bottom:2rem; border-left: 5px solid var(--primary);">
-                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
-                        <div style="background: var(--primary); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="ph ph-sun-horizon" style="font-size: 1.5rem;"></i></div>
-                        <div>
-                            <h3 style="margin:0;">Morning Fresh Banner</h3>
-                            <p style="font-size: 0.8rem; color: #64748B; margin:0;">Appears below Daily Essentials section.</p>
-                        </div>
-                    </div>
-                    <form id="morningFreshBannerForm">
-                        <div class="form-row">
-                            <div class="form-group"><label>Image URL</label><input type="text" id="mfImgUrl"></div>
-                            <div class="form-group"><label>Target Category</label><select id="mfCategory" class="admin-input" style="width:100%"></select></div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group"><label>Badge Text</label><input type="text" id="mfBadge" value="MORNING FRESH"></div>
-                            <div class="form-group"><label>Main Title</label><input type="text" id="mfTitle"></div>
-                        </div>
-                        <div class="form-group"><label>Description</label><input type="text" id="mfDesc"></div>
-                        <div class="form-group"><label>Button Text</label><input type="text" id="mfBtnText" value="Order Now"></div>
-                        <button type="submit" class="btn-submit" style="background: var(--primary);">Update Morning Fresh Banner</button>
-                    </form>
-                </div>
-
                 <div class="form-card" style="margin-bottom:2rem;">
                     <h3>Hero Banner</h3>
                     <form id="bannerEditForm">
                         <input type="hidden" id="bannerId">
                         <div class="form-group"><label>Hero Image URL</label><input type="text" id="bImgUrl"></div>
-                        <div class="form-group"><label>Target Category</label><select id="bCategory" class="admin-input" style="width:100%"></select></div>
-                        <div class="form-group"><label>Promo Label (Badge)</label><input type="text" id="bBadge" placeholder="e.g. 50% OFF"></div>
-                        <div class="form-group"><label>Main Title</label><input type="text" id="bTitle" placeholder="e.g. Fresh Groceries"></div>
-                        <div class="form-group"><label>Description (Sub Text)</label><input type="text" id="bDesc" placeholder="e.g. Delivered in 30 mins"></div>
-                        <div class="form-group"><label>Button Text</label><input type="text" id="bBtnText" placeholder="e.g. Shop Now"></div>
+                        <div class="form-group"><label>Target Category</label><select id="bCategory" class="admin-input"
+                                style="width:100%"></select></div>
+                        <div class="form-group"><label>Promo Label (Badge)</label><input type="text" id="bBadge"
+                                placeholder="e.g. 50% OFF"></div>
+                        <div class="form-group"><label>Main Title</label><input type="text" id="bTitle"
+                                placeholder="e.g. Fresh Groceries"></div>
+                        <div class="form-group"><label>Description (Sub Text)</label><input type="text" id="bDesc"
+                                placeholder="e.g. Delivered in 30 mins"></div>
+                        <div class="form-group"><label>Button Text</label><input type="text" id="bBtnText"
+                                placeholder="e.g. Shop Now"></div>
                         <button type="submit" class="btn-submit">Update Hero Banner</button>
                     </form>
                 </div>
 
+                <div class="form-card" style="margin-bottom:2rem; border-left: 5px solid var(--primary);">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
+                        <div
+                            style="background: var(--primary); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="ph ph-sun-horizon" style="font-size: 1.5rem;"></i></div>
+                        <div>
+                            <h3 style="margin:0;">Morning Fresh Banner</h3>
+                            <p style="font-size: 0.8rem; color: #64748B; margin:0;">Appears below Daily Essentials
+                                section.</p>
+                        </div>
+                    </div>
+                    <form id="morningFreshBannerForm">
+                        <div class="form-row">
+                            <div class="form-group"><label>Image URL</label><input type="text" id="mfImgUrl"></div>
+                            <div class="form-group"><label>Target Category</label><select id="mfCategory"
+                                    class="admin-input" style="width:100%"></select></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Badge Text</label><input type="text" id="mfBadge"
+                                    value="MORNING FRESH"></div>
+                            <div class="form-group"><label>Main Title</label><input type="text" id="mfTitle"></div>
+                        </div>
+                        <div class="form-group"><label>Description</label><input type="text" id="mfDesc"></div>
+                        <div class="form-group"><label>Button Text</label><input type="text" id="mfBtnText"
+                                value="Order Now"></div>
+                        <button type="submit" class="btn-submit" style="background: var(--primary);">Update Morning
+                            Fresh Banner</button>
+                    </form>
+                </div>
+
                 <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.5rem;">
-                    <div class="form-card" style="max-width: none;"><h3>Offer 1 (Orange)</h3><form id="offerForm1"><input type="hidden" id="offerId1"><input type="text" id="oTitle1" placeholder="Title" class="admin-input" style="width:100%"><textarea id="oDesc1" placeholder="Description" style="margin-top:1rem; width:100%; padding:0.75rem; border:1px solid #CBD5E1; border-radius:6px;"></textarea><select id="oCategory1" style="margin-top:1rem; width:100%; padding:0.75rem; border:1px solid #CBD5E1; border-radius:6px;"></select><button type="submit" class="btn-submit" style="margin-top:1rem; background:#F97316;">Save Offer 1</button></form></div>
-                    <div class="form-card" style="max-width: none;"><h3>Offer 2 (Purple)</h3><form id="offerForm2"><input type="hidden" id="offerId2"><input type="text" id="oTitle2" placeholder="Title" class="admin-input" style="width:100%"><textarea id="oDesc2" placeholder="Description" style="margin-top:1rem; width:100%; padding:0.75rem; border:1px solid #CBD5E1; border-radius:6px;"></textarea><select id="oCategory2" style="margin-top:1rem; width:100%; padding:0.75rem; border:1px solid #CBD5E1; border-radius:6px;"></select><button type="submit" class="btn-submit" style="margin-top:1rem; background:#A855F7;">Save Offer 2</button></form></div>
+                    <div class="form-card" style="max-width: none;">
+                        <h3>Offer 1 (Orange)</h3>
+                        <form id="offerForm1"><input type="hidden" id="offerId1"><input type="text" id="oTitle1"
+                                placeholder="Title" class="admin-input" style="width:100%"><textarea id="oDesc1"
+                                placeholder="Description"
+                                style="margin-top:1rem; width:100%; padding:0.75rem; border:1px solid #CBD5E1; border-radius:6px;"></textarea><select
+                                id="oCategory1"
+                                style="margin-top:1rem; width:100%; padding:0.75rem; border:1px solid #CBD5E1; border-radius:6px;"></select><button
+                                type="submit" class="btn-submit" style="margin-top:1rem; background:#F97316;">Save Offer
+                                1</button></form>
+                    </div>
+                    <div class="form-card" style="max-width: none;">
+                        <h3>Offer 2 (Purple)</h3>
+                        <form id="offerForm2"><input type="hidden" id="offerId2"><input type="text" id="oTitle2"
+                                placeholder="Title" class="admin-input" style="width:100%"><textarea id="oDesc2"
+                                placeholder="Description"
+                                style="margin-top:1rem; width:100%; padding:0.75rem; border:1px solid #CBD5E1; border-radius:6px;"></textarea><select
+                                id="oCategory2"
+                                style="margin-top:1rem; width:100%; padding:0.75rem; border:1px solid #CBD5E1; border-radius:6px;"></select><button
+                                type="submit" class="btn-submit" style="margin-top:1rem; background:#A855F7;">Save Offer
+                                2</button></form>
+                    </div>
+                    <div class="form-card" style="max-width: none; background: #EEF2FF; border: 2px solid #6366F1;">
+                        <h3>Super Deal</h3>
+                        <form id="offerForm3"><input type="hidden" id="offerId3"><input type="text" id="oTitle3"
+                                placeholder="Title" class="admin-input" style="width:100%"><textarea id="oDesc3"
+                                placeholder="Description"
+                                style="margin-top:1rem; width:100%; padding:0.75rem; border:1px solid #CBD5E1; border-radius:6px;"></textarea><select
+                                id="oCategory3"
+                                style="margin-top:1rem; width:100%; padding:0.75rem; border:1px solid #CBD5E1; border-radius:6px;"></select><button
+                                type="submit" class="btn-submit" style="margin-top:1rem; background:#4F46E5;">Update
+                                Super Deal</button></form>
+                    </div>
                 </div>
             </section>
 
@@ -418,7 +641,23 @@
                         <input type="date" onchange="fetchPaymentHistory(this.value)">
                     </div>
                 </div>
-                <div class="table-container"><table class="admin-table"><thead><tr><th>Order ID</th><th>Customer</th><th>Amount</th><th>Method</th><th>Payment Status</th><th>Order Status</th><th>Date</th><th>Action</th></tr></thead><tbody id="paymentTableBody"></tbody></table></div>
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Amount</th>
+                                <th>Method</th>
+                                <th>Payment Status</th>
+                                <th>Order Status</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="paymentTableBody"></tbody>
+                    </table>
+                </div>
             </section>
 
             <!-- Inquiries -->
@@ -430,7 +669,20 @@
                         <input type="date" onchange="fetchMessages(this.value)">
                     </div>
                 </div>
-                <div class="table-container"><table class="admin-table"><thead><tr><th>Date</th><th>Customer</th><th>Subject</th><th>Status</th><th>Action</th></tr></thead><tbody id="messagesTableBody"></tbody></table></div>
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Subject</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="messagesTableBody"></tbody>
+                    </table>
+                </div>
             </section>
 
             <!-- Reviews -->
@@ -442,31 +694,92 @@
                         <input type="date" onchange="fetchAdminReviews(this.value)">
                     </div>
                 </div>
-                <div class="table-container"><table class="admin-table"><thead><tr><th>Date</th><th>Product</th><th>Customer</th><th>Rating</th><th>Action</th></tr></thead><tbody id="reviewsTableBody"></tbody></table></div>
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Product</th>
+                                <th>Customer</th>
+                                <th>Rating</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reviewsTableBody"></tbody>
+                    </table>
+                </div>
             </section>
 
             <!-- Users -->
             <section id="view-users" class="content-section">
-                <div class="section-header-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+                <div class="section-header-row"
+                    style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
                     <h1 class="page-title" style="margin:0;">Users</h1>
                     <div style="display:flex; gap:1rem;">
-                        <input type="text" id="userSearch" placeholder="Search users..." onkeyup="fetchUsers(this.value, document.getElementById('userDateFilter').value)" style="padding:0.4rem; border-radius:4px; border:1px solid #E2E8F0;">
-                        <input type="date" id="userDateFilter" onchange="fetchUsers(document.getElementById('userSearch').value, this.value)" style="padding:0.4rem; border-radius:4px; border:1px solid #E2E8F0;">
+                        <input type="text" id="userSearch" placeholder="Search users..."
+                            onkeyup="fetchUsers(this.value, document.getElementById('userDateFilter').value)"
+                            style="padding:0.4rem; border-radius:4px; border:1px solid #E2E8F0;">
+                        <input type="date" id="userDateFilter"
+                            onchange="fetchUsers(document.getElementById('userSearch').value, this.value)"
+                            style="padding:0.4rem; border-radius:4px; border:1px solid #E2E8F0;">
                     </div>
                 </div>
-                <div class="table-container"><table class="admin-table"><thead><tr><th>ID</th><th>Username</th><th>Email</th><th>Date Joined</th><th>Status</th><th>Action</th></tr></thead><tbody id="usersTableBody"></tbody></table></div>
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Date Joined</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody"></tbody>
+                    </table>
+                </div>
             </section>
 
             <!-- Categories -->
             <section id="view-categories" class="content-section">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;"><h1 class="page-title">Categories</h1><button onclick="openAddCategoryModal()" class="btn-submit" style="width:auto;">Add Category</button></div>
-                <div class="table-container"><table class="admin-table"><thead><tr><th>ID</th><th>Icon</th><th>Name</th><th>Action</th></tr></thead><tbody id="categoriesTableBody"></tbody></table></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+                    <h1 class="page-title">Categories</h1><button onclick="openAddCategoryModal()" class="btn-submit"
+                        style="width:auto;">Add Category</button>
+                </div>
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Icon</th>
+                                <th>Name</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categoriesTableBody"></tbody>
+                    </table>
+                </div>
             </section>
 
             <!-- Brands -->
             <section id="view-brands" class="content-section">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;"><h1 class="page-title">Brands</h1><button onclick="openAddBrandModal()" class="btn-submit" style="width:auto;">Add Brand</button></div>
-                <div class="table-container"><table class="admin-table"><thead><tr><th>ID</th><th>Name</th><th>Action</th></tr></thead><tbody id="brandsTableBody"></tbody></table></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+                    <h1 class="page-title">Brands</h1><button onclick="openAddBrandModal()" class="btn-submit"
+                        style="width:auto;">Add Brand</button>
+                </div>
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="brandsTableBody"></tbody>
+                    </table>
+                </div>
             </section>
 
             <!-- Coupons -->
@@ -474,15 +787,20 @@
                 <div class="section-header-row">
                     <h1 class="page-title">Coupon Management</h1>
                     <div style="display:flex; gap:1rem; align-items:center;">
-                        <input type="date" onchange="fetchAdminCoupons(this.value)" style="padding:0.4rem; border-radius:4px; border:1px solid #E2E8F0;">
-                        <button onclick="openAddCouponModal()" class="btn-submit" style="width:auto;">Add Coupon</button>
+                        <input type="date" onchange="fetchAdminCoupons(this.value)"
+                            style="padding:0.4rem; border-radius:4px; border:1px solid #E2E8F0;">
+                        <button onclick="openAddCouponModal()" class="btn-submit" style="width:auto;">Add
+                            Coupon</button>
                     </div>
                 </div>
 
                 <!-- Coupon Stats -->
-                <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-                    <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
-                        <div style="background: #E0E7FF; color: #4F46E5; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                <div class="stats-grid"
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                    <div class="stat-card"
+                        style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
+                        <div
+                            style="background: #E0E7FF; color: #4F46E5; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
                             <i class="ph ph-ticket"></i>
                         </div>
                         <div>
@@ -490,8 +808,10 @@
                             <h3 id="statCouponUses" style="font-size: 1.5rem; color: #0F172A;">0</h3>
                         </div>
                     </div>
-                    <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
-                        <div style="background: #DCFCE7; color: #16A34A; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                    <div class="stat-card"
+                        style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
+                        <div
+                            style="background: #DCFCE7; color: #16A34A; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
                             <i class="ph ph-hand-coins"></i>
                         </div>
                         <div>
@@ -499,8 +819,10 @@
                             <h3 id="statCouponSaved" style="font-size: 1.5rem; color: #0F172A;">₹0</h3>
                         </div>
                     </div>
-                    <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
-                        <div style="background: #FEF3C7; color: #D97706; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                    <div class="stat-card"
+                        style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
+                        <div
+                            style="background: #FEF3C7; color: #D97706; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
                             <i class="ph ph-calendar-star"></i>
                         </div>
                         <div>
@@ -508,8 +830,10 @@
                             <h3 id="statTodayUses" style="font-size: 1.5rem; color: #0F172A;">0</h3>
                         </div>
                     </div>
-                    <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
-                        <div style="background: #FFEDD5; color: #EA580C; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                    <div class="stat-card"
+                        style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
+                        <div
+                            style="background: #FFEDD5; color: #EA580C; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
                             <i class="ph ph-coin-vertical"></i>
                         </div>
                         <div>
@@ -519,7 +843,22 @@
                     </div>
                 </div>
 
-                <div class="table-container"><table class="admin-table"><thead><tr><th>Code</th><th>Value</th><th>Type</th><th>Min. Amt</th><th>Uses</th><th>Expiry</th><th>Action</th></tr></thead><tbody id="couponsTableBody"></tbody></table></div>
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Value</th>
+                                <th>Type</th>
+                                <th>Min. Amt</th>
+                                <th>Uses</th>
+                                <th>Expiry</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="couponsTableBody"></tbody>
+                    </table>
+                </div>
             </section>
 
 
@@ -544,97 +883,203 @@
 
     <div id="editProductModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
-            <button class="close-btn" onclick="document.getElementById('editProductModal').style.display='none'"><i class="ph ph-x"></i></button>
+            <button class="close-btn" onclick="document.getElementById('editProductModal').style.display='none'"><i
+                    class="ph ph-x"></i></button>
             <h2>Edit Product</h2>
             <form id="editProductForm">
                 <input type="hidden" id="editPId">
                 <div class="form-group"><label>Name</label><input type="text" id="editPName"></div>
-                <div class="form-row"><div class="form-group"><label>Price (Base)</label><input type="number" id="editPPrice"></div><div class="form-group"><label>Stock</label><input type="number" id="editPStock"></div></div>
-                <div class="form-row"><div class="form-group"><label>Original Price (Base)</label><input type="number" id="editPOriginalPrice"></div><div class="form-group"><label>Category</label><select id="editPCategory" class="admin-input" style="width:100%"></select></div></div>
-                <div class="form-row"><div class="form-group"><label>Weight (Base)</label><input type="text" id="editPWeight"></div><div class="form-group"><label>Discount Tag</label><input type="text" id="editPDiscount" placeholder="e.g. 10% OFF"></div></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Price (Base)</label><input type="number" id="editPPrice"></div>
+                    <div class="form-group"><label>Stock</label><input type="number" id="editPStock"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Original Price (Base)</label><input type="number"
+                            id="editPOriginalPrice"></div>
+                    <div class="form-group"><label>Category</label><select id="editPCategory" class="admin-input"
+                            style="width:100%"></select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Weight (Base)</label><input type="text" id="editPWeight"></div>
+                    <div class="form-group"><label>Discount Tag</label><input type="text" id="editPDiscount"
+                            placeholder="e.g. 10% OFF"></div>
+                </div>
                 <div class="form-group"><label>Image URL</label><input type="text" id="editPImageUrl"></div>
-                
+
                 <div style="margin: 1.5rem 0; padding: 1rem; border: 1px dashed #CBD5E1; border-radius: 8px;">
-                    <h4 style="margin-bottom: 1rem; color: var(--primary);"><i class="ph ph-stack"></i> Weight Variants</h4>
+                    <h4 style="margin-bottom: 1rem; color: var(--primary);"><i class="ph ph-stack"></i> Weight Variants
+                    </h4>
                     <div id="editVariantList" style="margin-bottom: 1rem;"></div>
-                    <div class="form-row" style="background: #F8FAFC; padding: 0.5rem; border-radius: 8px; align-items: flex-end;">
-                        <div class="form-group" style="flex:1; margin-bottom:0;"><label style="font-size:0.75rem;">Weight</label><input type="text" id="evWeight" style="padding:0.4rem;"></div>
-                        <div class="form-group" style="flex:1; margin-bottom:0;"><label style="font-size:0.75rem;">Price</label><input type="number" id="evPrice" style="padding:0.4rem;"></div>
-                        <div class="form-group" style="flex:1; margin-bottom:0;"><label style="font-size:0.75rem;">Orig. Price</label><input type="number" id="evOriginalPrice" style="padding:0.4rem;"></div>
-                        <button type="button" class="btn-submit" onclick="addVariantToEditList()" style="width: auto; height: 35px; padding: 0 1rem; font-size: 0.8rem;">Add</button>
+                    <div class="form-row"
+                        style="background: #F8FAFC; padding: 0.5rem; border-radius: 8px; align-items: flex-end;">
+                        <div class="form-group" style="flex:1; margin-bottom:0;"><label
+                                style="font-size:0.75rem;">Weight</label><input type="text" id="evWeight"
+                                style="padding:0.4rem;"></div>
+                        <div class="form-group" style="flex:1; margin-bottom:0;"><label
+                                style="font-size:0.75rem;">Price</label><input type="number" id="evPrice"
+                                style="padding:0.4rem;"></div>
+                        <div class="form-group" style="flex:1; margin-bottom:0;"><label style="font-size:0.75rem;">Orig.
+                                Price</label><input type="number" id="evOriginalPrice" style="padding:0.4rem;"></div>
+                        <button type="button" class="btn-submit" onclick="addVariantToEditList()"
+                            style="width: auto; height: 35px; padding: 0 1rem; font-size: 0.8rem;">Add</button>
                     </div>
                 </div>
 
-                <div style="display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1rem; padding: 0.5rem; background: #F8FAFC; border-radius: 8px;">
-                    <div style="display:flex; align-items:center; gap:0.5rem;"><input type="checkbox" id="editPDailyEssential" style="width:20px; height:20px;"><label for="editPDailyEssential" style="margin:0;">Essential</label></div>
-                    <div style="display:flex; align-items:center; gap:0.5rem;"><input type="checkbox" id="editPTrending" style="width:20px; height:20px;"><label for="editPTrending" style="margin:0;">Trending</label></div>
-                    <div style="display:flex; align-items:center; gap:0.5rem;"><input type="checkbox" id="editPAvailable" style="width:20px; height:20px;"><label for="editPAvailable" style="margin:0;">Live</label></div>
+                <div
+                    style="display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1rem; padding: 0.5rem; background: #F8FAFC; border-radius: 8px;">
+                    <div style="display:flex; align-items:center; gap:0.5rem;"><input type="checkbox"
+                            id="editPDailyEssential" style="width:20px; height:20px;"><label for="editPDailyEssential"
+                            style="margin:0;">Essential</label></div>
+                    <div style="display:flex; align-items:center; gap:0.5rem;"><input type="checkbox" id="editPTrending"
+                            style="width:20px; height:20px;"><label for="editPTrending"
+                            style="margin:0;">Trending</label></div>
+                    <div style="display:flex; align-items:center; gap:0.5rem;"><input type="checkbox"
+                            id="editPAvailable" style="width:20px; height:20px;"><label for="editPAvailable"
+                            style="margin:0;">Live</label></div>
                 </div>
                 <button type="submit" class="btn-submit">Update Product</button>
             </form>
         </div>
     </div>
-    <div id="viewMessageModal" class="modal-overlay"><div class="modal-content"><button class="close-btn" onclick="document.getElementById('viewMessageModal').style.display='none'"><i class="ph ph-x"></i></button><h2>Reply to Enquiry</h2><div id="messageDetailContent" style="margin-top:1rem;"></div><label style="display:block; margin-top:1rem; font-weight:600;">Type Reply:</label><textarea id="replyText" style="width:100%; height:120px; margin-top:0.5rem; border:1px solid #CBD5E1; border-radius:8px; padding:0.75rem; font-family:inherit;"></textarea><button id="sendReplyBtn" class="btn-submit" style="margin-top:1rem;"><i class="ph ph-paper-plane-right"></i> Send Reply</button></div></div>
-    <div id="confirmModal" class="modal-overlay"><div class="modal-content" style="text-align:center;"><h2 id="confirmTitle">Confirm</h2><p id="confirmMessage" style="margin:1.5rem 0;"></p><div style="display:flex; gap:1rem;"><button id="confirmCancelBtn" class="btn-submit" style="background:#CBD5E1; color:#0F172A;">Cancel</button><button id="confirmProceedBtn" class="btn-submit" style="background:#EF4444;">Proceed</button></div></div></div>
+    <div id="viewMessageModal" class="modal-overlay">
+        <div class="modal-content"><button class="close-btn"
+                onclick="document.getElementById('viewMessageModal').style.display='none'"><i
+                    class="ph ph-x"></i></button>
+            <h2>Reply to Enquiry</h2>
+            <div id="messageDetailContent" style="margin-top:1rem;"></div><label
+                style="display:block; margin-top:1rem; font-weight:600;">Type Reply:</label><textarea id="replyText"
+                style="width:100%; height:120px; margin-top:0.5rem; border:1px solid #CBD5E1; border-radius:8px; padding:0.75rem; font-family:inherit;"></textarea><button
+                id="sendReplyBtn" class="btn-submit" style="margin-top:1rem;"><i class="ph ph-paper-plane-right"></i>
+                Send Reply</button>
+        </div>
+    </div>
+    <div id="confirmModal" class="modal-overlay">
+        <div class="modal-content" style="text-align:center;">
+            <h2 id="confirmTitle">Confirm</h2>
+            <p id="confirmMessage" style="margin:1.5rem 0;"></p>
+            <div style="display:flex; gap:1rem;"><button id="confirmCancelBtn" class="btn-submit"
+                    style="background:#CBD5E1; color:#0F172A;">Cancel</button><button id="confirmProceedBtn"
+                    class="btn-submit" style="background:#EF4444;">Proceed</button></div>
+        </div>
+    </div>
     <!-- Meta Modals -->
-    <div id="categoryModal" class="modal-overlay"><div class="modal-content"><h2>Category</h2><form id="categoryForm"><input type="hidden" id="catId"><label>Name</label><input type="text" id="catName" class="admin-input" style="width:100%"><label style="margin-top:1rem; display:block;">Icon</label><input type="text" id="catIcon" class="admin-input" style="width:100%"><button type="submit" class="btn-submit" style="margin-top:1.5rem;">Save</button></form></div></div>
-    <div id="brandModal" class="modal-overlay"><div class="modal-content"><h2>Brand</h2><form id="brandForm"><label>Brand Name</label><input type="text" id="brandNameInput" class="admin-input" style="width:100%"><button type="submit" class="btn-submit" style="margin-top:1.5rem;">Add</button></form></div></div>
-    <div id="couponModal" class="modal-overlay"><div class="modal-content"><h2>Coupon</h2><form id="couponForm" autocomplete="off"><label>Code</label><input type="text" id="couponCode" class="admin-input" autocomplete="off" style="width:100%"><div class="form-row" style="margin-top:1rem;"><div class="form-group"><label>Value</label><input type="number" id="couponValue"></div><div class="form-group"><label>Type</label><select id="couponType"><option value="percent">%</option><option value="fixed">₹</option></select></div></div><div class="form-group"><label>Minimum Purchase Amount (₹)</label><input type="number" id="couponMinAmt" value="0"></div><label>Expiry</label><input type="date" id="couponExpiry"><div class="form-group" style="display:flex; align-items:center; gap:0.5rem; margin-top:1rem; padding:0.5rem; background:#F8FAFC; border-radius:8px;"><input type="checkbox" id="couponIsOneTime" style="width:18px; height:18px;"><label for="couponIsOneTime" style="margin:0;">One-Time Use Per User</label></div><button type="submit" class="btn-submit" style="margin-top:1.5rem;">Create</button></form></div></div>
+    <div id="categoryModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Category</h2>
+            <form id="categoryForm"><input type="hidden" id="catId"><label>Name</label><input type="text" id="catName"
+                    class="admin-input" style="width:100%"><label
+                    style="margin-top:1rem; display:block;">Icon</label><input type="text" id="catIcon"
+                    class="admin-input" style="width:100%"><button type="submit" class="btn-submit"
+                    style="margin-top:1.5rem;">Save</button></form>
+        </div>
+    </div>
+    <div id="brandModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Brand</h2>
+            <form id="brandForm"><label>Brand Name</label><input type="text" id="brandNameInput" class="admin-input"
+                    style="width:100%"><button type="submit" class="btn-submit" style="margin-top:1.5rem;">Add</button>
+            </form>
+        </div>
+    </div>
+    <div id="couponModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Coupon</h2>
+            <form id="couponForm" autocomplete="off"><label>Code</label><input type="text" id="couponCode"
+                    class="admin-input" autocomplete="off" style="width:100%">
+                <div class="form-row" style="margin-top:1rem;">
+                    <div class="form-group"><label>Value</label><input type="number" id="couponValue"></div>
+                    <div class="form-group"><label>Type</label><select id="couponType">
+                            <option value="percent">%</option>
+                            <option value="fixed">₹</option>
+                        </select></div>
+                </div>
+                <div class="form-group"><label>Minimum Purchase Amount (₹)</label><input type="number" id="couponMinAmt"
+                        value="0"></div><label>Expiry</label><input type="date" id="couponExpiry">
+                <div class="form-group"
+                    style="display:flex; align-items:center; gap:0.5rem; margin-top:1rem; padding:0.5rem; background:#F8FAFC; border-radius:8px;">
+                    <input type="checkbox" id="couponIsOneTime" style="width:18px; height:18px;"><label
+                        for="couponIsOneTime" style="margin:0;">One-Time Use Per User</label></div><button type="submit"
+                    class="btn-submit" style="margin-top:1.5rem;">Create</button>
+            </form>
+        </div>
+    </div>
 
     <!-- Admin Auth Modal -->
-    <div id="adminLoginOverlay" class="modal-overlay" style="z-index: 9999; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.9);">
+    <div id="adminLoginOverlay" class="modal-overlay"
+        style="z-index: 9999; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.9);">
         <div class="modal-content" style="max-width: 400px; text-align: left; position: relative;">
             <h2 id="adminAuthTitle" style="margin-bottom: 0.5rem;"><i class="ph ph-shield-check"></i> Admin Setup</h2>
-            <p id="adminAuthDesc" style="color: #64748B; font-size: 0.9rem; margin-bottom: 1.5rem;">Create master credentials to secure panel.</p>
-            
+            <p id="adminAuthDesc" style="color: #64748B; font-size: 0.9rem; margin-bottom: 1.5rem;">Create master
+                credentials to secure panel.</p>
+
             <div id="adminAuthFields">
-                <input type="text" id="adminFullName" placeholder="Admin Full Name" class="admin-input" style="width: 100%; margin-bottom: 1rem;" autocomplete="off">
-                <input type="text" id="adminPhone" placeholder="Mobile Number" class="admin-input" style="width: 100%; margin-bottom: 1rem;" autocomplete="off">
+                <input type="text" id="adminFullName" placeholder="Admin Full Name" class="admin-input"
+                    style="width: 100%; margin-bottom: 1rem;" autocomplete="off">
+                <input type="text" id="adminPhone" placeholder="Mobile Number" class="admin-input"
+                    style="width: 100%; margin-bottom: 1rem;" autocomplete="off">
                 <div style="position: relative; margin-bottom: 1rem;">
-                    <input type="password" id="adminPassword" placeholder="Master Password" class="admin-input" style="width: 100%;">
-                    <i class="ph ph-eye password-toggle" onclick="togglePasswordVisibility('adminPassword', this)" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #64748B; font-size: 1.1rem;"></i>
+                    <input type="password" id="adminPassword" placeholder="Master Password" class="admin-input"
+                        style="width: 100%;">
+                    <i class="ph ph-eye password-toggle" onclick="togglePasswordVisibility('adminPassword', this)"
+                        style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #64748B; font-size: 1.1rem;"></i>
                 </div>
 
                 <div id="adminConfirmPasswordField" style="position: relative; margin-bottom: 1rem; display: none;">
-                    <input type="password" id="adminConfirmPassword" placeholder="Confirm Password" class="admin-input" style="width: 100%;">
-                    <i class="ph ph-eye password-toggle" onclick="togglePasswordVisibility('adminConfirmPassword', this)" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #64748B; font-size: 1.1rem;"></i>
+                    <input type="password" id="adminConfirmPassword" placeholder="Confirm Password" class="admin-input"
+                        style="width: 100%;">
+                    <i class="ph ph-eye password-toggle"
+                        onclick="togglePasswordVisibility('adminConfirmPassword', this)"
+                        style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #64748B; font-size: 1.1rem;"></i>
                 </div>
 
                 <div style="position: relative; margin-bottom: 1rem; display: none;" id="adminNewPasswordWrapper">
-                    <input type="password" id="adminNewPassword" placeholder="New Master Password" class="admin-input" style="width: 100%;">
-                    <i class="ph ph-eye password-toggle" onclick="togglePasswordVisibility('adminNewPassword', this)" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #64748B; font-size: 1.1rem;"></i>
+                    <input type="password" id="adminNewPassword" placeholder="New Master Password" class="admin-input"
+                        style="width: 100%;">
+                    <i class="ph ph-eye password-toggle" onclick="togglePasswordVisibility('adminNewPassword', this)"
+                        style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #64748B; font-size: 1.1rem;"></i>
                 </div>
-                
-                <div id="adminSecurityFields" style="border-top: 1px solid #E2E8F0; padding-top: 1rem; margin-top: 0.5rem; display: block;">
+
+                <div id="adminSecurityFields"
+                    style="border-top: 1px solid #E2E8F0; padding-top: 1rem; margin-top: 0.5rem; display: block;">
                     <p style="font-size: 0.8rem; color: #64748B; margin-bottom: 0.5rem;">Setup Security Questions</p>
                     <select id="adminQ1" class="admin-input" style="width: 100%; margin-bottom: 0.5rem;">
                         <option value="" disabled selected>Select Question 1</option>
-                        <option value="What was the name of your first school?">What was the name of your first school?</option>
+                        <option value="What was the name of your first school?">What was the name of your first school?
+                        </option>
                         <option value="What is your birthplace?">What is your birthplace?</option>
                         <option value="What is the name of your first pet?">What is the name of your first pet?</option>
                     </select>
-                    <input type="text" id="adminA1" placeholder="Answer 1" class="admin-input" style="width: 100%; margin-bottom: 1rem;" autocomplete="off">
-                    
+                    <input type="text" id="adminA1" placeholder="Answer 1" class="admin-input"
+                        style="width: 100%; margin-bottom: 1rem;" autocomplete="off">
+
                     <select id="adminQ2" class="admin-input" style="width: 100%; margin-bottom: 0.5rem;">
                         <option value="" disabled selected>Select Question 2</option>
-                        <option value="What was the name of your first school?">What was the name of your first school?</option>
+                        <option value="What was the name of your first school?">What was the name of your first school?
+                        </option>
                         <option value="What is your birthplace?">What is your birthplace?</option>
                         <option value="What is the name of your first pet?">What is the name of your first pet?</option>
                     </select>
-                    <input type="text" id="adminA2" placeholder="Answer 2" class="admin-input" style="width: 100%; margin-bottom: 1rem;" autocomplete="off">
+                    <input type="text" id="adminA2" placeholder="Answer 2" class="admin-input"
+                        style="width: 100%; margin-bottom: 1rem;" autocomplete="off">
                 </div>
             </div>
-            
-            <button id="adminSubmitBtn" class="btn-submit" style="width: 100%; margin-top: 1rem; font-size: 1rem;">Save Credentials</button>
-            
+
+            <button id="adminSubmitBtn" class="btn-submit" style="width: 100%; margin-top: 1rem; font-size: 1rem;">Save
+                Credentials</button>
+
             <div style="text-align: center; margin-top: 1rem;">
-                <a href="#" id="adminForgotBtn" style="color: #64748B; font-size: 0.85rem; text-decoration: underline; display: none;">Forgot Password?</a>
-                <a href="#" id="adminBackToLoginBtn" style="color: #64748B; font-size: 0.85rem; text-decoration: underline; display: none;">Back to Login</a>
+                <a href="#" id="adminForgotBtn"
+                    style="color: #64748B; font-size: 0.85rem; text-decoration: underline; display: none;">Forgot
+                    Password?</a>
+                <a href="#" id="adminBackToLoginBtn"
+                    style="color: #64748B; font-size: 0.85rem; text-decoration: underline; display: none;">Back to
+                    Login</a>
             </div>
         </div>
     </div>
 
-    <script type="module" src="toast.js"></script>
-    <script type="module" src="admin-script.js" defer></script>
+    <script src="toast.js"></script>
+    <script src="admin-script.js" defer></script>
 </body>
+
 </html>

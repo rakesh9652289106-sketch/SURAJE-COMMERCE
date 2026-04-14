@@ -108,6 +108,28 @@ router.get('/wishlist', async (req, res) => {
     res.json(products);
 });
 
+router.post('/wishlist', async (req, res) => {
+    const { product_id } = req.body;
+    if (!product_id) return res.status(400).json({ error: "Product ID required." });
+
+    // Check if already in wishlist
+    const { data: existing } = await supabase
+        .from('wishlist_items')
+        .select('id')
+        .eq('user_id', req.userId)
+        .eq('product_id', product_id)
+        .single();
+    
+    if (existing) return res.json({ message: "Already in wishlist" });
+
+    const { error } = await supabase
+        .from('wishlist_items')
+        .insert([{ user_id: req.userId, product_id }]);
+    
+    if (error) return res.status(500).json({ error: error.message });
+    res.status(201).json({ message: "Added to wishlist" });
+});
+
 router.delete('/wishlist/:pid', async (req, res) => {
     const { error } = await supabase
         .from('wishlist_items')

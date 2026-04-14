@@ -118,7 +118,7 @@ router.post('/support/messages', async (req, res) => {
     }
 
     // In node, undefined becomes null for integers in supabase
-    const insertData = { name, email, subject: subject || 'No Subject', message };
+    const insertData = { name, email, subject: subject || 'No Subject', message, status: 'unread' };
     if (userId) insertData.user_id = userId;
 
     const { data, error } = await supabase.from('support_messages').insert([insertData]).select().single();
@@ -145,7 +145,7 @@ router.post('/reviews', async (req, res) => {
 
 router.post('/orders', async (req, res) => {
     const userId = req.cookies.user_id || null;
-    let { items, paymentMethod, address, couponId } = req.body;
+    let { items, paymentMethod, address, couponId, deliveryType } = req.body;
 
     let subtotal = 0;
     try {
@@ -180,7 +180,8 @@ router.post('/orders', async (req, res) => {
             items: items, // Supabase handles JSON arrays directly
             payment_method: paymentMethod,
             address: address,
-            discount_amount: discountAmount
+            discount_amount: discountAmount,
+            delivery_type: deliveryType || 'Home Delivery'
         };
         if (userId) insertData.user_id = userId;
 

@@ -128,7 +128,11 @@ async function fetchOrders() {
         }
 
         listEl.innerHTML = orders.map(order => {
-            const items = JSON.parse(order.items || "[]");
+            let items = [];
+            try {
+                items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []);
+            } catch (e) { console.error("Error parsing order items:", e); items = []; }
+            
             const orderItems = JSON.stringify(items);
             
             // Timeline mapping
@@ -430,10 +434,21 @@ function toggleModal(id, show) {
 }
 
 // Global functions
-window.logoutUser = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    location.href = "/";
-};
+// Updated sidebar logout logic
+if (sidebarLogout) {
+    sidebarLogout.addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (typeof window.logoutUser === 'function') {
+            window.logoutUser();
+        } else {
+            // Fallback if script.js not loaded
+            if (confirm("Are you sure you want to log out?")) {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                location.href = "/";
+            }
+        }
+    });
+}
 
 window.setDefaultAddress = async (id) => {
     try {
@@ -489,11 +504,20 @@ function setupNavMenu() {
     if (overlay) overlay.addEventListener('click', closeNav);
 
     if (sidebarLogout) {
-        sidebarLogout.addEventListener('click', (e) => {
+        sidebarLogout.addEventListener('click', async (e) => {
             e.preventDefault();
-            fetch('/api/auth/logout', { method: 'POST' }).then(() => {
+            if (confirm("Are you sure you want to log out?")) {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                // Clear all auth cookies
+                document.cookie = "full_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                document.cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                document.cookie = "user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                // Clear localStorage fallbacks
+                localStorage.removeItem('user_full_name');
+                localStorage.removeItem('user_username');
+                localStorage.removeItem('user_id');
                 location.href = "/";
-            });
+            }
         });
     }
 

@@ -61,9 +61,20 @@ function setupNavMenu() {
     if (closeBtn) closeBtn.addEventListener('click', closeNav);
     if (overlay) overlay.addEventListener('click', closeNav);
     if (sidebarLogout) {
-        sidebarLogout.addEventListener('click', (e) => {
+        sidebarLogout.addEventListener('click', async (e) => {
             e.preventDefault();
-            fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.reload());
+            if (confirm("Are you sure you want to log out?")) {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                // Clear all auth cookies
+                document.cookie = "full_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                document.cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                document.cookie = "user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                // Clear localStorage fallbacks
+                localStorage.removeItem('user_full_name');
+                localStorage.removeItem('user_username');
+                localStorage.removeItem('user_id');
+                window.location.reload();
+            }
         });
     }
 }

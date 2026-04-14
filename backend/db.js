@@ -235,6 +235,7 @@ function initDb() {
         db.run("ALTER TABLE orders ADD COLUMN status TEXT DEFAULT 'pending'", (err) => {});
         db.run("ALTER TABLE orders ADD COLUMN payment_status TEXT DEFAULT 'pending'", (err) => {});
         db.run("ALTER TABLE orders ADD COLUMN discount_amount INTEGER DEFAULT 0", (err) => {});
+        db.run("ALTER TABLE orders ADD COLUMN delivery_type TEXT DEFAULT 'Home Delivery'", (err) => {});
         db.run("ALTER TABLE users ADD COLUMN created_at DATETIME", (err) => {
             if (!err) db.run("UPDATE users SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL");
         });
