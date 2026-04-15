@@ -7,7 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="cart-styles.css">
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css">
     <script type="module" src="translations.js"></script>
     <style>
         .hero-banner-static {
@@ -303,7 +304,7 @@
             document.getElementById('emptyMsg').style.display = 'none';
         }
 
-        function goBackToCategories(e) {
+        window.goBackToCategories = function(e) {
             e.preventDefault();
             const url = new URL(window.location);
             url.searchParams.set('name', 'All');
@@ -344,7 +345,7 @@
             }
         }
 
-        async function selectCategory(catName, updateHistory = true) {
+        window.selectCategory = async function(catName, updateHistory = true) {
             if (updateHistory) {
                 const url = new URL(window.location);
                 url.searchParams.set('name', catName);
@@ -396,40 +397,49 @@
             }
             empty.style.display = 'none';
 
-            grid.innerHTML = list.map(p => {
+            grid.innerHTML = list.map((p, i) => {
                 const cartItem = cart.find(c => c.name === p.name);
+                const qty = cartItem ? cartItem.quantity : 0;
                 const isWish = wishlist.map(id => Number(id)).includes(Number(p.id));
+                const isAvailable = p.is_available !== 0;
+                
+                const safeName = p.name.replace(/'/g, "\\'");
                 
                 let btnHtml = '';
-                if (p.is_available === 0) {
-                    btnHtml = '<span style="color:#EF4444; font-weight:600; font-size:0.85rem;">Out of Stock</span>';
-                } else if (cartItem) {
-                    btnHtml = `<div class="qty-selector mini">
-                        <button onclick="updateQty('${p.name}', -1)">-</button>
-                        <span>${cartItem.quantity}</span>
-                        <button onclick="updateQty('${p.name}', 1)">+</button>
+                if (!isAvailable) {
+                    btnHtml = `<span style="color: #EF4444; font-weight: 600; font-size: 0.9rem;">Out of Stock</span>`;
+                } else if (qty > 0) {
+                    btnHtml = `<div style="display: flex; align-items: center; background: var(--primary); border-radius: var(--radius-sm); overflow: hidden; height: 32px; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);">
+                        <button onclick="updateQty('${safeName}', -1)" style="border: none; background: transparent; color: white; padding: 0 10px; cursor: pointer; height: 100%;"><i class="ph ph-minus" style="font-weight: bold"></i></button>
+                        <span style="font-size: 0.85rem; padding: 0 8px; font-weight: bold; color: white;">${qty}</span>
+                        <button onclick="updateQty('${safeName}', 1)" style="border: none; background: transparent; color: white; padding: 0 10px; cursor: pointer; height: 100%;"><i class="ph ph-plus" style="font-weight: bold"></i></button>
                     </div>`;
                 } else {
-                    btnHtml = `<button class="btn btn-outline btn-sm" onclick="addToCart('${p.name}')">Add to Cart</button>`;
+                    btnHtml = `<button class="btn btn-outline btn-sm" onclick="addToCart('${safeName}')" style="display: flex; align-items: center; gap: 0.3rem;"><i class="ph ph-shopping-cart"></i> Add</button>`;
                 }
 
                 return `
-                    <div class="product-card hover-lift" style="${p.is_available === 0 ? 'opacity:0.6; filter:grayscale(0.8);' : ''}">
-                        <button class="wishlist-btn ${isWish ? 'active' : ''}" style="position: absolute; top: 1rem; right: 1rem; z-index: 2; background: none; border: none; padding: 0; cursor: pointer;" onclick="toggleWish(event, ${p.id})">
-                            <i class="${isWish ? 'ph-fill' : 'ph'} ph-heart ripple-effect" style="font-size:1.5rem; color:#EF4444;"></i>
+                    <div class="product-card hover-lift" style="${!isAvailable ? 'opacity: 0.6; filter: grayscale(1);' : ''}">
+                        <button class="wishlist-btn" style="position: absolute; top: 1rem; right: 1rem; z-index: 2; background: none; border: none; padding: 0; cursor: pointer;" onclick="toggleWish(event, '${p.id}')">
+                            <i class="${isWish ? 'ph-fill' : 'ph'} ph-heart ripple-effect" style="font-size: 1.5rem; color: #EF4444;"></i>
                         </button>
                         ${p.discount && p.discount !== '0% OFF' ? `<span class="discount-badge">${p.discount}</span>` : ''}
-                        <img src="${p.imgUrl}" alt="${p.name}" class="product-img">
+                        <img src="${p.imgUrl || p.imgurl}" alt="${p.name}" class="product-img" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&text=Product'">
                         <div class="product-info">
-                            <span class="product-weight">${p.weight}</span>
+                            <span class="product-weight" id="weight-${p.id}">${p.weight}</span>
                             <h4 class="product-title">${p.name}</h4>
-                            <div class="product-rating"><i class="ph-fill ph-star"></i> ${p.rating} (${p.reviews})</div>
+                            <div class="product-rating">
+                                <i class="ph-fill ph-star"></i>
+                                <span>${p.rating} (${p.reviews})</span>
+                            </div>
                             <div class="product-bottom">
                                 <div class="price">
-                                    <span class="current-price">₹${p.price}</span>
-                                    ${p.originalPrice ? `<span class="old-price">₹${p.originalPrice}</span>` : ''}
+                                    <span class="current-price" id="currPrice-${p.id}">₹${p.price}</span>
+                                    ${(p.originalPrice || p.originalprice) ? `<span class="old-price" id="oldPrice-${p.id}">₹${p.originalPrice || p.originalprice}</span>` : ''}
                                 </div>
-                                ${btnHtml}
+                                <div class="product-action-container">
+                                    ${btnHtml}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -438,7 +448,7 @@
         }
 
         // Shared Logic (Simplified from script.js)
-        async function addToCart(name) {
+        window.addToCart = async function(name) {
             const prod = allProducts.find(p => p.name === name);
             if (!prod) return;
             cart.push({ ...prod, quantity: 1 });
@@ -447,7 +457,7 @@
             Toast.show("Added to cart", "success");
         }
 
-        function updateQty(name, delta) {
+        window.updateQty = function(name, delta) {
             const idx = cart.findIndex(c => c.name === name);
             if (idx > -1) {
                 cart[idx].quantity += delta;
@@ -457,7 +467,7 @@
             }
         }
 
-        async function toggleWish(e, id) {
+        window.toggleWish = async function(e, id) {
             e.stopPropagation();
             const icon = e.currentTarget.querySelector('i');
             const isActive = icon.classList.contains('ph-fill');

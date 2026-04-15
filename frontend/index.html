@@ -3,27 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SURAJ - Fast Grocery Delivery</title>
-    <meta name="description" content="Shop for fresh groceries, pulses, snacks and household essentials. Delivered in minutes.">
+    <title>SURAJ | Fresh Groceries Delivered in 15 Minutes</title>
+    <meta name="description" content="Shop fresh groceries, dairy, snacks, and household essentials at SURAJ. Lightning-fast delivery in 15-45 minutes across Nellore. Best quality and lowest prices!">
+    <link rel="canonical" href="https://snapbasket.com/" />
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://snapbasket.com/">
-    <meta property="og:title" content="SURAJ - Fast Grocery Delivery">
-    <meta property="og:description" content="Shop for fresh groceries, pulses, snacks and household essentials. Delivered in minutes.">
+    <meta property="og:title" content="SURAJ | Fresh Groceries Delivered in 15 Minutes">
+    <meta property="og:description" content="Get fresh groceries delivered to your doorstep in minutes. Shop SURAJ for the best deals on daily essentials.">
     <meta property="og:image" content="https://snapbasket.com/assets/og-image.jpg">
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://snapbasket.com/">
-    <meta property="twitter:title" content="SURAJ - Fast Grocery Delivery">
-    <meta property="twitter:description" content="Shop for fresh groceries, pulses, snacks and household essentials. Delivered in minutes.">
+    <meta property="twitter:title" content="SURAJ | Fresh Groceries Delivered in 15 Minutes">
+    <meta property="twitter:description" content="Get fresh groceries delivered to your doorstep in minutes. Shop SURAJ for the best deals on daily essentials.">
     <meta property="twitter:image" content="https://snapbasket.com/assets/og-image.jpg">
+    
+    <!-- JSON-LD Structured Data: WebSite & Store Reviews -->
+    <script type="application/ld+json">
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "SURAJ",
+        "url": "https://snapbasket.com/",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://snapbasket.com/?search={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "Store",
+        "name": "SURAJ SnapBasket",
+        "image": "https://snapbasket.com/assets/og-image.jpg",
+        "telephone": "+91-98765-43210",
+        "url": "https://snapbasket.com/",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "123 Grocery Avenue",
+          "addressLocality": "Nellore",
+          "postalCode": "524004",
+          "addressCountry": "IN"
+        },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.9",
+          "reviewCount": "1854"
+        },
+        "priceRange": "$$"
+      }
+    ]
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="cart-styles.css">
-    <!-- Phosphor Icons Script -->
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Phosphor Icons CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css">
     <script type="module" src="translations.js"></script>
 </head>
 <body>
@@ -216,6 +257,34 @@
                 <div class="product-grid" id="brandProductGrid">
                     <!-- Populated by JS when a brand is clicked -->
                 </div>
+            </div>
+        </section>
+
+        <!-- Web Platform Section -->
+        <section class="web-platform-section">
+            <div class="web-platform-content">
+                <h2>The Future of Digital Grocery Shopping</h2>
+                <p>Access SURAJ SnapBasket from any device. Our powerful web platform is optimized for seamless shopping on your Desktop, Tablet, and Mobile browser.</p>
+                <div class="platform-features">
+                    <div class="feature-badge">
+                        <i class="ph-fill ph-globe"></i>
+                        <span>Browser Friendly</span>
+                    </div>
+                    <div class="feature-badge">
+                        <i class="ph-fill ph-shield-check"></i>
+                        <span>Secure Checkout</span>
+                    </div>
+                    <div class="feature-badge">
+                        <i class="ph-fill ph-lightning"></i>
+                        <span>Instant Loading</span>
+                    </div>
+                </div>
+                <div style="margin-top: 2rem;">
+                    <a href="#" class="btn btn-primary" style="padding: 1rem 2rem; font-size: 1.1rem;">Start Shopping Now</a>
+                </div>
+            </div>
+            <div class="web-platform-image">
+                <img src="assets/web-mockup.png" alt="SURAJ Web Platform">
             </div>
         </section>
 

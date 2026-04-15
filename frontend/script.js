@@ -540,7 +540,7 @@ function openFeatureModal(category) {
 
     switch(category) {
         case 'language':
-            title.innerText = "Select App Language";
+            title.innerText = "Select Platform Language";
             const langs = [
                 { name: "English", code: "en" },
                 { name: "Hindi", code: "hi" },
@@ -1911,28 +1911,11 @@ function toggleHomeSections(show) {
 }
 
 window.filterByCategory = function(catName) {
-    const resultsSection = document.getElementById('categoryResultsSection');
-    const resultsGrid = document.getElementById('categoryProductGrid');
-    const resultsTitle = document.getElementById('selectedCategoryTitle');
-    const viewAllBtn = document.getElementById('viewAllInCat');
-
-    if (!resultsSection || !resultsGrid) return;
-
-    // Filter products
-    const filtered = products.filter(p => p.category === catName);
-    
-    // Toggle Homepage Sections OFF
-    toggleHomeSections(false);
-    
-    // Update UI
-    resultsTitle.innerText = `Results for "${catName}"`;
-    resultsSection.style.display = 'block';
-    if (viewAllBtn) viewAllBtn.href = `category.html?name=${encodeURIComponent(catName)}`;
-    
-    populateProducts("categoryProductGrid", filtered);
-
-    // Scroll to results header
-    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (!catName || catName === 'All') {
+        window.location.href = 'category.html?name=All';
+    } else {
+        window.location.href = `category.html?name=${encodeURIComponent(catName)}`;
+    }
 };
 
 window.clearCategoryFilter = function() {
