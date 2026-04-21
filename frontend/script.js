@@ -1722,13 +1722,19 @@ async function setupCartInteractions() {
                 return;
             }
             if (!selectedPaymentMethod) return;
+
+            // Fix: Retrieve address values correctly from the DOM since they are not in scope here
+            const houseVal = document.getElementById('checkoutHouse')?.value.trim() || '';
+            const streetVal = document.getElementById('checkoutStreet')?.value.trim() || '';
+            const pincodeVal = document.getElementById('checkoutPincode')?.value.trim() || '';
+
             confirmOrderBtn.innerText = "Processing...";
             confirmOrderBtn.disabled = true;
 
             const orderData = {
                 name: document.getElementById('checkoutName').value.trim() || 'Pickup Order',
                 phone: document.getElementById('checkoutPhone').value.trim() || 'N/A',
-                address: window.selectedDeliveryType === 'Pickup from Shop' ? 'Store Pickup' : `${house}, ${street}`,
+                address: window.selectedDeliveryType === 'Pickup from Shop' ? 'Store Pickup' : `${houseVal}, ${streetVal} (${pincodeVal})`,
                 paymentMethod: selectedPaymentMethod,
                 items: cart,
                 couponId: window.appliedCoupon ? window.appliedCoupon.id : null,
@@ -1805,7 +1811,6 @@ async function fetchBanners() {
                     <div class="banner-content">
                         <span class="badge">${b.badge || ''}</span>
                         <h2>${b.title || ''}</h2>
-                        <p>${b.description || ''}</p>
                         <button class="btn btn-primary" onclick="navigateToBannerCategory('${b.target_category || 'All'}')">${b.btnText || b.btntext || 'Shop Now'}</button>
                     </div>
                     <img src="${b.imgurl || b.imgurl}" alt="Promo Banner" class="banner-image" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200'">
@@ -1835,7 +1840,6 @@ async function fetchSpecialOffers() {
                 card.innerHTML = `
                     <div class="offer-content">
                         <h4>${o.title}</h4>
-                        <p>${o.description}</p>
                         <span class="btn btn-sm">Shop Now</span>
                     </div>
                 `;
@@ -1850,10 +1854,16 @@ function populateCategories() {
     if (!grid) return;
     grid.innerHTML = '';
     categories.forEach(cat => {
+        // Icon mapping fallback for premium feel
+        let iconClass = cat.iconUrl || 'ph-package';
+        if (cat.name === 'Dairy & Bread' || cat.name === 'Dairy & Bakery') iconClass = 'ph-moped'; // Representative icon
+        if (cat.name === 'Fresh Vegetables' || cat.name === 'Vegetables') iconClass = 'ph-leaf';
+        if (cat.name === 'Fruits') iconClass = 'ph-orange';
+        
         const html = `
             <div class="category-link" style="cursor: pointer;" onclick="window.filterByCategory('${cat.name}')">
                 <div class="category-card ${activeFilter.type === 'category' && activeFilter.value === cat.name ? 'active' : ''}">
-                    <i class="ph ${cat.iconUrl || 'ph-package'}"></i>
+                    <i class="ph ${iconClass}"></i>
                     <span class="category-name">${cat.name}</span>
                 </div>
             </div>
@@ -1863,6 +1873,7 @@ function populateCategories() {
     
     // Re-run arrow check since content changed
     setupCarousels();
+    reRenderIcons();
 }
 
 /**
@@ -1948,33 +1959,13 @@ function populateProducts(containerId, items) {
         const safeName = prod.name.replace(/'/g, "\\'");
         
         // Variant Check
-        const hasVariants = prod.variants && Array.isArray(prod.variants) && prod.variants.length > 0;
         const imgurl = prod.imgurl || prod.imgUrl || "";
         const originalprice = prod.originalprice || prod.originalPrice || 0;
-
-        let weightDisplay = `<span class="product-weight" id="weight-${prod.id}">${prod.weight}</span>`;
-        let priceDisplay = `
-            <span class="current-price" id="currPrice-${prod.id}">₹${prod.price}</span>
-            <span class="old-price" id="oldPrice-${prod.id}">${originalprice ? '₹' + originalprice : ''}</span>
-        `;
-
-        if (hasVariants) {
-            weightDisplay = `
-                <select class="variant-select" onchange="window.updateVariantPrice(this, '${prod.id}', '${safeName}')" style="width: 100%; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.8rem; background: var(--bg-color); color: var(--text-main); margin-bottom: 0.5rem; cursor: pointer;">
-                    ${prod.variants.map((v, idx) => `<option value="${idx}" data-price="${v.price}" data-old-price="${v.originalprice || v.originalPrice || v.price}" data-weight="${v.weight}">${v.weight}</option>`).join('')}
-                </select>
-            `;
-            // Set initial price to first variant
-            priceDisplay = `
-                <span class="current-price" id="currPrice-${prod.id}">₹${prod.variants[0].price}</span>
-                <span class="old-price" id="oldPrice-${prod.id}">${(prod.variants[0].originalprice || prod.variants[0].originalprice) ? '₹' + (prod.variants[0].originalprice || prod.variants[0].originalprice) : ''}</span>
-            `;
-        }
 
         let btnHtml = '';
         if (!isAvailable) {
             btnHtml = `<span style="color: #EF4444; font-weight: 600; font-size: 0.9rem;">Out of Stock</span>`;
-        } else if (qty > 0 && !hasVariants) { // Qty buttons only for non-variant or pre-selected
+        } else if (qty > 0) { // Qty buttons only for non-variant or pre-selected
             btnHtml = `<div style="display: flex; align-items: center; background: var(--primary); border-radius: var(--radius-sm); overflow: hidden; height: 32px; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);">
                 <button onclick="gridChangeQty('${safeName}', -1)" style="border: none; background: transparent; color: white; padding: 0 10px; cursor: pointer; height: 100%;"><i class="ph ph-minus" style="font-weight: bold"></i></button>
                 <span style="font-size: 0.85rem; padding: 0 8px; font-weight: bold; color: white;">${qty}</span>
@@ -1990,15 +1981,16 @@ function populateProducts(containerId, items) {
                 ${prod.discount ? `<span class="discount-badge">${prod.discount}</span>` : ''}
                 <img src="${imgurl}" alt="${prod.name}" class="product-img" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&text=Product'">
                 <div class="product-info">
-                    ${weightDisplay}
+                    <span class="product-weight" id="weight-${prod.id}">${prod.weight}</span>
                     <h4 class="product-title">${prod.name}</h4>
-                    <div class="product-rating" style="cursor: pointer;" onclick="openReviews('${prod.rating}', '${prod.reviews}', '${prod.name}', '${prod.id}')">
+                    <div class="product-rating" style="cursor: pointer;" onclick="openReviews('${prod.rating || 4.5}', '${prod.reviews || '10+'}', '${prod.name}', '${prod.id}')">
                         <i class="ph-fill ph-star"></i>
-                        <span style="text-decoration: underline;">${prod.rating} (${prod.reviews})</span>
+                        <span style="text-decoration: underline;">${prod.rating || 4.5} (${prod.reviews || '10+'})</span>
                     </div>
                     <div class="product-bottom">
                         <div class="price">
-                            ${priceDisplay}
+                            <span class="current-price" id="currPrice-${prod.id}">₹${prod.price}</span>
+                            <span class="old-price" id="oldPrice-${prod.id}">${originalprice ? '₹' + originalprice : ''}</span>
                         </div>
                         <div class="product-action-container" data-product-id="${prod.id}" data-product-name="${safeName}" data-product-index="${i}" data-product-source="${containerId}">
                             ${btnHtml}
@@ -2019,6 +2011,7 @@ function populateProducts(containerId, items) {
     if (!container.innerHTML.trim()) {
         container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--text-soft);">No items available in this category.</div>`;
     }
+    reRenderIcons();
 }
 
 window.updateVariantPrice = function(select, prodId, productName) {
@@ -2458,8 +2451,8 @@ function updateAuthUI(name) {
         authContent.innerHTML = `
             <div class="user-profile-wrapper">
                 <div class="premium-user-badge" id="userMenuTrigger" style="display: flex; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.8); padding: 6px 14px; border-radius: 30px; border: 1.5px solid var(--primary); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.08);">
-                    <div class="avatar-circle" style="width: 28px; height: 28px; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 900; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);">
-                        ${displayName.charAt(0)}
+                    <div class="avatar-circle" style="width: 28px; height: 28px; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);">
+                        <i class="ph ph-user"></i>
                     </div>
                     <span style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--primary); font-size: 0.9rem; letter-spacing: 0.5px;">HI, ${isMobile ? firstName : displayName}</span>
                     <i class="ph ph-caret-down" style="font-size: 0.8rem; color: var(--primary);"></i>
@@ -2485,6 +2478,7 @@ function updateAuthUI(name) {
         `;
         
         // Re-attach dropdown toggle logic
+        reRenderIcons();
         const trigger = document.getElementById('userMenuTrigger');
         const dropdown = document.getElementById('userDropdownMenu');
         
@@ -2585,3 +2579,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// Helper to re-render icons if using SVG mode
+function reRenderIcons() {
+    if (window.phosphor && window.phosphor.replace) {
+        window.phosphor.replace();
+    }
+}
+
+// Ensure icons are rendered on initial load
+window.addEventListener('load', reRenderIcons);

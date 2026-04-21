@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
 :root {
     /* Refined HSL Palette */
     --primary-h: 161;
@@ -35,7 +37,6 @@
     --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
 * {
     margin: 0;
@@ -139,6 +140,11 @@ ul {
 }
 
 /* Header */
+/* Global Icon Fix: Ensure Phosphor font is used regardless of global resets */
+.ph, [class^="ph-"], .ph-fill {
+    font-family: "Phosphor" !important;
+}
+
 header {
     background: var(--glass-bg);
     backdrop-filter: blur(12px);
@@ -597,12 +603,8 @@ body:has(header.sticky) .main-content {
 .category-card i {
     font-size: 3rem;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--primary); /* Use solid brand color for maximum visibility */
     display: inline-block;
-    color: #10B981; /* Fallback */
 }
 
 

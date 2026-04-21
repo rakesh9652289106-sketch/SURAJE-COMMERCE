@@ -147,13 +147,23 @@ router.post('/orders', async (req, res) => {
     const userId = req.cookies.user_id || null;
     let { items, paymentMethod, address, couponId, deliveryType } = req.body;
 
+    // Helper for robust price parsing
+    const parsePrice = (p) => {
+        if (typeof p === 'number') return p;
+        if (typeof p === 'string') return parseFloat(p.replace(/[^0-9.]/g, '')) || 0;
+        return 0;
+    };
+
     let subtotal = 0;
     try {
         if (!items || !items.length) return res.status(400).json({ error: "Cart is empty" });
         items.forEach(item => {
-            subtotal += (item.price * item.quantity);
+            subtotal += (parsePrice(item.price) * (Number(item.quantity) || 1));
         });
-    } catch (e) { return res.status(400).json({ error: "Invalid items" }); }
+    } catch (e) { 
+        console.error("Order subtotal calculation failed:", e);
+        return res.status(400).json({ error: "Invalid items in cart" }); 
+    }
 
     let finalTotal = subtotal;
 
@@ -177,16 +187,32 @@ router.post('/orders', async (req, res) => {
 
         const insertData = {
             total: Math.round(calculatedTotal),
-            items: items, // Supabase handles JSON arrays directly
+            items: items, 
             payment_method: paymentMethod,
             address: address,
-            discount_amount: discountAmount,
-            delivery_type: deliveryType || 'Home Delivery'
+            discount_amount: discountAmount
+            // delivery_type is omitted for first try to be safe or added conditionally
         };
+
+        // Try adding delivery_type if it likely exists
+        insertData.delivery_type = deliveryType || 'Home Delivery';
+        
         if (userId) insertData.user_id = userId;
 
-        const { data, error } = await supabase.from('orders').insert([insertData]).select().single();
-        if (error) return res.status(500).json({ error: error.message });
+        let { data, error } = await supabase.from('orders').insert([insertData]).select().single();
+        
+        if (error) {
+            console.warn("Retrying order insertion without delivery_type due to error:", error.message);
+            // If the error is about missing column, retry without it
+            if (error.message.includes('delivery_type') || error.code === '42703') {
+                delete insertData.delivery_type;
+                const retry = await supabase.from('orders').insert([insertData]).select().single();
+                data = retry.data;
+                error = retry.error;
+            }
+        }
+
+        if (error) return res.status(500).json({ error: error.message, suggestion: "Please run 'node ensure_schema.js' to fix database columns." });
 
         if (confirmedCouponId && userId) {
             await supabase.from('coupon_usage').insert([{ user_id: userId, coupon_id: confirmedCouponId }]);

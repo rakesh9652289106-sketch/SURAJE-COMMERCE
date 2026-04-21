@@ -31,11 +31,28 @@ async function ensureSchema() {
         console.log("ALTER TABLE public.products RENAME COLUMN imgurl TO \"imgUrl\";");
     }
 
+    // 2. Check orders columns
+    const { data: orderData, error: orderError } = await supabase.from('orders').select('*').limit(1);
+    const orderColumns = orderData && orderData.length > 0 ? Object.keys(orderData[0]) : [];
+    console.log("Current columns in 'orders':", orderColumns);
+
+    if (!orderColumns.includes('delivery_type')) {
+        console.log("❌ Column 'delivery_type' is missing in 'orders' table!");
+        console.log("👉 PLEASE RUN THIS SQL IN YOUR SUPABASE SQL EDITOR:");
+        console.log("ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS delivery_type TEXT DEFAULT 'Home Delivery';");
+    }
+
+    if (!orderColumns.includes('discount_amount')) {
+        console.log("⚠️ Column 'discount_amount' is missing in 'orders' table.");
+        console.log("👉 PLEASE RUN THIS SQL:");
+        console.log("ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS discount_amount INTEGER DEFAULT 0;");
+    }
+
     // Check sessions/auth setup
     const { count: adminCount } = await supabase.from('admin_users').select('*', { count: 'exact', head: true });
     console.log("Total Admin Users:", adminCount);
     
-    console.log("Done checking.");
+    console.log("✅ Schema check complete. Please ensure you have run the suggested SQL commands if warnings appeared.");
 }
 
 ensureSchema();

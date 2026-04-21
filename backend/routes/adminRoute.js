@@ -5,7 +5,11 @@ const { verifyPassword, hashPassword } = require('./authRoute');
 
 // Admin Auth Middleware
 function checkAdminAuth(req, res, next) {
-    next();
+    if (req.cookies.admin_auth === 'true') {
+        next();
+    } else {
+        res.status(401).json({ error: "Unauthorized. Admin access required." });
+    }
 }
 
 router.get('/check-setup', async (req, res) => {
@@ -34,8 +38,11 @@ router.post('/setup', async (req, res) => {
 });
 
 router.get('/check-session', async (req, res) => {
-    // Lock removed: always authenticated
-    res.json({ authenticated: true, exists: true });
+    const { count, error } = await supabase.from('admin_users').select('*', { count: 'exact', head: true });
+    const exists = !error && count > 0;
+    const authenticated = req.cookies.admin_auth === 'true';
+    
+    res.json({ authenticated, exists });
 });
 
 router.post('/login', async (req, res) => {
@@ -122,7 +129,7 @@ router.get('/dashboard/stats', checkAdminAuth, async (req, res) => {
         ]);
 
         stats.totalOrders = ordersData.data?.length || 0;
-        stats.totalRevenue = ordersData.data?.reduce((acc, o) => acc + (o.total || 0), 0) || 0;
+        stats.totalRevenue = ordersData.data?.reduce((acc, o) => acc + (Number(o.total) || 0), 0) || 0;
         stats.totalProducts = productsCount.count || 0;
         stats.totalReviews = reviewsCount.count || 0;
         stats.unreadInquiries = messagesCount.count || 0;
@@ -245,16 +252,26 @@ router.patch('/settings/payments', async (req, res) => {
     res.json({ message: "Payment methods updated!" });
 });
 
-router.patch('/settings/password', async (req, res) => {
-    const { newPassword } = req.body;
-    if (!newPassword || newPassword.length < 4) {
-        return res.status(400).json({ error: "Password must be at least 4 characters long." });
+router.patch('/security', checkAdminAuth, async (req, res) => {
+    const { newPassword, security_q1, security_a1, security_q2, security_a2 } = req.body;
+    
+    const updates = {};
+    if (newPassword) {
+        if (newPassword.length < 4) return res.status(400).json({ error: "Password too short" });
+        updates.password = hashPassword(newPassword);
     }
-    const hashedPwd = hashPassword(newPassword);
-    // Since there's usually only 1 admin according to the flow
-    const { error } = await supabase.from('admin_users').update({ password: hashedPwd }).neq('id', 0);
+
+    if (security_q1) updates.security_q1 = security_q1;
+    if (security_a1) updates.security_a1 = security_a1.toLowerCase().trim();
+    if (security_q2) updates.security_q2 = security_q2;
+    if (security_a2) updates.security_a2 = security_a2.toLowerCase().trim();
+
+    if (Object.keys(updates).length === 0) return res.status(400).json({ error: "No updates provided" });
+
+    const { error } = await supabase.from('admin_users').update(updates).neq('id', 0);
+    
     if (error) return res.status(500).json({ error: error.message });
-    res.json({ message: "Admin password updated securely!" });
+    res.json({ message: "Admin security credentials updated successfully!" });
 });
 
 router.get('/orders', async (req, res) => {
@@ -590,4 +607,36 @@ router.delete('/notifications/:id', async (req, res) => {
     res.json({ message: "Deleted" });
 });
 
+// --- SYSTEM HEALTH ---
+router.get('/system/health', async (req, res) => {
+    try {
+        const health = {
+            status: "healthy",
+            missing_columns: []
+        };
+
+        // Check products table
+        const { data: pData, error: pErr } = await supabase.from('products').select('*').limit(1);
+        if (pErr) throw pErr;
+        
+        const pCols = pData.length > 0 ? Object.keys(pData[0]) : [];
+        if (!pCols.includes('variants')) health.missing_columns.push({ table: 'products', column: 'variants', sql: "ALTER TABLE public.products ADD COLUMN IF NOT EXISTS variants JSONB;" });
+        
+        // Check orders table
+        const { data: oData, error: oErr } = await supabase.from('orders').select('*').limit(1);
+        if (oErr) throw oErr;
+        
+        const oCols = oData.length > 0 ? Object.keys(oData[0]) : [];
+        if (!oCols.includes('delivery_type')) health.missing_columns.push({ table: 'orders', column: 'delivery_type', sql: "ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS delivery_type TEXT DEFAULT 'Home Delivery';" });
+        if (!oCols.includes('discount_amount')) health.missing_columns.push({ table: 'orders', column: 'discount_amount', sql: "ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS discount_amount INTEGER DEFAULT 0;" });
+
+        if (health.missing_columns.length > 0) health.status = "degraded";
+
+        res.json(health);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;
+

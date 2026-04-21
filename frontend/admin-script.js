@@ -19,10 +19,25 @@ async function checkInitialAuth() {
     const overlay = document.getElementById('adminLoginOverlay');
     const main = document.getElementById('adminLayoutMain');
 
-    // Lock removed: Bypass authentication check
-    if (overlay) overlay.style.display = 'none';
-    if (main) main.style.display = 'flex';
-    initDashboard();
+    try {
+        const res = await fetch('/api/admin/check-session');
+        const data = await res.json();
+        
+        if (data.authenticated) {
+            if (overlay) overlay.style.display = 'none';
+            if (main) main.style.display = 'flex';
+            initDashboard();
+        } else {
+            if (overlay) overlay.style.display = 'flex';
+            if (main) main.style.display = 'none';
+            setAuthMode(data.exists ? 'login' : 'setup');
+        }
+    } catch (e) {
+        // Fallback if API fails
+        if (overlay) overlay.style.display = 'none';
+        if (main) main.style.display = 'flex';
+        initDashboard();
+    }
 }
 
 function setAuthMode(mode) {
@@ -128,9 +143,18 @@ async function handleAuthSubmit(mode) {
 }
 
 async function adminLogout() {
-    if (confirm("Logout from Admin Panel?")) {
-        await fetch('/api/admin/logout', { method: 'POST' });
-        refreshWithToast("Logged out successfully", "info");
+    if (confirm("Are you sure you want to logout from the Admin Panel?")) {
+        try {
+            await fetch('/api/admin/logout', { method: 'POST' });
+            // Clear all admin state
+            localStorage.removeItem('admin_last_section');
+            localStorage.removeItem('admin_last_fulfillment');
+            
+            // Show toast and reload to trigger auth check
+            refreshWithToast("Admin session ended safely", "info");
+        } catch (e) {
+            location.reload();
+        }
     }
 }
 
@@ -149,7 +173,7 @@ function showSection(sectionId, forFulfillment = false) {
         target.classList.add('active');
         
         // Refresh data
-        if (sectionId === 'view-dashboard') fetchDashboardStats();
+        if (sectionId === 'view-dashboard') { fetchDashboardStats(); setupCharts(); }
         if (sectionId === 'view-orders') {
             document.getElementById('fulfillmentHeading').style.display = forFulfillment ? 'block' : 'none';
             document.getElementById('deliveryPincodeSettings').style.display = forFulfillment ? 'block' : 'none';
@@ -216,21 +240,28 @@ async function fetchDashboardStats() {
         const res = await fetch('/api/admin/dashboard/stats');
         const { stats } = await res.json();
         if (stats) {
-            document.getElementById('statRevenue').innerText = `₹${Math.round(stats.totalRevenue)}`;
-            document.getElementById('statOrders').innerText = stats.totalOrders;
-            document.getElementById('statProducts').innerText = stats.totalProducts;
-            document.getElementById('statMessages').innerText = stats.unreadInquiries;
+            if (document.getElementById('statRevenue')) document.getElementById('statRevenue').innerText = `₹${Math.round(stats.totalRevenue)}`;
+            if (document.getElementById('statOrdersToday')) document.getElementById('statOrdersToday').innerText = stats.ordersToday;
+            if (document.getElementById('statProducts')) document.getElementById('statProducts').innerText = stats.totalProducts;
+            if (document.getElementById('statMessages')) document.getElementById('statMessages').innerText = stats.unreadInquiries;
         }
     } catch (e) {}
 }
 
 async function setupCharts() {
+    console.log("Setting up charts...");
     const ctx = document.getElementById('revenueChart');
     if (!ctx) return;
+
     try {
         const res = await fetch('/api/admin/orders');
         const orders = await res.json();
         
+        if (!Array.isArray(orders)) {
+            console.warn("Graph data: Expected array but got", orders);
+            return;
+        }
+
         const last7Days = [...Array(7)].map((_, i) => {
             const d = new Date();
             d.setDate(d.getDate() - i);
@@ -238,8 +269,17 @@ async function setupCharts() {
         }).reverse();
 
         const dataPoints = last7Days.map(date => {
-            return orders.filter(o => o.created_at.startsWith(date)).reduce((sum, o) => sum + o.total, 0);
+            return orders
+                .filter(o => {
+                    if (!o.created_at) return false;
+                    // Robust matching: compare ISO date strings
+                    const oDate = new Date(o.created_at).toISOString().split('T')[0];
+                    return oDate === date;
+                })
+                .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
         });
+
+        console.log("Graph data points:", dataPoints);
 
         if (revenueChart) revenueChart.destroy();
         revenueChart = new Chart(ctx, {
@@ -251,56 +291,96 @@ async function setupCharts() {
                     data: dataPoints,
                     borderColor: '#4F46E5',
                     backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                    fill: true, tension: 0.4, borderWidth: 3
+                    fill: true, 
+                    tension: 0.4, 
+                    borderWidth: 3,
+                    pointBackgroundColor: '#4F46E5',
+                    pointRadius: 4
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `Revenue: ₹${context.raw}`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: (val) => '₹' + val
+                        }
+                    }
+                }
+            }
         });
-    } catch (e) {}
+    } catch (e) {
+        console.error("Critical error setting up revenue chart:", e);
+    }
 }
 
 // --- PRODUCTS ---
 
 async function fetchAdminProducts() {
-    const search = document.getElementById('adminProductSearch').value;
-    const cat = document.getElementById('adminProductCategory').value;
+    const search = document.getElementById('adminProductSearch').value || '';
+    const cat = document.getElementById('adminProductCategory').value || 'All';
     try {
         const res = await fetch(`/api/products?search=${search}&category=${cat}`);
         const products = await res.json();
         const tbody = document.getElementById('productsTableBody');
-        tbody.innerHTML = products.map(p => `
-            <tr>
-                <td>#${p.id}</td>
-                <td><img src="${p.imgUrl}" style="width:40px;height:40px;object-fit:cover;"></td>
-                <td>${p.name}</td>
-                <td>${p.category}</td>
-                <td>₹${p.price}</td>
-                <td>${p.stock_quantity}</td>
-                <td>
-                    <label class="toggle-switch">
-                        <input type="checkbox" ${p.is_available !== 0 ? 'checked' : ''} onchange="toggleProductField(${p.id}, 'availability', this.checked)">
-                        <span class="slider"></span>
-                    </label>
-                </td>
-                <td>
-                    <label class="toggle-switch">
-                        <input type="checkbox" ${p.is_trending === 1 ? 'checked' : ''} onchange="toggleProductField(${p.id}, 'trending', this.checked)">
-                        <span class="slider" style="background:${p.is_trending ? '#F59E0B' : '#ccc'}"></span>
-                    </label>
-                </td>
-                <td>
-                    <label class="toggle-switch">
-                        <input type="checkbox" ${p.is_daily_essential === 1 ? 'checked' : ''} onchange="toggleProductField(${p.id}, 'essential', this.checked)">
-                        <span class="slider" style="background:${p.is_daily_essential ? '#3B82F6' : '#ccc'}"></span>
-                    </label>
-                </td>
-                <td>
-                    <button onclick="openEditModal(${p.id})" class="action-btn" style="background:#4F46E5;"><i class="ph ph-pencil"></i></button>
-                    <button onclick="deleteProduct(${p.id})" class="action-btn" style="background:#EF4444;"><i class="ph ph-trash"></i></button>
-                </td>
-            </tr>
-        `).join('');
-    } catch (e) {}
+        
+        tbody.innerHTML = products.map(p => {
+            const stockLevel = p.stock_quantity || 0;
+            const stockColor = stockLevel < 10 ? '#EF4444' : '#10B981';
+            const stockBg = stockLevel < 10 ? '#FEF2F2' : '#F0FDF4';
+
+            return `
+                <tr>
+                    <td>#${p.id}</td>
+                    <td><img src="${p.imgUrl || p.imgurl || 'https://via.placeholder.com/60?text=Product'}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid #E2E8F0; background:#f8fafc;"></td>
+                    <td><div style="font-weight:600; color:#1E293B;">${p.name}</div></td>
+                    <td><span class="badge" style="background:#F1F5F9; color:#475569; text-transform:none;">${p.category}</span></td>
+                    <td style="font-weight:700;">₹${p.price}</td>
+                    <td>
+                        <span style="display:inline-block; padding:2px 8px; border-radius:12px; font-weight:700; font-size:0.8rem; background:${stockBg}; color:${stockColor}; border: 1px solid ${stockLevel < 10 ? '#FEE2E2' : '#DCFCE7'};">
+                            ${stockLevel} ${stockLevel < 10 ? '<i class="ph-fill ph-warning" style="font-size:0.75rem; vertical-align:middle;"></i>' : ''}
+                        </span>
+                    </td>
+                    <td>
+                        <label class="toggle-switch">
+                            <input type="checkbox" ${p.is_available !== 0 ? 'checked' : ''} onchange="toggleProductField(${p.id}, 'availability', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td>
+                        <label class="toggle-switch">
+                            <input type="checkbox" ${p.is_trending === 1 ? 'checked' : ''} onchange="toggleProductField(${p.id}, 'trending', this.checked)">
+                            <span class="slider" style="background:${p.is_trending ? '#F59E0B' : '#ccc'}"></span>
+                        </label>
+                    </td>
+                    <td>
+                        <label class="toggle-switch">
+                            <input type="checkbox" ${p.is_daily_essential === 1 ? 'checked' : ''} onchange="toggleProductField(${p.id}, 'essential', this.checked)">
+                            <span class="slider" style="background:${p.is_daily_essential ? '#3B82F6' : '#ccc'}"></span>
+                        </label>
+                    </td>
+                    <td>
+                        <div style="display:flex; gap:6px;">
+                            <button onclick='openEditModal(${JSON.stringify(p).replace(/'/g, "&apos;")})' class="action-btn" style="background:#4F46E5;" title="Edit Product"><i class="ph ph-pencil"></i></button>
+                            <button onclick="deleteProduct(${p.id})" class="action-btn" style="background:#EF4444;" title="Delete Product"><i class="ph ph-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } catch (e) {
+        console.error("Failed to fetch products", e);
+    }
 }
 
 async function toggleProductField(id, field, val) {
@@ -308,12 +388,21 @@ async function toggleProductField(id, field, val) {
     const updateKey = field === 'availability' ? 'is_available' : (field === 'trending' ? 'is_trending' : 'is_daily_essential');
     payload[updateKey] = val ? 1 : 0;
     
-    await fetch(`/api/admin/products/${id}/${field}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    });
-    Toast.show("Status updated", "success");
+    try {
+        const res = await fetch(`/api/admin/products/${id}/${field}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            Toast.show("Status updated", "success");
+            // No need to full refresh, the switch reflects state
+        } else {
+            Toast.show("Failed to update status", "error");
+        }
+    } catch (err) {
+        Toast.show("Connection error", "error");
+    }
 }
 
 async function handleAddProduct(e) {
@@ -490,14 +579,41 @@ window.removeQuickVariant = (idx) => {
 
 window.saveQuickVariants = async () => {
     const id = document.getElementById('quickVariantProductSelect').value;
-    await fetch(`/api/admin/products/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ variants: tempVariants })
-    });
-    Toast.show("Variants saved", "success");
-    closeQuickVariantEditor();
-    fetchAdminProducts();
+    const btn = document.querySelector('button[onclick="saveQuickVariants()"]');
+    
+    if (!id) return Toast.show("Please select a product", "warning");
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ph ph-spinner-gap ph-spin"></i> Saving...';
+    }
+
+    try {
+        const res = await fetch(`/api/admin/products/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ variants: tempVariants })
+        });
+        
+        const data = await res.json();
+
+        if (res.ok) {
+            Toast.show("Variants saved", "success");
+            closeQuickVariantEditor();
+            fetchAdminProducts();
+        } else {
+            console.error("Save failed:", data.error);
+            Toast.show(data.error || "Failed to save variants", "error");
+        }
+    } catch (err) {
+        console.error("Network error:", err);
+        Toast.show("Connection error", "error");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = 'Save Changes to Product';
+        }
+    }
 };
 
 window.closeQuickVariantEditor = () => {
@@ -519,24 +635,31 @@ async function fetchOrders(date = "") {
         const tbody = document.getElementById('ordersTableBody');
         tbody.innerHTML = orders.map(o => {
             const items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
-            const itemsHtml = items.map(i => `<div>${i.name} x${i.quantity}</div>`).join('');
+            const itemsHtml = items.map(i => `<div class="order-item-badge">${i.name} x${i.quantity}</div>`).join('');
             return `
                 <tr>
                     <td>#${o.id}</td>
-                    <td>${o.full_name}<br><small>${o.phone}</small></td>
-                    <td>₹${o.total}</td>
-                    <td>${itemsHtml}</td>
-                    <td><small>${o.address}</small></td>
-                    <td>${o.payment_method}<br><small>${o.payment_status}</small></td>
+                    <td><div style="font-weight:600;">${o.full_name || 'Customer'}</div><small style="color:#64748B;">${o.phone || ''}</small></td>
+                    <td style="font-weight:700; color:#1E293B;">₹${o.total}</td>
+                    <td><div style="display:flex; flex-wrap:wrap; gap:4px;">${itemsHtml}</div></td>
+                    <td><small style="color:#64748B;">${o.address || ''}</small></td>
                     <td>
-                        <select onchange="updateOrderStatus(${o.id}, this.value)" style="padding:4px; border-radius:4px;">
+                        <div style="text-transform:uppercase; font-size:0.7rem; font-weight:700; color:#475569;">${o.payment_method}</div>
+                        <span class="badge ${o.payment_status === 'paid' ? 'delivered' : 'pending'}" style="font-size:0.6rem; padding:1px 6px;">${o.payment_status}</span>
+                    </td>
+                    <td>
+                        <select onchange="updateOrderStatus(${o.id}, this.value)" class="admin-input" style="padding:4px 8px; font-size:0.85rem; border-color:#CBD5E1;">
                             <option value="pending" ${o.status === 'pending' ? 'selected' : ''}>Pending</option>
                             <option value="confirmed" ${o.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
                             <option value="delivered" ${o.status === 'delivered' ? 'selected' : ''}>Delivered</option>
                         </select>
                     </td>
-                    <td>${new Date(o.created_at).toLocaleDateString()}</td>
-                    <td><button onclick="deleteOrder(${o.id})" class="action-btn" style="background:#EF4444;"><i class="ph ph-trash"></i></button></td>
+                    <td style="white-space:nowrap; font-size:0.85rem; color:#64748B;">${new Date(o.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <div style="display:flex; gap:6px;">
+                            <button onclick="deleteOrder(${o.id})" class="action-btn" style="background:#EF4444;" title="Delete Order"><i class="ph ph-trash"></i></button>
+                        </div>
+                    </td>
                 </tr>
             `;
         }).join('');
@@ -571,8 +694,8 @@ async function fetchPaymentHistory() {
             <td><span style="color:#10B981; font-weight:700;">RECEIVED</span></td>
             <td>${new Date(p.created_at).toLocaleDateString()}</td>
             <td>
-                <button onclick="Toast.show('Receipt view coming soon', 'info')" class="action-btn" title="View Receipt"><i class="ph ph-receipt"></i></button>
-                <button onclick="deleteOrder(${p.order_id})" class="action-btn" style="background:#EF4444; margin-left:4px;" title="Remove"><i class="ph ph-trash"></i></button>
+                <button onclick="Toast.show('Receipt view coming soon', 'info')" class="action-btn" style="background:#4F46E5;" title="View Receipt"><i class="ph ph-receipt"></i></button>
+                <button onclick="deleteOrder(${p.order_id})" class="action-btn" style="background:#EF4444;" title="Remove"><i class="ph ph-trash"></i></button>
             </td>
         </tr>
     `).join('');
@@ -889,7 +1012,7 @@ async function fetchAdminBrands() {
         <tr>
             <td>#${b.id}</td>
             <td>${b.name}</td>
-            <td><button onclick="deleteBrand(${b.id})" class="action-btn" style="background:#EF4444;"><i class="ph ph-trash"></i></button></td>
+            <td><button onclick="deleteBrand(${b.id})" class="action-btn" style="background:#EF4444;" title="Delete Brand"><i class="ph ph-trash"></i></button></td>
         </tr>
     `).join('');
 }
@@ -928,7 +1051,7 @@ async function fetchAdminCoupons() {
             <td>₹${c.min_amount}</td>
             <td>${c.useCount}</td>
             <td>${new Date(c.expiry_date).toLocaleDateString()}</td>
-            <td><button onclick="deleteCoupon(${c.id})" class="action-btn" style="background:#EF4444;"><i class="ph ph-trash"></i></button></td>
+            <td><button onclick="deleteCoupon(${c.id})" class="action-btn" style="background:#EF4444;" title="Delete Coupon"><i class="ph ph-trash"></i></button></td>
         </tr>
     `).join('');
     
@@ -977,8 +1100,8 @@ async function fetchUsers(search = "") {
             <td>${new Date(u.created_at).toLocaleDateString()}</td>
             <td><span class="badge ${u.status}">${u.status}</span></td>
             <td>
-                <button onclick="toggleUserStatus(${u.id}, '${u.status}')" class="action-btn" style="background:#4F46E5; width:auto; padding:4px 10px;">${u.status === 'active' ? 'Block' : 'Unblock'}</button>
-                <button onclick="deleteUser(${u.id})" class="action-btn" style="background:#EF4444; width:auto; padding:4px 10px;"><i class="ph ph-trash"></i></button>
+                <button onclick="toggleUserStatus(${u.id}, '${u.status}')" class="action-btn" style="background:#4F46E5;" title="${u.status === 'active' ? 'Block User' : 'Unblock User'}"><i class="ph ${u.status === 'active' ? 'ph-user-minus' : 'ph-user-plus'}"></i></button>
+                <button onclick="deleteUser(${u.id})" class="action-btn" style="background:#EF4444;" title="Delete User"><i class="ph ph-trash"></i></button>
             </td>
         </tr>
     `).join('');
@@ -1010,7 +1133,7 @@ async function fetchAdminReviews() {
             <td>${r.product_name}</td>
             <td>${r.username}</td>
             <td>${'★'.repeat(r.rating)}</td>
-            <td><button onclick="deleteReview(${r.id})" class="action-btn" style="background:#EF4444;"><i class="ph ph-trash"></i></button></td>
+            <td><button onclick="deleteReview(${r.id})" class="action-btn" style="background:#EF4444;" title="Delete Review"><i class="ph ph-trash"></i></button></td>
         </tr>
     `).join('');
 }
@@ -1051,6 +1174,48 @@ function setupEventListeners() {
     document.getElementById('categoryForm')?.addEventListener('submit', handleCategorySubmit);
     document.getElementById('brandForm')?.addEventListener('submit', handleBrandSubmit);
     document.getElementById('couponForm')?.addEventListener('submit', handleCouponSubmit);
+    document.getElementById('adminSecurityForm')?.addEventListener('submit', handleSecurityUpdate);
+}
+
+async function handleSecurityUpdate(e) {
+    e.preventDefault();
+    const newPassword = document.getElementById('secNewPassword').value;
+    const security_q1 = document.getElementById('secQ1').value;
+    const security_a1 = document.getElementById('secA1').value;
+    const security_q2 = document.getElementById('secQ2').value;
+    const security_a2 = document.getElementById('secA2').value;
+
+    const btn = e.target.querySelector('button');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph ph-spinner-gap ph-spin"></i> Updating...';
+
+    try {
+        const payload = {};
+        if (newPassword) payload.newPassword = newPassword;
+        if (security_q1) payload.security_q1 = security_q1;
+        if (security_a1) payload.security_a1 = security_a1;
+        if (security_q2) payload.security_q2 = security_q2;
+        if (security_a2) payload.security_a2 = security_a2;
+
+        const res = await fetch('/api/admin/security', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+            Toast.show("Security credentials updated successfully", "success");
+            e.target.reset();
+        } else {
+            Toast.show(data.error || "Update failed", "error");
+        }
+    } catch (err) {
+        Toast.show("Connection error", "error");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'Update Security Credentials';
+    }
 }
 
 window.togglePasswordVisibility = (id, el) => {
@@ -1093,3 +1258,50 @@ window.openAddCouponModal = () => {
     document.getElementById('couponModal').style.display = 'flex';
 };
 window.loadProductForQuickVariants = loadProductForQuickVariants;
+
+async function checkSystemHealth() {
+    try {
+        const res = await fetch('/api/admin/system/health');
+        const data = await res.json();
+        
+        const healthStatus = document.getElementById('statHealthStatus');
+        const healthBox = document.getElementById('healthWarningBox');
+        const healthSql = document.getElementById('healthWarningSql');
+        
+        if (healthStatus) {
+            healthStatus.innerText = data.status === 'healthy' ? 'Healthy' : 'Sync Required';
+            healthStatus.style.color = data.status === 'healthy' ? '#10B981' : '#EF4444';
+        }
+        
+        if (data.status === 'degraded') {
+            if (healthBox && healthSql) {
+                healthBox.style.display = 'block';
+                const totalSql = data.missing_columns.map(c => c.sql).join('\n');
+                healthSql.innerText = totalSql;
+            }
+        } else {
+            if (healthBox) healthBox.style.display = 'none';
+        }
+    } catch (err) {
+        console.error("Health check failed", err);
+    }
+}
+
+window.copyHealthSql = () => {
+    const sql = document.getElementById('healthWarningSql').innerText;
+    navigator.clipboard.writeText(sql).then(() => {
+        Toast.show("SQL copied to clipboard", "success");
+    });
+};
+
+// Update fetchDashboardStats to include health check
+const originalFetchDashboardStats = window.fetchDashboardStats;
+window.fetchDashboardStats = async function() {
+    if (typeof originalFetchDashboardStats === 'function') await originalFetchDashboardStats();
+    await checkSystemHealth();
+};
+
+// Initial health check
+if (getCookie('admin_auth') === 'true') {
+    checkSystemHealth();
+}

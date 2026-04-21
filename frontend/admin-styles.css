@@ -294,6 +294,42 @@ input:checked + .slider:before { transform: translateX(20px); }
     font-size: 0.75rem;
 }
 
+/* Action Buttons */
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    border: none;
+    color: white;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 1.25rem;
+    padding: 0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    position: relative;
+    overflow: hidden;
+}
+
+.action-btn:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.action-btn i, .action-btn svg {
+    display: block;
+    width: 1.2em;
+    height: 1.2em;
+    transition: transform 0.2s;
+}
+
+.action-btn:active {
+    transform: translateY(0) scale(0.95);
+}
+
 /* Mobile */
 @media (max-width: 768px) {
     .admin-sidebar {

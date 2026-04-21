@@ -138,10 +138,9 @@ async function fetchOrders() {
             // Timeline mapping
             const status = (order.status || 'pending').toLowerCase();
             const steps = [
-                { id: 'pending', label: 'Placed' },
+                { id: 'pending', label: 'Pending' },
                 { id: 'confirmed', label: 'Confirmed' },
-                { id: 'out for delivery', label: 'Delivering' },
-                { id: 'received', label: 'Received' }
+                { id: 'delivered', label: 'Delivered' }
             ];
             
             // Find current index
