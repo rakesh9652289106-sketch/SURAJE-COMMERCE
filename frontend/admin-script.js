@@ -410,23 +410,30 @@ async function handleAddProduct(e) {
     const payload = {
         name: document.getElementById('pName').value,
         price: Number(document.getElementById('pPrice').value),
-        originalprice: Number(document.getElementById('pOriginalPrice').value),
+        originalPrice: Number(document.getElementById('pOriginalPrice').value),
         category: document.getElementById('pCategory').value,
         stock_quantity: Number(document.getElementById('pStock').value),
         weight: document.getElementById('pWeight').value,
         discount: document.getElementById('pDiscount').value,
-        imgurl: document.getElementById('pImageUrl').value,
+        imgUrl: document.getElementById('pImageUrl').value,
         is_daily_essential: document.getElementById('pDailyEssential').checked ? 1 : 0,
         variants: tempVariants
     };
 
-    const res = await fetch('/api/admin/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    });
-    if (res.ok) {
-        refreshWithToast("Product added", "success");
+    try {
+        const res = await fetch('/api/admin/products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            refreshWithToast("Product added", "success");
+        } else {
+            const data = await res.json();
+            Toast.show(data.error || "Failed to add product", "error");
+        }
+    } catch (err) {
+        Toast.show("Connection error", "error");
     }
 }
 
@@ -459,24 +466,31 @@ async function handleEditProduct(e) {
     const payload = {
         name: document.getElementById('editPName').value,
         price: Number(document.getElementById('editPPrice').value),
-        originalprice: Number(document.getElementById('editPOriginalPrice').value),
+        originalPrice: Number(document.getElementById('editPOriginalPrice').value),
         category: document.getElementById('editPCategory').value,
         stock_quantity: Number(document.getElementById('editPStock').value),
         weight: document.getElementById('editPWeight').value,
         discount: document.getElementById('editPDiscount').value,
-        imgurl: document.getElementById('editPImageUrl').value,
+        imgUrl: document.getElementById('editPImageUrl').value,
         is_daily_essential: document.getElementById('editPDailyEssential').checked ? 1 : 0,
         is_trending: document.getElementById('editPTrending').checked ? 1 : 0,
         is_available: document.getElementById('editPAvailable').checked ? 1 : 0,
         variants: currentEditVariants
     };
-    const res = await fetch(`/api/admin/products/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    });
-    if (res.ok) {
-        refreshWithToast("Product updated", "success");
+    try {
+        const res = await fetch(`/api/admin/products/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            refreshWithToast("Product updated", "success");
+        } else {
+            const data = await res.json();
+            Toast.show(data.error || "Failed to update product", "error");
+        }
+    } catch (err) {
+        Toast.show("Connection error", "error");
     }
 }
 

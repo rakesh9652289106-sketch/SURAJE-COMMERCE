@@ -38,6 +38,15 @@ app.use('/api', indexRouter);
 
 // User Profile logic is now handled by userRouter at /api/user
 
+// Static Files - Serve frontend
+const path = require('path');
+app.use(express.static(path.join(__dirname, '../frontend')));
+
+// Fallback for SPA routing if needed (optional)
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/index.html'));
+});
+
 const server = app.listen(PORT, () => {
     console.log(`Professional API Server running on port ${PORT}`);
 });

@@ -970,6 +970,13 @@ function setupAuth() {
     let currentRecoveryStep = 0; // 0: Initiate, 1: Q1, 2: Q2, 3: Reset
     let userRecoveryAnswers = [];
 
+    // Expose to window for global access
+    window.openAuthModal = function(mode = 'login') {
+        currMode = mode;
+        updateModalState();
+        if (authModal) authModal.classList.add('active');
+    };
+
     // Prevent duplicate security question selection
     function updateSecurityOptions() {
         const q1Val = securityQ1.value;
@@ -1811,6 +1818,7 @@ async function fetchBanners() {
                     <div class="banner-content">
                         <span class="badge">${b.badge || ''}</span>
                         <h2>${b.title || ''}</h2>
+                        ${b.description ? `<p>${b.description}</p>` : ''}
                         <button class="btn btn-primary" onclick="navigateToBannerCategory('${b.target_category || 'All'}')">${b.btnText || b.btntext || 'Shop Now'}</button>
                     </div>
                     <img src="${b.imgurl || b.imgurl}" alt="Promo Banner" class="banner-image" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200'">
@@ -1840,6 +1848,7 @@ async function fetchSpecialOffers() {
                 card.innerHTML = `
                     <div class="offer-content">
                         <h4>${o.title}</h4>
+                        ${o.description ? `<p>${o.description}</p>` : ''}
                         <span class="btn btn-sm">Shop Now</span>
                     </div>
                 `;
@@ -2383,17 +2392,18 @@ async function checkOrderStatus() {
         const res = await fetch('/api/user/orders');
         if (res.ok) {
             const orders = await res.json();
-            // Check if any recent order is 'confirmed'
-            const confirmedOrder = orders.find(o => o.status === 'confirmed');
+            // Check if the most recent order is 'confirmed'
+            const sortedOrders = orders.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+            const recentOrder = sortedOrders.length > 0 ? sortedOrders[0] : null;
             
             const widget = document.getElementById('liveOrderStatus');
             const orderIdEl = document.getElementById('confirmedOrderId');
 
-            if (confirmedOrder && widget && orderIdEl) {
+            if (recentOrder && recentOrder.status === 'confirmed' && widget && orderIdEl) {
                 // Show if it's not already dismissed in this session
                 const dismissedId = sessionStorage.getItem('dismissedOrderId');
-                if (dismissedId !== String(confirmedOrder.id)) {
-                    orderIdEl.innerText = confirmedOrder.id;
+                if (dismissedId !== String(recentOrder.id)) {
+                    orderIdEl.innerText = recentOrder.id;
                     widget.style.display = 'flex';
                 }
             } else if (widget) {
@@ -2502,7 +2512,9 @@ function updateAuthUI(name) {
             window.logoutUser();
         });
     } else {
-        authContent.innerHTML = `
+        authContent.innerHTML = isMobile ? `
+            <a href="#" class="nav-link" onclick="openAuthModal('login')" data-i18n="nav_log_in">Log In</a>
+        ` : `
             <a href="#" class="nav-link" onclick="openAuthModal('login')" data-i18n="nav_sign_in">Sign In</a>
             <span class="divider">|</span>
             <a href="#" class="nav-link" onclick="openAuthModal('login')" data-i18n="nav_log_in">Log In</a>
@@ -2588,4 +2600,141 @@ function reRenderIcons() {
 }
 
 // Ensure icons are rendered on initial load
-window.addEventListener('load', reRenderIcons);
+document.addEventListener('DOMContentLoaded', () => {
+    reRenderIcons();
+    initProfessionalMobileFeatures();
+});
+
+function initProfessionalMobileFeatures() {
+    const isMobile = window.innerWidth <= 768;
+    
+    // 1. Populate Category Chips
+    if (isMobile) {
+        populateCategoryChips();
+    }
+
+    // 3. Sync Bottom Nav Badges
+    syncBottomBadges();
+
+    // 4. Feature Modal Logic
+    setupFeatureModal();
+}
+
+function populateCategoryChips() {
+    const container = document.getElementById('categoryChips');
+    if (!container) return;
+
+    const chipCategories = [
+        { name: 'All', icon: 'ph-squares-four' },
+        { name: 'Vegetables', icon: 'ph-leaf' },
+        { name: 'Fruits', icon: 'ph-orange' },
+        { name: 'Dairy', icon: 'ph-moped' },
+        { name: 'Bakery', icon: 'ph-cookie' },
+        { name: 'Beverages', icon: 'ph-coffee' }
+    ];
+
+    container.innerHTML = chipCategories.map(cat => `
+        <div class="category-chip ${cat.name === 'All' ? 'active' : ''}" onclick="filterByChip('${cat.name}', this)">
+            <i class="ph ${cat.icon}"></i>
+            <span>${cat.name}</span>
+        </div>
+    `).join('');
+}
+
+window.filterByChip = function(name, el) {
+    document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    
+    if (name === 'All') {
+        window.location.href = 'category.html?name=All';
+    } else {
+        // Map simplified names to real categories if needed
+        let target = name;
+        if (name === 'Vegetables') target = 'Fresh Vegetables';
+        if (name === 'Dairy') target = 'Dairy & Bread';
+        window.location.href = `category.html?name=${encodeURIComponent(target)}`;
+    }
+};
+
+function syncBottomBadges() {
+    const cartBadge = document.getElementById('cartBadge');
+    const bottomCartBadge = document.getElementById('bottomCartBadge');
+    if (cartBadge && bottomCartBadge) {
+        bottomCartBadge.innerText = cartBadge.innerText;
+        bottomCartBadge.parentElement.style.display = 'flex';
+    }
+
+    const wishlistBadge = document.getElementById('wishlistBadge');
+    const bottomWishlistBadge = document.getElementById('bottomWishlistBadge');
+    if (wishlistBadge && bottomWishlistBadge) {
+        bottomWishlistBadge.innerText = wishlistBadge.innerText;
+        bottomWishlistBadge.style.display = parseInt(wishlistBadge.innerText) > 0 ? 'flex' : 'none';
+    }
+}
+
+window.openFeatureModal = function(modalTitle, html) {
+    const overlay = document.getElementById('featureModalOverlay');
+    const content = document.getElementById('featureModalContent');
+    const title = document.getElementById('featureModalTitle');
+    
+    if (!overlay || !content || !title) return;
+    
+    title.innerText = modalTitle || 'Settings';
+    content.innerHTML = html || '<p>No content available.</p>';
+    overlay.classList.add('active');
+};
+
+function setupFeatureModal() {
+    const overlay = document.getElementById('featureModalOverlay');
+    const closeBtn = document.getElementById('closeFeatureModal');
+
+    if (!overlay || !closeBtn) return;
+
+    closeBtn.onclick = () => overlay.classList.remove('active');
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.classList.remove('active'); };
+
+    // Bind Sidebar Links
+    document.getElementById('nav-language')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.openFeatureModal('App Language', `
+            <div class="language-options" style="display: flex; flex-direction: column; gap: 1rem;">
+                <label style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                    <span>English</span>
+                    <input type="radio" name="lang" value="en" checked>
+                </label>
+                <label style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                    <span>Telugu (తెలుగు)</span>
+                    <input type="radio" name="lang" value="te">
+                </label>
+                <label style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                    <span>Hindi (हिन्दी)</span>
+                    <input type="radio" name="lang" value="hi">
+                </label>
+                <button class="btn btn-primary" style="margin-top: 1rem;" onclick="Toast.show('Language updated!', 'success'); document.getElementById('featureModalOverlay').classList.remove('active');">Apply Language</button>
+            </div>
+        `);
+    });
+
+    document.getElementById('nav-notifications')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.openFeatureModal('Notifications', `
+            <div class="notif-settings" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h4 style="font-size: 1rem; margin-bottom: 0.2rem;">Order Updates</h4>
+                        <p style="font-size: 0.8rem; color: var(--text-soft);">Get real-time tracking alerts</p>
+                    </div>
+                    <input type="checkbox" checked style="width: 20px; height: 20px; accent-color: var(--primary);">
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h4 style="font-size: 1rem; margin-bottom: 0.2rem;">Offers & Promos</h4>
+                        <p style="font-size: 0.8rem; color: var(--text-soft);">Never miss a big discount</p>
+                    </div>
+                    <input type="checkbox" checked style="width: 20px; height: 20px; accent-color: var(--primary);">
+                </div>
+                <button class="btn btn-primary" onclick="Toast.show('Preferences saved!', 'success'); document.getElementById('featureModalOverlay').classList.remove('active');">Save Preferences</button>
+            </div>
+        `);
+    });
+}
