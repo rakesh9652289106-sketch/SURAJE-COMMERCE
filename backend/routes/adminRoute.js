@@ -46,15 +46,16 @@ router.get('/check-session', async (req, res) => {
 });
 
 router.post('/login', async (req, res) => {
-    const { full_name, phone, password } = req.body;
-    if (!full_name || !phone || !password) return res.status(400).json({ error: "Name, Phone and password required." });
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ error: "Password required." });
     
-    const { data: row, error } = await supabase.from('admin_users').select('*').eq('phone', phone).single();
-    if (error || !row) return res.status(404).json({ error: "Admin not found." });
+    // There is only one master admin, so we just check the password against the first admin record.
+    // The unified form sends full_name and phone, but we ignore them for admin login to make it a true single login.
+    const { data: adminList, error } = await supabase.from('admin_users').select('*').limit(1);
+    
+    if (error || !adminList || adminList.length === 0) return res.status(404).json({ error: "Admin not found." });
 
-    if (row.full_name.toLowerCase().trim() !== full_name.toLowerCase().trim()) {
-        return res.status(401).json({ error: "Name and Phone Number combination is incorrect." });
-    }
+    const row = adminList[0];
     
     if (verifyPassword(password, row.password)) {
         res.cookie('admin_auth', 'true', { httpOnly: false, path: '/' });
@@ -114,10 +115,12 @@ router.post('/logout', (req, res) => {
 
 router.get('/dashboard/stats', checkAdminAuth, async (req, res) => {
     try {
+        const { date } = req.query;
         const stats = { totalOrders: 0, totalRevenue: 0, totalProducts: 0, totalReviews: 0, unreadInquiries: 0, ordersToday: 0, ordersDelivered: 0 };
-        const today = new Date().toISOString().split('T')[0];
-        const start = `${today}T00:00:00.000Z`;
-        const end = `${today}T23:59:59.999Z`;
+        
+        const filterDate = date || new Date().toISOString().split('T')[0];
+        const start = `${filterDate}T00:00:00.000Z`;
+        const end = `${filterDate}T23:59:59.999Z`;
 
         const [ordersData, productsCount, reviewsCount, messagesCount, todayStatus, deliveredStatus] = await Promise.all([
             supabase.from('orders').select('total'),
@@ -253,14 +256,15 @@ router.patch('/settings/payments', async (req, res) => {
 });
 
 router.patch('/security', checkAdminAuth, async (req, res) => {
-    const { newPassword, security_q1, security_a1, security_q2, security_a2 } = req.body;
+    const { newPassword, full_name, phone, security_q1, security_a1, security_q2, security_a2 } = req.body;
     
     const updates = {};
     if (newPassword) {
         if (newPassword.length < 4) return res.status(400).json({ error: "Password too short" });
         updates.password = hashPassword(newPassword);
     }
-
+    if (full_name) updates.full_name = full_name;
+    if (phone) updates.phone = phone;
     if (security_q1) updates.security_q1 = security_q1;
     if (security_a1) updates.security_a1 = security_a1.toLowerCase().trim();
     if (security_q2) updates.security_q2 = security_q2;
@@ -272,6 +276,12 @@ router.patch('/security', checkAdminAuth, async (req, res) => {
     
     if (error) return res.status(500).json({ error: error.message });
     res.json({ message: "Admin security credentials updated successfully!" });
+});
+
+router.get('/info', checkAdminAuth, async (req, res) => {
+    const { data, error } = await supabase.from('admin_users').select('full_name, phone').limit(1);
+    if (error || !data || data.length === 0) return res.status(404).json({ error: "Admin info not found." });
+    res.json(data[0]);
 });
 
 router.get('/orders', async (req, res) => {
@@ -365,18 +375,26 @@ router.patch('/orders/:id/payment-status', async (req, res) => {
 });
 
 router.put('/products/:id', async (req, res) => {
-    const { id } = req.params;
-    const data = { ...req.body };
-    const { error } = await supabase.from('products').update(data).eq('id', id);
-    if (error) return res.status(500).json({ error: error.message });
-    res.json({ message: "Product updated successfully" });
+    try {
+        const id = Number(req.params.id);
+        const data = { ...req.body };
+        const { error } = await supabase.from('products').update(data).eq('id', id);
+        if (error) throw error;
+        res.json({ message: "Product updated successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 router.post('/products', async (req, res) => {
-    const data = { ...req.body };
-    const { data: newRow, error } = await supabase.from('products').insert([data]).select().single();
-    if (error) return res.status(500).json({ error: error.message });
-    res.status(201).json({ message: "Product added!", productId: newRow.id });
+    try {
+        const data = { ...req.body };
+        const { data: newRow, error } = await supabase.from('products').insert(data).select();
+        if (error) throw error;
+        res.status(201).json({ message: "Product added!", productId: newRow?.[0]?.id });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 router.patch('/products/:id/:field', async (req, res) => {
@@ -433,17 +451,19 @@ router.put('/special-offers/:id', async (req, res) => {
 
 // Category Management
 router.post('/categories', async (req, res) => {
-    const { name, iconurl } = req.body;
+    const { name, iconUrl, iconurl } = req.body;
     if (!name) return res.status(400).json({ error: "Category name required" });
-    const { data: newRow, error } = await supabase.from('categories').insert([{ name, iconurl }]).select().single();
+    const finalIcon = iconUrl || iconurl;
+    const { data: newRow, error } = await supabase.from('categories').insert([{ name, iconUrl: finalIcon }]).select().single();
     if (error) return res.status(500).json({ error: error.message });
     res.status(201).json({ message: "Category added!", category: newRow });
 });
 
 router.put('/categories/:id', async (req, res) => {
     const { id } = req.params;
-    const { name, iconurl } = req.body;
-    const { error } = await supabase.from('categories').update({ name, iconurl }).eq('id', id);
+    const { name, iconUrl, iconurl } = req.body;
+    const finalIcon = iconUrl || iconurl;
+    const { error } = await supabase.from('categories').update({ name, iconUrl: finalIcon }).eq('id', id);
     if (error) return res.status(500).json({ error: error.message });
     res.json({ message: "Category updated successfully" });
 });
@@ -538,7 +558,17 @@ router.delete('/coupons/:id', async (req, res) => {
 
 // --- SUPPORT MESSAGES ---
 router.get('/support-messages', async (req, res) => {
-    const { data, error } = await supabase.from('support_messages').select('*').order('created_at', { ascending: false });
+    const { date, search } = req.query;
+    let query = supabase.from('support_messages').select('*');
+    if (date) {
+        const start = `${date}T00:00:00.000Z`;
+        const end = `${date}T23:59:59.999Z`;
+        query = query.gte('created_at', start).lte('created_at', end);
+    }
+    if (search) {
+        query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,subject.ilike.%${search}%`);
+    }
+    const { data, error } = await query.order('created_at', { ascending: false });
     if (error) return res.status(500).json({ error: error.message });
     res.json(data);
 });

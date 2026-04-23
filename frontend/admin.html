@@ -188,7 +188,13 @@
         <main class="admin-content">
             <!-- Dashboard Overview -->
             <section id="view-dashboard" class="content-section active">
-                <h1 class="page-title">Dashboard Overview</h1>
+                <div class="section-header-row">
+                    <h1 class="page-title">Dashboard Overview</h1>
+                    <div class="global-date-filter">
+                        <label><i class="ph ph-calendar"></i> Stats Date</label>
+                        <input type="date" onchange="fetchDashboardStats(this.value)">
+                    </div>
+                </div>
 
                 <!-- Stats Grid -->
                 <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
@@ -409,6 +415,21 @@
                                     required></div>
                         </div>
                         <div class="form-group"><label>Image URL</label><input type="text" id="pImageUrl"></div>
+                        
+                        <!-- Inline Variant Manager for New Product -->
+                        <div style="margin: 1.5rem 0; padding: 1rem; border: 1px dashed #CBD5E1; border-radius: 12px; background: #F8FAFC;">
+                            <h4 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="ph ph-stack"></i> Add Weight Variants
+                            </h4>
+                            <div id="addVariantList" style="margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+                            <div class="form-row" style="align-items: flex-end; gap: 0.5rem;">
+                                <div class="form-group" style="flex: 2; margin-bottom: 0;"><label style="font-size: 0.75rem;">Weight</label><input type="text" id="avWeight" placeholder="500g" style="padding: 0.5rem;"></div>
+                                <div class="form-group" style="flex: 1; margin-bottom: 0;"><label style="font-size: 0.75rem;">Price</label><input type="number" id="avPrice" placeholder="50" style="padding: 0.5rem;"></div>
+                                <div class="form-group" style="flex: 1; margin-bottom: 0;"><label style="font-size: 0.75rem;">Orig. Price</label><input type="number" id="avOriginalPrice" placeholder="60" style="padding: 0.5rem;"></div>
+                                <button type="button" class="btn-submit" onclick="addVariantToNewList()" style="width: auto; height: 38px; padding: 0 1rem; font-size: 0.8rem; background: var(--primary);">Add</button>
+                            </div>
+                        </div>
+
                         <div class="form-group" style="display:flex; align-items:center; gap:0.5rem;">
                             <input type="checkbox" id="pDailyEssential" checked style="width:20px; height:20px;">
                             <label for="pDailyEssential">Daily Essential Product (Home Page)</label>
@@ -463,17 +484,17 @@
 
                 <!-- Product Filters Bar -->
                 <div class="filter-bar"
-                    style="background:#F8FAFC; padding:1.25rem; border-radius:12px; margin-bottom:2rem; display:flex; gap:1.5rem; align-items:center; border:1px solid #E2E8F0;">
-                    <div style="flex:1; position:relative;">
+                    style="background: white; padding: 1rem; border-radius: 12px; margin-bottom: 2rem; display: flex; justify-content: space-between; gap: 1rem; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #E2E8F0; flex-wrap: wrap;">
+                    <div style="flex: 0 0 50%; position: relative; min-width: 280px;">
                         <i class="ph ph-magnifying-glass"
-                            style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#64748B; font-size:1.1rem;"></i>
+                            style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #64748B; font-size: 1.2rem; pointer-events: none;"></i>
                         <input type="text" id="adminProductSearch" placeholder="Search by name or description..."
                             onkeyup="fetchAdminProducts()"
-                            style="width:100%; padding:0.75rem 1rem 0.75rem 2.75rem; border-radius:10px; border:1px solid #CBD5E1; font-size:0.95rem; background:white;">
+                            style="width: 100%; padding: 0.8rem 1rem 0.8rem 3rem; border-radius: 10px; border: 1px solid #E2E8F0; font-size: 0.95rem; background: #F8FAFC; transition: all 0.3s ease; color: #1E293B;">
                     </div>
-                    <div style="width:250px;">
+                    <div style="width: 240px; min-width: 200px;">
                         <select id="adminProductCategory" onchange="fetchAdminProducts()"
-                            style="width:100%; padding:0.75rem 1rem; border-radius:10px; border:1px solid #CBD5E1; font-size:0.95rem; background:white; color:#1E293B; cursor:pointer;">
+                            style="width: 100%; padding: 0.8rem 1rem; border-radius: 10px; border: 1px solid #E2E8F0; font-size: 0.95rem; background: #F8FAFC; color: #1E293B; cursor: pointer; transition: all 0.3s ease; appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748B%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1rem;">
                             <option value="All">All Categories</option>
                         </select>
                     </div>
@@ -483,16 +504,16 @@
                     <table class="admin-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Img</th>
-                                <th>Name</th>
+                                <th>#ID</th>
+                                <th>Preview</th>
+                                <th>Product Details</th>
                                 <th>Category</th>
-                                <th>Price</th>
-                                <th>Stock</th>
-                                <th>Live</th>
+                                <th>Unit Price</th>
+                                <th>Inventory</th>
+                                <th>Status</th>
                                 <th>Trending</th>
                                 <th>Essential</th>
-                                <th>Action</th>
+                                <th style="text-align:right; padding-right:2rem;">Management</th>
                             </tr>
                         </thead>
                         <tbody id="productsTableBody"></tbody>
@@ -893,10 +914,20 @@
                         <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1.5rem;">Update your master password and security recovery questions. These are used for password recovery if you are locked out.</p>
                         
                         <form id="adminSecurityForm">
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom: 1rem;">
+                                <div class="form-group">
+                                    <label>Admin Full Name</label>
+                                    <input type="text" id="secFullName" class="admin-input" placeholder="Update admin name">
+                                </div>
+                                <div class="form-group">
+                                    <label>Admin Mobile Number</label>
+                                    <input type="text" id="secPhone" class="admin-input" placeholder="Update admin phone" maxlength="10">
+                                </div>
+                            </div>
                             <div class="form-group">
-                                <label>New Master Password</label>
+                                <label>New Master Password (Leave blank to keep current)</label>
                                 <div style="position: relative;">
-                                    <input type="password" id="secNewPassword" class="admin-input" placeholder="Enter new password (min. 4 chars)">
+                                    <input type="password" id="secNewPassword" class="admin-input" placeholder="Enter new password (min. 7 chars)">
                                     <i class="ph ph-eye password-toggle" onclick="togglePasswordVisibility('secNewPassword', this)" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #64748B;"></i>
                                 </div>
                             </div>

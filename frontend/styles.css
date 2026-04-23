@@ -158,22 +158,53 @@ header {
 }
 
 header.sticky {
-    background: rgba(255, 255, 255, 0.85);
-    padding: 0.75rem 0;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+    background: rgba(255, 255, 255, 0.98);
+    padding: 0.5rem 0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
-/* Ensure main content doesn't jump when header becomes fixed */
-body:has(header.sticky) .main-content {
-    padding-top: 80px; 
+header.sticky .nav-left,
+header.sticky .location-selector,
+header.sticky .nav-actions,
+header.sticky .nav-menu-btn {
+    display: none !important;
 }
 
-/* Fallback if :has is not supported */
-.main-content {
-    padding-top: 0;
-    transition: padding-top 0.3s ease;
+header.sticky .nav-container {
+    justify-content: center !important;
+    padding: 0.25rem 1rem !important;
 }
 
+header.sticky .search-bar {
+    flex: 1 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+header.sticky .search-bar input {
+    padding-right: 85px !important; /* Make room for the watermark */
+}
+
+/* Watermark styles */
+.search-brand-watermark {
+    display: none;
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: 800;
+    font-size: 1rem;
+    color: var(--primary);
+    opacity: 0.7;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+}
+
+header.sticky .search-brand-watermark {
+    display: block;
+}
 .nav-container {
     max-width: 1280px;
     margin: 0 auto;
@@ -1238,11 +1269,7 @@ body:has(header.sticky) .main-content {
         padding: 0.5rem;
         gap: 1rem;
     }
-    
-    body:has(header.sticky) .main-content {
-        padding-top: 110px; 
-    }
-    
+
     /* Extra Compact Product Grid for Mobile Apps */
     .product-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -1559,8 +1586,14 @@ body.dark-theme .banner-slide {
 }
 
 .checkout-modal-overlay.active {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     opacity: 1;
+}
+
+.checkout-modal-overlay.active .checkout-modal {
+    transform: scale(1);
 }
 
 /* Checkout Modal Success Styles */
@@ -1583,11 +1616,15 @@ body.dark-theme .banner-slide {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 4rem;
     margin-bottom: 2rem;
     box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.4);
     position: relative;
     z-index: 1;
+}
+
+.success-check-icon i {
+    font-size: 3.5rem !important;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
 }
 
 .success-check-icon::after {
@@ -2382,9 +2419,7 @@ body.dark-theme .banner-slide {
 /* --- Professional Mobile Enhancements --- */
 @media (max-width: 768px) {
     header {
-        background: rgba(255, 255, 255, 0.8) !important;
-        backdrop-filter: blur(12px) !important;
-        -webkit-backdrop-filter: blur(12px) !important;
+        background: rgba(255, 255, 255, 0.98) !important;
         border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
         position: sticky !important;
         top: 0;
@@ -2583,6 +2618,40 @@ body.dark-theme .banner-slide {
     .category-chip.active {
         background: var(--primary-light-alpha) !important;
         border-color: var(--primary) !important;
+    }
+
+    /* Modal Mobile Optimizations */
+    .checkout-modal, .feature-modal {
+        padding: 1.5rem 1rem !important;
+        width: 95% !important;
+        max-height: 95vh !important;
+        overflow-y: auto !important;
+        margin: auto !important;
+    }
+
+    .checkout-modal-overlay {
+        padding: 0 !important;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .checkout-modal-overlay.active {
+        display: flex !important;
+    }
+
+    /* Delivery Options Responsive Grid */
+    div:has(> .delivery-option-card) {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
+    }
+
+    .delivery-option-card {
+        padding: 0.75rem !important;
+    }
+
+    .delivery-option-card i {
+        font-size: 1.5rem !important;
     }
 }
 

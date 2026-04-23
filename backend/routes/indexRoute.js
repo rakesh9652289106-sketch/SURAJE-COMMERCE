@@ -242,10 +242,19 @@ router.get('/reviews/recent', async (req, res) => {
 });
 
 router.get('/notifications/history', async (req, res) => {
-    const { data, error } = await supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(10);
+    const { date } = req.query;
+    let query = supabase.from('notifications').select('*');
+    
+    if (date) {
+        const start = `${date}T00:00:00.000Z`;
+        const end = `${date}T23:59:59.999Z`;
+        query = query.gte('created_at', start).lte('created_at', end);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false }).limit(20);
     if (error) return res.status(500).json({ error: error.message });
     
-    if (data.length === 0) {
+    if (data.length === 0 && !date) {
         return res.json([{
             id: 1,
             message: "Welcome to SURAJ! Enjoy fresh groceries delivered to your doorstep.",

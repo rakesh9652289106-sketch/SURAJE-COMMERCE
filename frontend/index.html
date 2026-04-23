@@ -75,7 +75,7 @@
     <!-- Main Navigation -->
     <header class="navbar">
         <div class="nav-container">
-            <div style="display:flex; align-items:center; gap: 1.2rem;">
+            <div class="nav-left" style="display:flex; align-items:center; gap: 1.2rem;">
                 <button class="nav-menu-btn" id="navMenuBtn" style="background:none; border:none; color:var(--text-main); font-size:1.75rem; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0.25rem;">
                     <i class="ph ph-list"></i>
                 </button>
@@ -96,6 +96,7 @@
             <div class="search-bar">
                 <i class="ph ph-magnifying-glass search-icon"></i>
                 <input type="text" id="mainSearchInput" autocomplete="off" data-i18n="nav_search_placeholder" placeholder="Search for 'Atta', 'Maggi' or 'Milk'...">
+                <span class="search-brand-watermark">SURAJ</span>
             </div>
 
             <div class="nav-actions">
@@ -245,6 +246,11 @@
             <div class="product-grid" id="productGrid">
                 <!-- Populated by JS -->
             </div>
+        </section>
+
+        <!-- Morning Fresh Specialty Banner -->
+        <section class="banner-section" id="morningFreshBannerSection" style="display: none; margin-top: -1rem; margin-bottom: 2rem;">
+            <div id="morningFreshBannerContainer"></div>
         </section>
 
         <section class="brands-section">
@@ -523,7 +529,7 @@
             
             <div id="checkoutStepSuccess" style="display: none; flex-direction: column; align-items: center; text-align: center;">
                 <div class="success-check-icon shadow-lg">
-                    <i class="ph ph-check-circle-fill"></i>
+                    <i class="ph ph-check" style="font-weight: 800; font-size: 5rem;"></i>
                 </div>
                 <h3 style="font-size: 1.85rem; color: var(--text-main); margin-bottom: 0.5rem; font-family: 'Outfit';">Order Placed!</h3>
                 <p style="color: var(--text-soft); margin-bottom: 2rem; line-height: 1.5; font-size: 1rem;">Thank you for shopping with SURAJ. Your order is being processed.</p>

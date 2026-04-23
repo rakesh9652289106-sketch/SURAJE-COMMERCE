@@ -240,6 +240,17 @@
             }
         }
 
+        window.updateVariantPrice = function(select, prodId) {
+            const option = select.options[select.selectedIndex];
+            const price = option.getAttribute('data-price');
+            const oldPrice = option.getAttribute('data-old-price');
+            
+            const currPriceEl = document.getElementById(`currPrice-${prodId}`);
+            const oldPriceEl = document.getElementById(`oldPrice-${prodId}`);
+            if (currPriceEl) currPriceEl.innerText = `₹${price}`;
+            if (oldPriceEl) oldPriceEl.innerText = oldPrice ? `₹${oldPrice}` : '';
+        }
+
         async function fetchUserWishlist() {
             const user_id = getCookie('user_id');
             if (!user_id) return;
@@ -427,27 +438,29 @@
                 const isAvailable = p.is_available !== 0;
                 
                 const safeName = p.name.replace(/'/g, "\\'");
+                const imgurl = p.imgUrl || p.imgurl || "";
+                const originalprice = p.originalPrice || p.originalprice || 0;
                 
                 let btnHtml = '';
                 if (!isAvailable) {
                     btnHtml = `<span style="color: #EF4444; font-weight: 600; font-size: 0.9rem;">Out of Stock</span>`;
-                } else if (qty > 0) {
-                    btnHtml = `<div style="display: flex; align-items: center; background: var(--primary); border-radius: var(--radius-sm); overflow: hidden; height: 32px; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);">
-                        <button onclick="updateQty('${safeName}', -1)" style="border: none; background: transparent; color: white; padding: 0 10px; cursor: pointer; height: 100%;"><i class="ph ph-minus" style="font-weight: bold"></i></button>
-                        <span style="font-size: 0.85rem; padding: 0 8px; font-weight: bold; color: white;">${qty}</span>
-                        <button onclick="updateQty('${safeName}', 1)" style="border: none; background: transparent; color: white; padding: 0 10px; cursor: pointer; height: 100%;"><i class="ph ph-plus" style="font-weight: bold"></i></button>
+                } else if (qty > 0 && (!p.variants || p.variants.length === 0)) {
+                    btnHtml = `<div style="display: flex; align-items: center; background: var(--primary-light); border-radius: var(--radius-sm); overflow: hidden; height: 32px; border: 1px solid var(--primary);">
+                        <button onclick="updateQty('${safeName}', -1)" style="border: none; background: transparent; color: var(--primary); padding: 0 10px; cursor: pointer; height: 100%;"><i class="ph ph-minus" style="font-weight: bold"></i></button>
+                        <span style="font-size: 0.85rem; padding: 0 8px; font-weight: bold; color: var(--primary);">${qty}</span>
+                        <button onclick="updateQty('${safeName}', 1)" style="border: none; background: transparent; color: var(--primary); padding: 0 10px; cursor: pointer; height: 100%;"><i class="ph ph-plus" style="font-weight: bold"></i></button>
                     </div>`;
                 } else {
-                    btnHtml = `<button class="btn btn-outline btn-sm" onclick="addToCart('${safeName}')" style="display: flex; align-items: center; gap: 0.3rem;"><i class="ph ph-shopping-cart"></i> Add</button>`;
+                    btnHtml = `<button class="btn btn-outline btn-sm" onclick="addToCartByCatalog('${safeName}', '${p.id}')" style="display: flex; align-items: center; gap: 0.3rem;"><i class="ph ph-shopping-cart"></i> Add</button>`;
                 }
 
                 return `
-                    <div class="product-card hover-lift" style="${!isAvailable ? 'opacity: 0.6; filter: grayscale(1);' : ''}">
+                    <div class="product-card hover-lift" style="${!isAvailable ? 'opacity: 0.6; filter: grayscale(1);' : ''}" data-product-id="${p.id}">
                         <button class="wishlist-btn" style="position: absolute; top: 1rem; right: 1rem; z-index: 2; background: none; border: none; padding: 0; cursor: pointer;" onclick="toggleWish(event, '${p.id}')">
                             <i class="${isWish ? 'ph-fill' : 'ph'} ph-heart ripple-effect" style="font-size: 1.5rem; color: #EF4444;"></i>
                         </button>
                         ${p.discount && p.discount !== '0% OFF' ? `<span class="discount-badge">${p.discount}</span>` : ''}
-                        <img src="${p.imgUrl || p.imgurl}" alt="${p.name}" class="product-img" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&text=Product'">
+                        <img src="${imgurl}" alt="${p.name}" class="product-img" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&text=Product'">
                         <div class="product-info">
                             <span class="product-weight" id="weight-${p.id}">${p.weight}</span>
                             <h4 class="product-title">${p.name}</h4>
@@ -457,13 +470,24 @@
                             </div>
                             <div class="product-bottom">
                                 <div class="price">
-                                    <span class="current-price" id="currPrice-${p.id}">₹${p.price}</span>
-                                    ${(p.originalPrice || p.originalprice) ? `<span class="old-price" id="oldPrice-${p.id}">₹${p.originalPrice || p.originalprice}</span>` : ''}
+                                    <div style="display: flex; flex-direction: column;">
+                                        <span class="current-price" id="currPrice-${p.id}">₹${p.price}</span>
+                                        <span class="old-price" id="oldPrice-${p.id}">${originalprice ? '₹' + originalprice : ''}</span>
+                                    </div>
                                 </div>
                                 <div class="product-action-container">
                                     ${btnHtml}
                                 </div>
                             </div>
+                            ${p.variants && p.variants.length > 0 ? `
+                                <div style="margin-top: 1rem;">
+                                    <select class="variant-select" onchange="updateVariantPrice(this, '${p.id}')" 
+                                        style="width: 100%; padding: 0.4rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-color); color: var(--text-main); font-size: 0.85rem; cursor: pointer;">
+                                        <option data-weight="${p.weight}" data-price="${p.price}" data-old-price="${originalprice}">${p.weight} - Default</option>
+                                        ${p.variants.map(v => `<option data-weight="${v.weight}" data-price="${v.price}" data-old-price="${v.originalprice || v.originalPrice || v.price}">${v.weight} - ₹${v.price}</option>`).join('')}
+                                    </select>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 `;
@@ -472,10 +496,34 @@
         }
 
         // Shared Logic (Simplified from script.js)
-        window.addToCart = async function(name) {
-            const prod = allProducts.find(p => p.name === name);
+        window.addToCartByCatalog = async function(name, id) {
+            const prod = allProducts.find(p => p.id == id || p.name === name);
             if (!prod) return;
-            cart.push({ ...prod, quantity: 1 });
+
+            const card = document.querySelector(`.product-card[data-product-id="${prod.id}"]`);
+            const select = card?.querySelector('.variant-select');
+            
+            let selectedVariant = null;
+            if (select) {
+                const opt = select.options[select.selectedIndex];
+                selectedVariant = {
+                    weight: opt.getAttribute('data-weight'),
+                    price: Number(opt.getAttribute('data-price')),
+                    originalprice: Number(opt.getAttribute('data-old-price'))
+                };
+            }
+
+            const weight = selectedVariant ? selectedVariant.weight : prod.weight;
+            const price = selectedVariant ? selectedVariant.price : prod.price;
+            const originalprice = selectedVariant ? selectedVariant.originalprice : (prod.originalPrice || prod.originalprice);
+
+            const existing = cart.find(c => c.id === prod.id && c.weight === weight);
+            if (existing) {
+                existing.quantity += 1;
+            } else {
+                cart.push({ ...prod, weight, price, originalprice, quantity: 1 });
+            }
+            
             localStorage.setItem('cart', JSON.stringify(cart));
             renderProducts(allProducts);
             Toast.show("Added to cart", "success");

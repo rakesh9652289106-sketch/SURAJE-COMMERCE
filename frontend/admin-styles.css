@@ -2,19 +2,21 @@ html, body {
     margin: 0;
     padding: 0;
     width: 100%;
-    overflow-x: hidden;
+    height: 100%;
+    overflow: hidden; /* Prevent body scroll */
     font-family: 'Inter', sans-serif;
 }
 
 body {
-    background-color: #F1F5F9; /* Slate 100 */
+    background-color: #F1F5F9;
     color: #0F172A;
 }
 
 .admin-layout {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
     width: 100%;
+    overflow: hidden;
 }
 
 /* Sidebar */
@@ -27,6 +29,21 @@ body {
     position: sticky;
     top: 0;
     height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.admin-sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.admin-sidebar::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 10px;
 }
 
 .sidebar-header {
@@ -100,13 +117,17 @@ body {
     background: white;
     border-radius: 12px;
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
     margin-bottom: 2rem;
+    border: 1px solid #E2E8F0;
 }
 
 .admin-table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 800px; /* Force scroll on mobile */
 }
 
 .admin-table th, .admin-table td {

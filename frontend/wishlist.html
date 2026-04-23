@@ -180,57 +180,15 @@
                     return null;
                 }
 
-                window.gridChangeQty = function(prodName, delta) {
-                    const prod = wishlistProducts.find(p => p.name === prodName);
-                    if (!prod) return;
-
-                    const cartItem = cart.find(item => item.name === prod.name);
-                    if (cartItem) {
-                        cartItem.quantity += delta;
-                        if (cartItem.quantity <= 0) {
-                            cart = cart.filter(item => item.name !== prod.name);
-                        }
-                        localStorage.setItem('cart', JSON.stringify(cart));
-                        updateCartBadgeLocal();
-                        refreshWishlistButtons();
-                    }
-                }
-
-                window.addToCartDirectly = function(prodName) {
-                    const prod = wishlistProducts.find(p => p.name === prodName);
-                    if (prod) {
-                        const existing = cart.find(item => item.name === prod.name);
-                        if (existing) {
-                            existing.quantity += 1;
-                        } else {
-                            cart.push({ ...prod, quantity: 1 });
-                        }
-                        localStorage.setItem('cart', JSON.stringify(cart));
-                        Toast.show("Added to cart", "success");
-                        updateCartBadgeLocal();
-                        refreshWishlistButtons();
-                    }
-                }
-
-                function refreshWishlistButtons() {
-                    const containers = document.querySelectorAll('.product-action-container');
-                    containers.forEach(container => {
-                        const prodName = container.dataset.name;
-                        const cartItem = cart.find(item => item.name === prodName);
-                        
-                        if (cartItem && cartItem.quantity > 0) {
-                            container.innerHTML = `
-                                <div class="qty-toggle-sm" style="display: flex; align-items: center; gap: 0.75rem; background: var(--primary); color: white; padding: 4px 8px; border-radius: 20px;">
-                                    <button onclick="gridChangeQty('${prodName.replace(/'/g, "\\'")}', -1)" style="background:none; border:none; color:white; cursor:pointer;"><i class="ph ph-minus"></i></button>
-                                    <span style="font-weight: 600; font-size: 0.9rem; min-width: 15px; text-align: center;">${cartItem.quantity}</span>
-                                    <button onclick="gridChangeQty('${prodName.replace(/'/g, "\\'")}', 1)" style="background:none; border:none; color:white; cursor:pointer;"><i class="ph ph-plus"></i></button>
-                                </div>
-                            `;
-                        } else {
-                            container.innerHTML = `<button class="btn btn-outline btn-sm" onclick="addToCartDirectly('${prodName.replace(/'/g, "\\'")}')">Add to Cart</button>`;
-                        }
-                    });
-                    if (window.phosphor) window.phosphor.replace();
+                window.updateVariantPrice = function(select, prodId) {
+                    const option = select.options[select.selectedIndex];
+                    const price = option.getAttribute('data-price');
+                    const oldPrice = option.getAttribute('data-old-price');
+                    
+                    const currPriceEl = document.getElementById(`currPrice-${prodId}`);
+                    const oldPriceEl = document.getElementById(`oldPrice-${prodId}`);
+                    if (currPriceEl) currPriceEl.innerText = `₹${price}`;
+                    if (oldPriceEl) oldPriceEl.innerText = oldPrice ? `₹${oldPrice}` : '';
                 }
 
                 function renderWishlist() {
@@ -242,13 +200,16 @@
                     emptyMsg.style.display = "none";
                     grid.innerHTML = products.filter(p => wishlist.includes(Number(p.id))).map(prod => {
                         const escapedName = prod.name.replace(/'/g, "&apos;");
+                        const imgurl = prod.imgUrl || prod.imgurl || "";
+                        const originalprice = prod.originalPrice || prod.originalprice || 0;
+
                         return `
-                            <div class="product-card">
+                            <div class="product-card" data-product-id="${prod.id}">
                                 <i class="ph-fill ph-heart" style="position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; color: #EF4444; z-index: 2; cursor: pointer;" onclick="removeFromWishlist(event, '${prod.id}')"></i>
                                 ${prod.discount ? '<span class="discount-badge">' + prod.discount + '</span>' : ''}
-                                <img src="${prod.imgUrl}" alt="${prod.name}" class="product-img" onerror="this.src='https://via.placeholder.com/200/F8FAFC/94A3B8?text=Product'">
+                                <img src="${imgurl}" alt="${prod.name}" class="product-img" onerror="this.src='https://via.placeholder.com/200/F8FAFC/94A3B8?text=Product'">
                                 <div class="product-info">
-                                    <span class="product-weight">${prod.weight}</span>
+                                    <span class="product-weight" id="weight-${prod.id}">${prod.weight}</span>
                                     <h4 class="product-title">${prod.name}</h4>
                                     <div class="product-rating">
                                         <i class="ph-fill ph-star"></i>
@@ -256,18 +217,111 @@
                                     </div>
                                     <div class="product-bottom">
                                         <div class="price">
-                                            <span class="current-price">₹${prod.price}</span>
-                                            <span class="old-price">₹${prod.originalPrice}</span>
+                                            <div style="display: flex; flex-direction: column;">
+                                                <span class="current-price" id="currPrice-${prod.id}">₹${prod.price}</span>
+                                                <span class="old-price" id="oldPrice-${prod.id}">${originalprice ? '₹' + originalprice : ''}</span>
+                                            </div>
                                         </div>
-                                        <div class="product-action-container" data-name="${escapedName}">
+                                        <div class="product-action-container" data-name="${escapedName}" data-product-id="${prod.id}">
                                             <!-- Hydrated by refreshWishlistButtons -->
                                         </div>
                                     </div>
+                                    ${prod.variants && prod.variants.length > 0 ? `
+                                        <div style="margin-top: 1rem;">
+                                            <select class="variant-select" onchange="updateVariantPrice(this, '${prod.id}')" 
+                                                style="width: 100%; padding: 0.4rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-color); color: var(--text-main); font-size: 0.85rem; cursor: pointer;">
+                                                <option data-weight="${prod.weight}" data-price="${prod.price}" data-old-price="${originalprice}">${prod.weight} - Default</option>
+                                                ${prod.variants.map(v => `<option data-weight="${v.weight}" data-price="${v.price}" data-old-price="${v.originalprice || v.originalPrice || v.price}">${v.weight} - ₹${v.price}</option>`).join('')}
+                                            </select>
+                                        </div>
+                                    ` : ''}
                                 </div>
                             </div>
                         `;
                     }).join('');
                     refreshWishlistButtons();
+                    if (window.phosphor) window.phosphor.replace();
+                }
+
+                window.addToCartDirectly = function(prodName, prodId) {
+                    const prod = wishlistProducts.find(p => p.id == prodId || p.name === prodName);
+                    if (prod) {
+                        const card = document.querySelector(`.product-card[data-product-id="${prod.id}"]`);
+                        const select = card?.querySelector('.variant-select');
+                        
+                        let selectedVariant = null;
+                        if (select) {
+                            const opt = select.options[select.selectedIndex];
+                            selectedVariant = {
+                                weight: opt.getAttribute('data-weight'),
+                                price: Number(opt.getAttribute('data-price')),
+                                originalprice: Number(opt.getAttribute('data-old-price'))
+                            };
+                        }
+
+                        const weight = selectedVariant ? selectedVariant.weight : prod.weight;
+                        const price = selectedVariant ? selectedVariant.price : prod.price;
+                        const originalprice = selectedVariant ? selectedVariant.originalprice : (prod.originalPrice || prod.originalprice);
+
+                        const existing = cart.find(item => item.id === prod.id && item.weight === weight);
+                        if (existing) {
+                            existing.quantity += 1;
+                        } else {
+                            cart.push({ ...prod, weight, price, originalprice, quantity: 1 });
+                        }
+                        localStorage.setItem('cart', JSON.stringify(cart));
+                        Toast.show("Added to cart", "success");
+                        updateCartBadgeLocal();
+                        refreshWishlistButtons();
+                    }
+                }
+
+                window.gridChangeQty = function(prodName, delta, prodId) {
+                    const prod = wishlistProducts.find(p => p.id == prodId || p.name === prodName);
+                    if (!prod) return;
+
+                    const card = document.querySelector(`.product-card[data-product-id="${prod.id}"]`);
+                    const select = card?.querySelector('.variant-select');
+                    const weight = select ? select.options[select.selectedIndex].getAttribute('data-weight') : prod.weight;
+
+                    const cartItem = cart.find(item => item.id === prod.id && item.weight === weight);
+                    if (cartItem) {
+                        cartItem.quantity += delta;
+                        if (cartItem.quantity <= 0) {
+                            cart = cart.filter(item => !(item.id === prod.id && item.weight === weight));
+                        }
+                        localStorage.setItem('cart', JSON.stringify(cart));
+                        updateCartBadgeLocal();
+                        refreshWishlistButtons();
+                    }
+                }
+
+                function refreshWishlistButtons() {
+                    const containers = document.querySelectorAll('.product-action-container');
+                    containers.forEach(container => {
+                        const prodName = container.dataset.name;
+                        const prodId = container.dataset.productId;
+                        const prod = wishlistProducts.find(p => p.id == prodId);
+                        if (!prod) return;
+
+                        const card = container.closest('.product-card');
+                        const select = card?.querySelector('.variant-select');
+                        const weight = select ? select.options[select.selectedIndex].getAttribute('data-weight') : prod.weight;
+
+                        const cartItem = cart.find(item => item.id === prod.id && item.weight === weight);
+                        
+                        if (cartItem && cartItem.quantity > 0) {
+                            container.innerHTML = `
+                                <div class="qty-toggle-sm" style="display: flex; align-items: center; gap: 0.75rem; background: var(--primary); color: white; padding: 4px 8px; border-radius: 20px;">
+                                    <button onclick="gridChangeQty('${prodName.replace(/'/g, "\\'")}', -1, '${prodId}')" style="background:none; border:none; color:white; cursor:pointer;"><i class="ph ph-minus"></i></button>
+                                    <span style="font-weight: 600; font-size: 0.9rem; min-width: 15px; text-align: center;">${cartItem.quantity}</span>
+                                    <button onclick="gridChangeQty('${prodName.replace(/'/g, "\\'")}', 1, '${prodId}')" style="background:none; border:none; color:white; cursor:pointer;"><i class="ph ph-plus"></i></button>
+                                </div>
+                            `;
+                        } else {
+                            container.innerHTML = `<button class="btn btn-outline btn-sm" onclick="addToCartDirectly('${prodName.replace(/'/g, "\\'")}', '${prodId}')">Add to Cart</button>`;
+                        }
+                    });
                     if (window.phosphor) window.phosphor.replace();
                 }
 

@@ -90,15 +90,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("SURAJ Initialization Complete.");
 });
 
-// Sticky Header Logic
+// Sticky Header Logic - Optimized for performance
+const mainHeader = document.querySelector('header');
+let isHeaderSticky = false;
+let ticking = false;
+
 window.addEventListener('scroll', () => {
-    const header = document.querySelector('header');
-    if (window.scrollY > 50) {
-        header.classList.add('sticky');
-    } else {
-        header.classList.remove('sticky');
+    if (!ticking) {
+        window.requestAnimationFrame(() => {
+            const shouldBeSticky = window.scrollY > 50;
+            if (shouldBeSticky !== isHeaderSticky) {
+                isHeaderSticky = shouldBeSticky;
+                if (isHeaderSticky) {
+                    mainHeader.classList.add('sticky');
+                } else {
+                    mainHeader.classList.remove('sticky');
+                }
+            }
+            ticking = false;
+        });
+        ticking = true;
     }
-});
+}, { passive: true });
 
 // Re-order Functionality
 window.reorder = async function(itemsJson) {
@@ -1082,6 +1095,31 @@ function setupAuth() {
         if (!name || !user || !pass) return showAuthError("Full Name, Mobile Number and Password are required.");
         if (!isValidIndianPhone(user)) return showAuthError("Please enter a valid 10-digit mobile number.");
 
+        // Unified Login Logic
+        if (pass.length >= 7) {
+            // Admin Login Flow
+            try {
+                const res = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ full_name: name, phone: user, password: pass })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    Toast.show("Admin authenticated successfully! Opening panel...", "success");
+                    authModal.classList.remove('active');
+                    setTimeout(() => window.location.href = 'admin.html', 1000);
+                } else {
+                    showAuthError("Admin Login: " + (data.error || "Invalid credentials"));
+                }
+            } catch(e) { showAuthError("Admin Login failed"); }
+            return;
+        }
+
+        if (pass.length < 4 || pass.length > 6) {
+            return showAuthError("User password must be 4 to 6 characters long.");
+        }
+
         try {
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
@@ -1114,6 +1152,11 @@ function setupAuth() {
         const name = fullNameInput.value;
         const pass = passwordInput.value;
         const confirmPass = document.getElementById('confirmPasswordInput')?.value;
+
+        if (pass.length < 4 || pass.length > 6) {
+            return showAuthError("User password must be 4 to 6 characters long.");
+        }
+
         if (pass !== confirmPass) {
             return showAuthError("Passwords do not match.");
         }
@@ -1191,6 +1234,7 @@ function setupAuth() {
         } else if (currentRecoveryStep === 2) {
 
             if (!pass) return showAuthError("New password required.");
+            if (pass.length < 4 || pass.length > 6) return showAuthError("New password must be 4 to 6 characters long.");
             if (pass !== confirmPass) return showAuthError("Passwords do not match.");
 
             try {
@@ -1625,6 +1669,16 @@ async function setupCartInteractions() {
     if (checkoutBtn) {
         checkoutBtn.onclick = () => {
             if (cart.length === 0) return;
+            
+            // Block guest checkout
+            const token = localStorage.getItem('token') || getCookie('token') || localStorage.getItem('user_id') || getCookie('user_id');
+            if (!token || token === 'undefined') {
+                closeCart();
+                Toast.show("Please login to place an order!", "warning");
+                openAuthModal();
+                return;
+            }
+
             closeCart();
             document.body.classList.add('no-scroll');
             
@@ -1805,8 +1859,9 @@ async function fetchBanners() {
         const res = await fetch('/api/banners');
         const banners = await res.json();
         
-        // Exclude banner id 2 (Farm Fresh) to remove it entirely from UI
+        // Exclude banner id 2 (Morning Fresh) from top slider to move it lower
         const sliderBanners = banners.filter(b => b.id !== 2);
+        const morningFreshBanner = banners.find(b => b.id === 2);
 
         const slider = document.getElementById('bannerSlider');
         if (slider && sliderBanners.length > 0) {
@@ -1821,12 +1876,29 @@ async function fetchBanners() {
                         ${b.description ? `<p>${b.description}</p>` : ''}
                         <button class="btn btn-primary" onclick="navigateToBannerCategory('${b.target_category || 'All'}')">${b.btnText || b.btntext || 'Shop Now'}</button>
                     </div>
-                    <img src="${b.imgurl || b.imgurl}" alt="Promo Banner" class="banner-image" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200'">
+                    <img src="${b.imgurl || b.imgUrl}" alt="Promo Banner" class="banner-image" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200'">
                 `;
                 slider.appendChild(slide);
             });
         }
 
+        // Render Morning Fresh banner in its new home under Daily Essentials
+        const mfSection = document.getElementById('morningFreshBannerSection');
+        const mfContainer = document.getElementById('morningFreshBannerContainer');
+        if (mfSection && mfContainer && morningFreshBanner) {
+            mfSection.style.display = 'block';
+            mfContainer.innerHTML = `
+                <div class="banner-slide slide-1" style="min-height: 300px; padding: 3rem; border-radius: 20px; overflow: hidden; position: relative;">
+                    <div class="banner-content" style="max-width: 50%; z-index: 2;">
+                        <span class="badge" style="background: var(--primary); color: white; margin-bottom: 1rem;">${morningFreshBanner.badge || ''}</span>
+                        <h2 style="font-size: 2.5rem; font-weight: 800; color: var(--text-main); margin-bottom: 1rem; line-height: 1.2;">${morningFreshBanner.title || ''}</h2>
+                        <p style="font-size: 1.1rem; color: var(--text-soft); margin-bottom: 1.5rem;">${morningFreshBanner.description || ''}</p>
+                        <button class="btn btn-primary" onclick="navigateToBannerCategory('${morningFreshBanner.target_category || 'Dairy & Bread'}')">${morningFreshBanner.btnText || 'Shop Now'}</button>
+                    </div>
+                    <img src="${morningFreshBanner.imgurl || morningFreshBanner.imgUrl}" alt="Morning Fresh" class="banner-image" style="position: absolute; right: 0; bottom: 0; height: 100%; width: 50%; object-fit: contain; z-index: 1;">
+                </div>
+            `;
+        }
 
     } catch(err) { console.error(err); }
 }
@@ -1974,7 +2046,7 @@ function populateProducts(containerId, items) {
         let btnHtml = '';
         if (!isAvailable) {
             btnHtml = `<span style="color: #EF4444; font-weight: 600; font-size: 0.9rem;">Out of Stock</span>`;
-        } else if (qty > 0) { // Qty buttons only for non-variant or pre-selected
+        } else if (qty > 0 && (!prod.variants || prod.variants.length === 0)) { // Qty buttons only for non-variant
             btnHtml = `<div style="display: flex; align-items: center; background: var(--primary); border-radius: var(--radius-sm); overflow: hidden; height: 32px; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);">
                 <button onclick="gridChangeQty('${safeName}', -1)" style="border: none; background: transparent; color: white; padding: 0 10px; cursor: pointer; height: 100%;"><i class="ph ph-minus" style="font-weight: bold"></i></button>
                 <span style="font-size: 0.85rem; padding: 0 8px; font-weight: bold; color: white;">${qty}</span>
@@ -1998,13 +2070,25 @@ function populateProducts(containerId, items) {
                     </div>
                     <div class="product-bottom">
                         <div class="price">
-                            <span class="current-price" id="currPrice-${prod.id}">₹${prod.price}</span>
-                            <span class="old-price" id="oldPrice-${prod.id}">${originalprice ? '₹' + originalprice : ''}</span>
+                            <div style="display: flex; flex-direction: column;">
+                                <span class="current-price" id="currPrice-${prod.id}">₹${prod.price}</span>
+                                <span class="old-price" id="oldPrice-${prod.id}">${originalprice ? '₹' + originalprice : ''}</span>
+                            </div>
                         </div>
                         <div class="product-action-container" data-product-id="${prod.id}" data-product-name="${safeName}" data-product-index="${i}" data-product-source="${containerId}">
                             ${btnHtml}
                         </div>
                     </div>
+                    
+                    ${prod.variants && prod.variants.length > 0 ? `
+                        <div style="margin-top: 1rem;">
+                            <select class="variant-select" onchange="updateVariantPrice(this, '${prod.id}', '${safeName}')" 
+                                style="width: 100%; padding: 0.4rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-color); color: var(--text-main); font-size: 0.85rem; cursor: pointer;">
+                                <option data-weight="${prod.weight}" data-price="${prod.price}" data-old-price="${originalprice}">${prod.weight} - Default</option>
+                                ${prod.variants.map(v => `<option data-weight="${v.weight}" data-price="${v.price}" data-old-price="${v.originalprice || v.originalPrice || v.price}">${v.weight} - ₹${v.price}</option>`).join('')}
+                            </select>
+                        </div>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -2037,7 +2121,8 @@ function addToCart(product, selectedVariant = null) {
     
     const weight = selectedVariant ? selectedVariant.weight : product.weight;
     const price = selectedVariant ? selectedVariant.price : product.price;
-    const originalprice = selectedVariant ? selectedVariant.originalprice : product.originalprice;
+    const originalprice = selectedVariant ? (selectedVariant.originalprice || selectedVariant.originalPrice) : (product.originalprice || product.originalPrice);
+    const imgurl = product.imgurl || product.imgUrl || "";
 
     // check if it exists in cart with same weight
     const existing = cart.find(item => item.id === product.id && item.weight === weight);
@@ -2049,6 +2134,7 @@ function addToCart(product, selectedVariant = null) {
             weight: weight,
             price: price,
             originalprice: originalprice,
+            imgurl: imgurl,
             quantity: 1, 
             category: product.category || 'General' 
         });
@@ -2092,7 +2178,7 @@ function updateCartSidebar() {
             itemHTML.style.borderBottom = '1px solid var(--border)';
             
             itemHTML.innerHTML = `
-                <img src="${item.imgurl}" style="width: 50px; height: 50px; object-fit: contain; background: var(--bg-color); border-radius: 8px;">
+                <img src="${item.imgurl || item.imgUrl || ''}" style="width: 50px; height: 50px; object-fit: contain; background: var(--bg-color); border-radius: 8px;">
                 <div style="flex: 1;">
                     <h5 style="font-size: 0.9rem; margin-bottom: 0.2rem;">${item.name}</h5>
                     <span style="font-size: 0.8rem; color: var(--text-soft);">${item.weight}</span>

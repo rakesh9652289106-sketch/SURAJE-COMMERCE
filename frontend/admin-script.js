@@ -30,7 +30,7 @@ async function checkInitialAuth() {
         } else {
             if (overlay) overlay.style.display = 'flex';
             if (main) main.style.display = 'none';
-            setAuthMode(data.exists ? 'login' : 'setup');
+            setAuthMode('login');
         }
     } catch (e) {
         // Fallback if API fails
@@ -235,9 +235,10 @@ function refreshWithToast(message, type = 'success') {
     location.reload();
 }
 
-async function fetchDashboardStats() {
+async function fetchDashboardStats(date = "") {
     try {
-        const res = await fetch('/api/admin/dashboard/stats');
+        const url = date ? `/api/admin/dashboard/stats?date=${date}` : '/api/admin/dashboard/stats';
+        const res = await fetch(url);
         const { stats } = await res.json();
         if (stats) {
             if (document.getElementById('statRevenue')) document.getElementById('statRevenue').innerText = `₹${Math.round(stats.totalRevenue)}`;
@@ -336,20 +337,40 @@ async function fetchAdminProducts() {
         
         tbody.innerHTML = products.map(p => {
             const stockLevel = p.stock_quantity || 0;
-            const stockColor = stockLevel < 10 ? '#EF4444' : '#10B981';
-            const stockBg = stockLevel < 10 ? '#FEF2F2' : '#F0FDF4';
+            const isLowStock = stockLevel < 10;
+            const statusColor = isLowStock ? '#EF4444' : '#10B981';
+            const statusBg = isLowStock ? '#FEF2F2' : '#F0FDF4';
 
             return `
-                <tr>
-                    <td>#${p.id}</td>
-                    <td><img src="${p.imgUrl || p.imgurl || 'https://via.placeholder.com/60?text=Product'}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid #E2E8F0; background:#f8fafc;"></td>
-                    <td><div style="font-weight:600; color:#1E293B;">${p.name}</div></td>
-                    <td><span class="badge" style="background:#F1F5F9; color:#475569; text-transform:none;">${p.category}</span></td>
-                    <td style="font-weight:700;">₹${p.price}</td>
+                <tr style="transition: background 0.2s ease;">
+                    <td style="color: #64748B; font-family: monospace; font-size: 0.85rem;">#${p.id}</td>
                     <td>
-                        <span style="display:inline-block; padding:2px 8px; border-radius:12px; font-weight:700; font-size:0.8rem; background:${stockBg}; color:${stockColor}; border: 1px solid ${stockLevel < 10 ? '#FEE2E2' : '#DCFCE7'};">
-                            ${stockLevel} ${stockLevel < 10 ? '<i class="ph-fill ph-warning" style="font-size:0.75rem; vertical-align:middle;"></i>' : ''}
+                        <div style="position: relative; width: 48px; height: 48px; border-radius: 12px; overflow: hidden; border: 1px solid #E2E8F0; background: #F8FAFC; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <img src="${p.imgurl || p.imgUrl || 'https://via.placeholder.com/60?text=Product'}" 
+                                 style="width: 100%; height: 100%; object-fit: cover;"
+                                 onerror="this.src='https://via.placeholder.com/60?text=Error'">
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-weight: 600; color: #1E293B; font-size: 0.95rem;">${p.name}</div>
+                        <div style="font-size: 0.75rem; color: #64748B;">${p.weight || 'N/A'}</div>
+                    </td>
+                    <td>
+                        <span style="display: inline-block; padding: 4px 10px; border-radius: 20px; background: #F1F5F9; color: #475569; font-size: 0.75rem; font-weight: 600;">
+                            ${p.category}
                         </span>
+                    </td>
+                    <td>
+                        <div style="font-weight: 700; color: #0F172A;">₹${p.price}</div>
+                        <div style="font-size: 0.7rem; color: #94A3B8; text-decoration: line-through;">₹${p.originalprice || p.originalPrice || p.price}</div>
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; background: ${statusBg}; color: ${statusColor}; border: 1px solid ${isLowStock ? '#FEE2E2' : '#DCFCE7'};">
+                                ${stockLevel}
+                            </span>
+                            ${isLowStock ? '<i class="ph-fill ph-warning" style="color: #EF4444; font-size: 0.9rem;" title="Low Stock"></i>' : ''}
+                        </div>
                     </td>
                     <td>
                         <label class="toggle-switch">
@@ -369,10 +390,14 @@ async function fetchAdminProducts() {
                             <span class="slider" style="background:${p.is_daily_essential ? '#3B82F6' : '#ccc'}"></span>
                         </label>
                     </td>
-                    <td>
-                        <div style="display:flex; gap:6px;">
-                            <button onclick='openEditModal(${JSON.stringify(p).replace(/'/g, "&apos;")})' class="action-btn" style="background:#4F46E5;" title="Edit Product"><i class="ph ph-pencil"></i></button>
-                            <button onclick="deleteProduct(${p.id})" class="action-btn" style="background:#EF4444;" title="Delete Product"><i class="ph ph-trash"></i></button>
+                    <td style="text-align: right;">
+                        <div style="display: flex; gap: 8px; justify-content: flex-end; padding-right: 1rem;">
+                            <button onclick="openEditModal(${p.id})" class="action-btn" style="background: #4F46E5; width: 32px; height: 32px; border-radius: 8px;" title="Edit Product">
+                                <i class="ph ph-pencil-simple" style="font-size: 1rem;"></i>
+                            </button>
+                            <button onclick="deleteProduct(${p.id})" class="action-btn" style="background: #EF4444; width: 32px; height: 32px; border-radius: 8px;" title="Delete Product">
+                                <i class="ph ph-trash" style="font-size: 1rem;"></i>
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -409,13 +434,13 @@ async function handleAddProduct(e) {
     e.preventDefault();
     const payload = {
         name: document.getElementById('pName').value,
-        price: Number(document.getElementById('pPrice').value),
-        originalPrice: Number(document.getElementById('pOriginalPrice').value),
+        price: Number(document.getElementById('pPrice').value) || 0,
+        originalprice: Number(document.getElementById('pOriginalPrice').value) || 0,
         category: document.getElementById('pCategory').value,
-        stock_quantity: Number(document.getElementById('pStock').value),
+        stock_quantity: Number(document.getElementById('pStock').value) || 0,
         weight: document.getElementById('pWeight').value,
         discount: document.getElementById('pDiscount').value,
-        imgUrl: document.getElementById('pImageUrl').value,
+        imgurl: document.getElementById('pImageUrl').value,
         is_daily_essential: document.getElementById('pDailyEssential').checked ? 1 : 0,
         variants: tempVariants
     };
@@ -465,13 +490,13 @@ async function handleEditProduct(e) {
     const id = document.getElementById('editPId').value;
     const payload = {
         name: document.getElementById('editPName').value,
-        price: Number(document.getElementById('editPPrice').value),
-        originalPrice: Number(document.getElementById('editPOriginalPrice').value),
+        price: Number(document.getElementById('editPPrice').value) || 0,
+        originalprice: Number(document.getElementById('editPOriginalPrice').value) || 0,
         category: document.getElementById('editPCategory').value,
-        stock_quantity: Number(document.getElementById('editPStock').value),
+        stock_quantity: Number(document.getElementById('editPStock').value) || 0,
         weight: document.getElementById('editPWeight').value,
         discount: document.getElementById('editPDiscount').value,
-        imgUrl: document.getElementById('editPImageUrl').value,
+        imgurl: document.getElementById('editPImageUrl').value,
         is_daily_essential: document.getElementById('editPDailyEssential').checked ? 1 : 0,
         is_trending: document.getElementById('editPTrending').checked ? 1 : 0,
         is_available: document.getElementById('editPAvailable').checked ? 1 : 0,
@@ -519,7 +544,7 @@ window.addVariantToTempList = () => {
     const p = Number(document.getElementById('vPrice').value);
     const op = Number(document.getElementById('vOriginalPrice').value || p);
     if (!w || !p) return;
-    tempVariants.push({ weight: w, price: p, originalPrice: op });
+    tempVariants.push({ weight: w, price: p, originalprice: op });
     renderVariantList('addVariantList', tempVariants, 'add');
     document.getElementById('vWeight').value = ''; document.getElementById('vPrice').value = ''; document.getElementById('vOriginalPrice').value = '';
 };
@@ -529,7 +554,7 @@ window.addVariantToEditList = () => {
     const p = Number(document.getElementById('evPrice').value);
     const op = Number(document.getElementById('evOriginalPrice').value || p);
     if (!w || !p) return;
-    currentEditVariants.push({ weight: w, price: p, originalPrice: op });
+    currentEditVariants.push({ weight: w, price: p, originalprice: op });
     renderVariantList('editVariantList', currentEditVariants, 'edit');
     document.getElementById('evWeight').value = ''; document.getElementById('evPrice').value = ''; document.getElementById('evOriginalPrice').value = '';
 };
@@ -555,6 +580,35 @@ async function populateVariantProductDropdown() {
     }
 }
 
+window.addVariantToNewList = () => {
+    const w = document.getElementById('avWeight').value;
+    const p = Number(document.getElementById('avPrice').value);
+    const op = Number(document.getElementById('avOriginalPrice').value || p);
+    if (!w || !p) return;
+    tempVariants.push({ weight: w, price: p, originalprice: op });
+    renderNewVariantList();
+    document.getElementById('avWeight').value = ''; 
+    document.getElementById('avPrice').value = ''; 
+    document.getElementById('avOriginalPrice').value = '';
+};
+
+function renderNewVariantList() {
+    const container = document.getElementById('addVariantList');
+    if (!container) return;
+    container.innerHTML = tempVariants.map((v, idx) => `
+        <div style="background: white; border: 1px solid #E2E8F0; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.03);">
+            <span style="font-weight: 600;">${v.weight}</span>
+            <span style="color: #64748B;">₹${v.price}</span>
+            <button type="button" onclick="removeVariantFromNewList(${idx})" style="border: none; background: none; color: #EF4444; padding: 0; cursor: pointer; display: flex;"><i class="ph ph-x-circle"></i></button>
+        </div>
+    `).join('');
+}
+
+window.removeVariantFromNewList = (idx) => {
+    tempVariants.splice(idx, 1);
+    renderNewVariantList();
+};
+
 window.loadProductForQuickVariants = async (id) => {
     const res = await fetch(`/api/products/${id}`);
     const p = await res.json();
@@ -568,6 +622,7 @@ window.loadProductForQuickVariants = async (id) => {
 
 function renderQuickVariantList() {
     const container = document.getElementById('quickVariantList');
+    if (!container) return;
     container.innerHTML = tempVariants.map((v, idx) => `
         <div style="display:flex; justify-content:space-between; background:white; padding:8px 12px; border:1px solid #E2E8F0; border-radius:8px; margin-bottom:0.5rem;">
             <span>${v.weight} - ₹${v.price}</span>
@@ -581,9 +636,11 @@ window.addQuickVariant = () => {
     const p = Number(document.getElementById('qvPrice').value);
     const op = Number(document.getElementById('qvOriginalPrice').value || p);
     if (!w || !p) return;
-    tempVariants.push({ weight: w, price: p, originalPrice: op });
+    tempVariants.push({ weight: w, price: p, originalprice: op });
     renderQuickVariantList();
-    document.getElementById('qvWeight').value = ''; document.getElementById('qvPrice').value = ''; document.getElementById('qvOriginalPrice').value = '';
+    document.getElementById('qvWeight').value = ''; 
+    document.getElementById('qvPrice').value = ''; 
+    document.getElementById('qvOriginalPrice').value = '';
 };
 
 window.removeQuickVariant = (idx) => {
@@ -696,31 +753,38 @@ async function deleteOrder(id) {
     }
 }
 
-async function fetchPaymentHistory() {
-    const res = await fetch('/api/admin/payments');
-    const payments = await res.json();
-    document.getElementById('paymentTableBody').innerHTML = payments.map(p => `
-        <tr>
-            <td>#${p.order_id}</td>
-            <td>${p.full_name}<br><small>${p.phone}</small></td>
-            <td>₹${p.amount}</td>
-            <td>${p.method}</td>
-            <td><span style="color:#10B981; font-weight:700;">RECEIVED</span></td>
-            <td>${new Date(p.created_at).toLocaleDateString()}</td>
-            <td>
-                <button onclick="Toast.show('Receipt view coming soon', 'info')" class="action-btn" style="background:#4F46E5;" title="View Receipt"><i class="ph ph-receipt"></i></button>
-                <button onclick="deleteOrder(${p.order_id})" class="action-btn" style="background:#EF4444;" title="Remove"><i class="ph ph-trash"></i></button>
-            </td>
-        </tr>
-    `).join('');
+async function fetchPaymentHistory(date = "") {
+    try {
+        const url = date ? `/api/admin/payments?date=${date}` : '/api/admin/payments';
+        const res = await fetch(url);
+        const payments = await res.json();
+        const tbody = document.getElementById('paymentTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = payments.map(p => `
+            <tr>
+                <td>#${p.order_id}</td>
+                <td><div style="font-weight:600;">${p.full_name}</div><small>${p.phone}</small></td>
+                <td style="font-weight:700;">₹${p.amount}</td>
+                <td><span class="badge" style="background:#F1F5F9; color:#475569; text-transform:uppercase; font-size:0.7rem;">${p.method}</span></td>
+                <td><span style="color:#10B981; font-weight:700;">RECEIVED</span></td>
+                <td style="font-size:0.85rem; color:#64748B;">${new Date(p.created_at).toLocaleString()}</td>
+                <td>
+                    <button onclick="deleteOrder(${p.order_id})" class="action-btn" style="background:#EF4444;" title="Delete Record"><i class="ph ph-trash"></i></button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) {}
 }
 
 // --- SUPPORT ---
 
-async function fetchMessages() {
-    const res = await fetch('/api/admin/support-messages');
+async function fetchMessages(date = "") {
+    const url = date ? `/api/admin/support-messages?date=${date}` : '/api/admin/support-messages';
+    const res = await fetch(url);
     const messages = await res.json();
-    document.getElementById('messagesTableBody').innerHTML = messages.map(m => `
+    const tbody = document.getElementById('messagesTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = messages.map(m => `
         <tr>
             <td>${new Date(m.created_at).toLocaleDateString()}</td>
             <td>${m.name}<br><small>${m.email}</small></td>
@@ -776,11 +840,20 @@ async function fetchShopSettings() {
     const res = await fetch('/api/settings');
     const s = await res.json();
     if (s) {
-        document.getElementById('sEmail').value = s.shop_email;
-        document.getElementById('sPhone').value = s.shop_phone;
-        document.getElementById('sAddress').value = s.shop_address;
-        document.getElementById('sImage').value = s.shop_image;
+        document.getElementById('sEmail').value = s.shop_email || '';
+        document.getElementById('sPhone').value = s.shop_phone || '';
+        document.getElementById('sAddress').value = s.shop_address || '';
+        document.getElementById('sImage').value = s.shop_image || '';
     }
+
+    try {
+        const adminRes = await fetch('/api/admin/info');
+        const adminInfo = await adminRes.json();
+        if (adminInfo) {
+            document.getElementById('secFullName').value = adminInfo.full_name || '';
+            document.getElementById('secPhone').value = adminInfo.phone || '';
+        }
+    } catch (e) { console.warn("Could not fetch admin info", e); }
 }
 
 async function handleSaveSettings(e) {
@@ -822,16 +895,24 @@ async function handleSaveDeliverySettings(e) {
 
 // --- NOTIFICATIONS ---
 
-async function fetchNotificationsHistory() {
-    const res = await fetch('/api/admin/notifications/history');
-    const history = await res.json();
-    document.getElementById('notifHistoryBody').innerHTML = history.map(n => `
-        <tr>
-            <td>${new Date(n.created_at).toLocaleString()}</td>
-            <td>${n.message}</td>
-            <td><button onclick="deleteNotification(${n.id})" class="action-btn" style="background:#EF4444;"><i class="ph ph-trash"></i></button></td>
-        </tr>
-    `).join('');
+async function fetchNotificationsHistory(date = "") {
+    try {
+        const url = date ? `/api/notifications/history?date=${date}` : '/api/notifications/history';
+        const res = await fetch(url);
+        const notifications = await res.json();
+        const tbody = document.getElementById('notificationsTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = notifications.map(n => `
+            <tr>
+                <td>#${n.id}</td>
+                <td>${n.message}</td>
+                <td>${new Date(n.created_at).toLocaleString()}</td>
+                <td>
+                    <button onclick="deleteNotification(${n.id})" class="action-btn" style="background:#EF4444;"><i class="ph ph-trash"></i></button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) {}
 }
 
 async function handleSendNotification(e) {
@@ -978,10 +1059,10 @@ async function fetchAdminCategories() {
     document.getElementById('categoriesTableBody').innerHTML = cats.map(c => `
         <tr>
             <td>#${c.id}</td>
-            <td><i class="ph ${c.iconurl || c.iconUrl}" style="font-size:1.2rem;"></i></td>
+            <td><i class="ph ${c.iconUrl || c.iconurl}" style="font-size:1.2rem;"></i></td>
             <td>${c.name}</td>
             <td>
-                <button onclick="openEditCategoryModal(${c.id}, '${c.name}', '${c.iconUrl}')" class="action-btn" style="background:#4F46E5;"><i class="ph ph-pencil"></i></button>
+                <button onclick="openEditCategoryModal(${c.id}, '${c.name}', '${c.iconUrl || c.iconurl}')" class="action-btn" style="background:#4F46E5;"><i class="ph ph-pencil"></i></button>
                 <button onclick="deleteCategory(${c.id})" class="action-btn" style="background:#EF4444;"><i class="ph ph-trash"></i></button>
             </td>
         </tr>
@@ -1005,7 +1086,7 @@ window.openEditCategoryModal = (id, name, icon) => {
 async function handleCategorySubmit(e) {
     e.preventDefault();
     const id = document.getElementById('catId').value;
-    const data = { name: document.getElementById('catName').value, iconurl: document.getElementById('catIcon').value };
+    const data = { name: document.getElementById('catName').value, iconUrl: document.getElementById('catIcon').value };
     const method = id ? 'PUT' : 'POST';
     const url = id ? `/api/admin/categories/${id}` : '/api/admin/categories';
     await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
@@ -1054,28 +1135,31 @@ async function deleteBrand(id) {
     }
 }
 
-async function fetchAdminCoupons() {
-    const res = await fetch('/api/admin/coupons');
-    const coupons = await res.json();
-    document.getElementById('couponsTableBody').innerHTML = coupons.map(c => `
-        <tr>
-            <td><code>${c.code}</code></td>
-            <td>${c.discount_value}${c.discount_type === 'percent' ? '%' : '₹'}</td>
-            <td>${c.discount_type}</td>
-            <td>₹${c.min_amount}</td>
-            <td>${c.useCount}</td>
-            <td>${new Date(c.expiry_date).toLocaleDateString()}</td>
-            <td><button onclick="deleteCoupon(${c.id})" class="action-btn" style="background:#EF4444;" title="Delete Coupon"><i class="ph ph-trash"></i></button></td>
-        </tr>
-    `).join('');
-    
-    // Stats
-    const statsRes = await fetch('/api/admin/coupons/stats');
-    const stats = await statsRes.json();
-    if (document.getElementById('statCouponUses')) document.getElementById('statCouponUses').innerText = stats.totalUses;
-    if (document.getElementById('statCouponSaved')) document.getElementById('statCouponSaved').innerText = `₹${stats.totalSaved}`;
-    if (document.getElementById('statTodayUses')) document.getElementById('statTodayUses').innerText = stats.todayUses;
-    if (document.getElementById('statTodaySaved')) document.getElementById('statTodaySaved').innerText = `₹${stats.todaySaved}`;
+async function fetchAdminCoupons(date = "") {
+    try {
+        const statsRes = await fetch('/api/admin/coupons/stats');
+        const stats = await statsRes.json();
+        if (document.getElementById('statTotalSaved')) document.getElementById('statTotalSaved').innerText = `₹${Math.round(stats.totalSaved)}`;
+        if (document.getElementById('statTotalUses')) document.getElementById('statTotalUses').innerText = stats.totalUses;
+
+        const url = date ? `/api/admin/coupons?date=${date}` : '/api/admin/coupons';
+        const res = await fetch(url);
+        const coupons = await res.json();
+        const tbody = document.getElementById('couponsTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = coupons.map(c => `
+            <tr>
+                <td><div style="font-weight:700; color:#1E293B;">${c.code}</div></td>
+                <td><span class="badge" style="background:#F1F5F9; color:#475569;">${c.discount_type === 'percent' ? c.discount_value + '%' : '₹' + c.discount_value}</span></td>
+                <td>₹${c.min_amount}</td>
+                <td>${c.useCount}</td>
+                <td style="font-size:0.85rem; color:#64748B;">${new Date(c.expiry_date).toLocaleDateString()}</td>
+                <td>
+                    <button onclick="deleteCoupon(${c.id})" class="action-btn" style="background:#EF4444;"><i class="ph ph-trash"></i></button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) {}
 }
 
 async function handleCouponSubmit(e) {
@@ -1103,19 +1187,24 @@ async function deleteCoupon(id) {
     }
 }
 
-async function fetchUsers(search = "") {
-    const res = await fetch(`/api/admin/users?search=${search}`);
+async function fetchUsers(search = "", date = "") {
+    let url = `/api/admin/users?search=${search}`;
+    if (date) url += `&date=${date}`;
+    const res = await fetch(url);
     const users = await res.json();
-    document.getElementById('usersTableBody').innerHTML = users.map(u => `
+    const tbody = document.getElementById('usersTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = users.map(u => `
         <tr>
             <td>#${u.id}</td>
-            <td>${u.full_name || 'N/A'}<br><small>${u.phone || u.username}</small></td>
-            <td>${u.email || 'N/A'}</td>
-            <td>${new Date(u.created_at).toLocaleDateString()}</td>
-            <td><span class="badge ${u.status}">${u.status}</span></td>
+            <td><div style="font-weight:600;">${u.full_name || 'User'}</div><small>${u.username}</small></td>
+            <td>${u.email}</td>
+            <td>${u.phone || 'N/A'}</td>
+            <td><span class="badge ${u.status || 'active'}">${u.status || 'active'}</span></td>
+            <td><small>${new Date(u.created_at).toLocaleDateString()}</small></td>
             <td>
-                <button onclick="toggleUserStatus(${u.id}, '${u.status}')" class="action-btn" style="background:#4F46E5;" title="${u.status === 'active' ? 'Block User' : 'Unblock User'}"><i class="ph ${u.status === 'active' ? 'ph-user-minus' : 'ph-user-plus'}"></i></button>
-                <button onclick="deleteUser(${u.id})" class="action-btn" style="background:#EF4444;" title="Delete User"><i class="ph ph-trash"></i></button>
+                <button onclick="toggleUserStatus(${u.id}, '${u.status === 'blocked' ? 'active' : 'blocked'}')" class="action-btn" style="background:${u.status === 'blocked' ? '#10B981' : '#F59E0B'};" title="${u.status === 'blocked' ? 'Unblock' : 'Block'} User"><i class="ph ph-prohibit"></i></button>
+                <button onclick="deleteUser(${u.id})" class="action-btn" style="background:#EF4444; margin-left:5px;"><i class="ph ph-trash"></i></button>
             </td>
         </tr>
     `).join('');
@@ -1138,16 +1227,20 @@ async function deleteUser(id) {
     }
 }
 
-async function fetchAdminReviews() {
-    const res = await fetch('/api/admin/reviews');
+async function fetchAdminReviews(date = "") {
+    const url = date ? `/api/admin/reviews?date=${date}` : '/api/admin/reviews';
+    const res = await fetch(url);
     const reviews = await res.json();
-    document.getElementById('reviewsTableBody').innerHTML = reviews.map(r => `
+    const tbody = document.getElementById('reviewsTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = reviews.map(r => `
         <tr>
+            <td><div style="font-weight:600;">${r.product_name}</div></td>
+            <td><div style="font-weight:600;">${r.username}</div></td>
+            <td><div style="color:#F59E0B;">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div></td>
+            <td><small>${r.comment}</small></td>
             <td>${new Date(r.created_at).toLocaleDateString()}</td>
-            <td>${r.product_name}</td>
-            <td>${r.username}</td>
-            <td>${'★'.repeat(r.rating)}</td>
-            <td><button onclick="deleteReview(${r.id})" class="action-btn" style="background:#EF4444;" title="Delete Review"><i class="ph ph-trash"></i></button></td>
+            <td><button onclick="deleteReview(${r.id})" class="action-btn" style="background:#EF4444;"><i class="ph ph-trash"></i></button></td>
         </tr>
     `).join('');
 }
@@ -1194,6 +1287,8 @@ function setupEventListeners() {
 async function handleSecurityUpdate(e) {
     e.preventDefault();
     const newPassword = document.getElementById('secNewPassword').value;
+    const full_name = document.getElementById('secFullName').value;
+    const phone = document.getElementById('secPhone').value;
     const security_q1 = document.getElementById('secQ1').value;
     const security_a1 = document.getElementById('secA1').value;
     const security_q2 = document.getElementById('secQ2').value;
@@ -1206,6 +1301,8 @@ async function handleSecurityUpdate(e) {
     try {
         const payload = {};
         if (newPassword) payload.newPassword = newPassword;
+        if (full_name) payload.full_name = full_name;
+        if (phone) payload.phone = phone;
         if (security_q1) payload.security_q1 = security_q1;
         if (security_a1) payload.security_a1 = security_a1;
         if (security_q2) payload.security_q2 = security_q2;

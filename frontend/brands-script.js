@@ -117,6 +117,17 @@ function filterByBrand(brandName) {
     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+window.updateVariantPrice = function(select, prodId) {
+    const option = select.options[select.selectedIndex];
+    const price = option.getAttribute('data-price');
+    const oldPrice = option.getAttribute('data-old-price');
+    
+    const currPriceEl = document.getElementById(`currPrice-${prodId}`);
+    const oldPriceEl = document.getElementById(`oldPrice-${prodId}`);
+    if (currPriceEl) currPriceEl.innerText = `₹${price}`;
+    if (oldPriceEl) oldPriceEl.innerText = oldPrice ? `₹${oldPrice}` : '';
+}
+
 function populateProducts(containerId, items) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -132,11 +143,14 @@ function populateProducts(containerId, items) {
         const qty = cartItem ? cartItem.quantity : 0;
         const isWishlisted = wishlist.includes(prod.name);
         const isAvailable = prod.is_available !== 0;
+        
+        const imgurl = prod.imgUrl || prod.imgurl || "";
+        const originalprice = prod.originalPrice || prod.originalprice || 0;
 
         let btnHtml = '';
         if (!isAvailable) {
             btnHtml = `<span style="color: #EF4444; font-weight: 600; font-size: 0.9rem;">Out of Stock</span>`;
-        } else if (qty > 0) {
+        } else if (qty > 0 && (!prod.variants || prod.variants.length === 0)) {
             btnHtml = `<div style="display: flex; align-items: center; background: var(--primary-light); border-radius: var(--radius-sm); overflow: hidden; height: 32px; border: 1px solid var(--primary);">
                 <button onclick="changeInCart('${prod.name}', -1)" style="border: none; background: transparent; color: var(--primary); padding: 0 10px; cursor: pointer; height: 100%; font-weight: bold;">-</button>
                 <span style="font-size: 0.85rem; padding: 0 8px; font-weight: bold; color: var(--primary);">${qty}</span>
@@ -144,23 +158,36 @@ function populateProducts(containerId, items) {
             </div>`;
         } else {
             const escapedName = prod.name.replace(/'/g, "&apos;");
-            btnHtml = `<button class="btn btn-outline btn-sm" onclick="addToCartByName('${escapedName}')">Add to Cart</button>`;
+            btnHtml = `<button class="btn btn-outline btn-sm" onclick="addToCartByBrand('${escapedName}', '${prod.id}')">Add to Cart</button>`;
         }
 
         const html = `
-            <div class="product-card" style="${!isAvailable ? 'opacity: 0.6; filter: grayscale(1);' : ''}">
+            <div class="product-card" style="${!isAvailable ? 'opacity: 0.6; filter: grayscale(1);' : ''}" data-product-id="${prod.id}">
                 <i class="${isWishlisted ? 'ph-fill' : 'ph'} ph-heart" style="position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; color: #EF4444; z-index: 2; cursor: pointer;" onclick="toggleWishlist(event, '${prod.name}')"></i>
-                <img src="${prod.imgUrl}" alt="${prod.name}" class="product-img" onerror="this.src='https://via.placeholder.com/200/F8FAFC/94A3B8?text=Product'">
+                <img src="${imgurl}" alt="${prod.name}" class="product-img" onerror="this.src='https://via.placeholder.com/200/F8FAFC/94A3B8?text=Product'">
                 <div class="product-info">
-                    <span class="product-weight">${prod.weight}</span>
+                    <span class="product-weight" id="weight-${prod.id}">${prod.weight}</span>
                     <h4 class="product-title">${prod.name}</h4>
                     <div class="product-bottom">
                         <div class="price">
-                            <span class="current-price">₹${prod.price}</span>
-                            <span class="old-price">₹${prod.originalPrice || ''}</span>
+                            <div style="display: flex; flex-direction: column;">
+                                <span class="current-price" id="currPrice-${prod.id}">₹${prod.price}</span>
+                                <span class="old-price" id="oldPrice-${prod.id}">${originalprice ? '₹' + originalprice : ''}</span>
+                            </div>
                         </div>
-                        ${btnHtml}
+                        <div class="product-action-container">
+                            ${btnHtml}
+                        </div>
                     </div>
+                    ${prod.variants && prod.variants.length > 0 ? `
+                        <div style="margin-top: 1rem;">
+                            <select class="variant-select" onchange="updateVariantPrice(this, '${prod.id}')" 
+                                style="width: 100%; padding: 0.4rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-color); color: var(--text-main); font-size: 0.85rem; cursor: pointer;">
+                                <option data-weight="${prod.weight}" data-price="${prod.price}" data-old-price="${originalprice}">${prod.weight} - Default</option>
+                                ${prod.variants.map(v => `<option data-weight="${v.weight}" data-price="${v.price}" data-old-price="${v.originalprice || v.originalPrice || v.price}">${v.weight} - ₹${v.price}</option>`).join('')}
+                            </select>
+                        </div>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -168,14 +195,31 @@ function populateProducts(containerId, items) {
     });
 }
 
-window.addToCartByName = function(prodName) {
-    const prod = products.find(p => p.name === prodName);
-    if (prod) {
-        const existing = cart.find(item => item.name === prodName);
+window.addToCartByBrand = function(productName, prodId) {
+    const prod = products.find(p => p.id == prodId || p.name === productName);
+    if(prod) {
+        const card = document.querySelector(`.product-card[data-product-id="${prod.id}"]`);
+        const select = card?.querySelector('.variant-select');
+        
+        let selectedVariant = null;
+        if (select) {
+            const opt = select.options[select.selectedIndex];
+            selectedVariant = {
+                weight: opt.getAttribute('data-weight'),
+                price: Number(opt.getAttribute('data-price')),
+                originalprice: Number(opt.getAttribute('data-old-price'))
+            };
+        }
+
+        const weight = selectedVariant ? selectedVariant.weight : prod.weight;
+        const price = selectedVariant ? selectedVariant.price : prod.price;
+        const originalprice = selectedVariant ? selectedVariant.originalprice : (prod.originalPrice || prod.originalprice);
+
+        const existing = cart.find(item => item.id === prod.id && item.weight === weight);
         if (existing) existing.quantity += 1;
-        else cart.push({ ...prod, quantity: 1 });
+        else cart.push({ ...prod, weight, price, originalprice, quantity: 1 });
         syncCart();
-        Toast.show(`${prodName} added to cart!`, "success");
+        Toast.show(`${productName} added to cart!`, "success");
     }
 };
 
