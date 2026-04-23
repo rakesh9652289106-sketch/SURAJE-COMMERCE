@@ -152,36 +152,58 @@ router.post('/login', async (req, res) => {
         return res.status(400).json({ error: "Full Name, Mobile Number and Password are required." });
     }
     
+    // 1. Try regular users table first
     const { data: user, error } = await supabase.from('users').select('*').or(`username.eq.${username},phone.eq.${username}`).single();
     
-    if (error || !user || !verifyPassword(password, user.password)) {
-        return res.status(401).json({ error: "Invalid credentials." });
+    if (user && verifyPassword(password, user.password)) {
+        const dbName = (user.full_name || '').toLowerCase().trim();
+        const providedName = (full_name || '').toLowerCase().trim();
+
+        if (dbName === providedName) {
+            if (user.status !== 'active') {
+                return res.status(403).json({ error: "Account is inactive. Please contact support." });
+            }
+
+            res.cookie('user_id', user.id, { maxAge: 30 * 24 * 60 * 60 * 1000, path: '/' });
+            res.cookie('username', user.username, { maxAge: 30 * 24 * 60 * 60 * 1000, path: '/' });
+            res.cookie('full_name', user.full_name, { maxAge: 30 * 24 * 60 * 60 * 1000, path: '/' });
+            
+            return res.json({ 
+                message: "Login successful", 
+                username: user.username, 
+                full_name: user.full_name, 
+                language: user.language,
+                user_id: user.id,
+                token: user.id,
+                is_admin: false
+            });
+        }
     }
 
-    const dbName = (user.full_name || '').toLowerCase().trim();
-    const providedName = (full_name || '').toLowerCase().trim();
+    // 2. Fallback to admin_users table
+    const { data: adminUser } = await supabase.from('admin_users').select('*').or(`phone.eq.${username}`).single();
+    if (adminUser && verifyPassword(password, adminUser.password)) {
+        const dbName = (adminUser.full_name || '').toLowerCase().trim();
+        const providedName = (full_name || '').toLowerCase().trim();
 
-    if (dbName !== providedName) {
-        return res.status(401).json({ error: "Name and Mobile Number combination is incorrect." });
+        if (dbName === providedName) {
+            // Success: Set admin cookie and return is_admin flag
+            res.cookie('admin_auth', 'true', { maxAge: 30 * 24 * 60 * 60 * 1000, path: '/' });
+            res.cookie('user_id', adminUser.id, { maxAge: 30 * 24 * 60 * 60 * 1000, path: '/' });
+            res.cookie('username', adminUser.phone, { maxAge: 30 * 24 * 60 * 60 * 1000, path: '/' });
+            res.cookie('full_name', adminUser.full_name, { maxAge: 30 * 24 * 60 * 60 * 1000, path: '/' });
+
+            return res.json({
+                message: "Admin Login successful",
+                username: adminUser.phone,
+                full_name: adminUser.full_name,
+                is_admin: true,
+                token: adminUser.id
+            });
+        }
     }
-    
-    if (user.status !== 'active') {
-        return res.status(403).json({ error: "Account is inactive. Please contact support." });
-    }
 
-    res.cookie('user_id', user.id, { maxAge: 30 * 24 * 60 * 60 * 1000, path: '/' });
-    res.cookie('username', user.username, { maxAge: 30 * 24 * 60 * 60 * 1000, path: '/' });
-    res.cookie('full_name', user.full_name, { maxAge: 30 * 24 * 60 * 60 * 1000, path: '/' });
-    
-    res.json({ 
-        message: "Login successful", 
-        username: user.username, 
-        full_name: user.full_name, 
-        language: user.language,
-        user_id: user.id, // Explicitly provide user_id
-        token: user.id
-    });
-
+    return res.status(401).json({ error: "Invalid credentials or Name/Phone combination incorrect." });
 });
 
 router.post('/logout', (req, res) => {

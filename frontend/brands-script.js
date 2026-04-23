@@ -166,8 +166,18 @@ function populateProducts(containerId, items) {
                 <i class="${isWishlisted ? 'ph-fill' : 'ph'} ph-heart" style="position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; color: #EF4444; z-index: 2; cursor: pointer;" onclick="toggleWishlist(event, '${prod.name}')"></i>
                 <img src="${imgurl}" alt="${prod.name}" class="product-img" onerror="this.src='https://via.placeholder.com/200/F8FAFC/94A3B8?text=Product'">
                 <div class="product-info">
-                    <span class="product-weight" id="weight-${prod.id}">${prod.weight}</span>
+                    ${prod.variants && prod.variants.length > 0 ? `
+                        <select class="variant-select-inline" onchange="updateVariantPrice(this, '${prod.id}')">
+                            <option data-weight="${prod.weight}" data-price="${prod.price}" data-old-price="${originalprice}">${prod.weight}</option>
+                            ${prod.variants.map(v => `<option data-weight="${v.weight}" data-price="${v.price}" data-old-price="${v.originalprice || v.originalPrice || v.price}">${v.weight}</option>`).join('')}
+                        </select>
+                    ` : `<span class="product-weight" id="weight-${prod.id}">${prod.weight}</span>`}
+                    
                     <h4 class="product-title">${prod.name}</h4>
+                    <div class="product-rating">
+                        <i class="ph-fill ph-star"></i>
+                        <span>${prod.rating || 4.5} (${prod.reviews || '10+'})</span>
+                    </div>
                     <div class="product-bottom">
                         <div class="price">
                             <div style="display: flex; flex-direction: column;">
@@ -179,15 +189,6 @@ function populateProducts(containerId, items) {
                             ${btnHtml}
                         </div>
                     </div>
-                    ${prod.variants && prod.variants.length > 0 ? `
-                        <div style="margin-top: 1rem;">
-                            <select class="variant-select" onchange="updateVariantPrice(this, '${prod.id}')" 
-                                style="width: 100%; padding: 0.4rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-color); color: var(--text-main); font-size: 0.85rem; cursor: pointer;">
-                                <option data-weight="${prod.weight}" data-price="${prod.price}" data-old-price="${originalprice}">${prod.weight} - Default</option>
-                                ${prod.variants.map(v => `<option data-weight="${v.weight}" data-price="${v.price}" data-old-price="${v.originalprice || v.originalPrice || v.price}">${v.weight} - ₹${v.price}</option>`).join('')}
-                            </select>
-                        </div>
-                    ` : ''}
                 </div>
             </div>
         `;
@@ -215,7 +216,7 @@ window.addToCartByBrand = function(productName, prodId) {
         const price = selectedVariant ? selectedVariant.price : prod.price;
         const originalprice = selectedVariant ? selectedVariant.originalprice : (prod.originalPrice || prod.originalprice);
 
-        const existing = cart.find(item => item.id === prod.id && item.weight === weight);
+        const existing = cart.find(item => Number(item.id) === Number(prod.id) && String(item.weight) === String(weight));
         if (existing) existing.quantity += 1;
         else cart.push({ ...prod, weight, price, originalprice, quantity: 1 });
         syncCart();
@@ -224,7 +225,10 @@ window.addToCartByBrand = function(productName, prodId) {
 };
 
 window.changeInCart = function(prodName, delta) {
-    const idx = cart.findIndex(item => item.name === prodName);
+    const idx = cart.findIndex(item => Number(item.id) === Number(cart.find(c => c.name === prodName)?.id));
+    // Actually, since this is for simple products, we can use id if we pass it, but name is fine too.
+    // However, for consistency:
+    const existing = cart.find(item => item.name === prodName);
     if (idx > -1) {
         cart[idx].quantity += delta;
         if (cart[idx].quantity <= 0) cart.splice(idx, 1);

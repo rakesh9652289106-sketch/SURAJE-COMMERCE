@@ -21,7 +21,13 @@ async function updateDB() {
             discount: "18% OFF", is_available: 1, is_daily_essential: 1
         }]);
     } else {
-         await supabase.from('products').update({discount: "18% OFF", originalprice: 220, price: 180, weight: "1 kg"}).eq('name', 'Premium Toor Dal');
+         await supabase.from('products').update({
+             discount: "18% OFF", originalprice: 220, price: 180, weight: "1 kg",
+             variants: [
+                 { weight: "500g", price: 95, originalprice: 115 },
+                 { weight: "2kg", price: 350, originalprice: 430 }
+             ]
+         }).eq('name', 'Premium Toor Dal');
     }
 
     // 2. Fresh Red Apples

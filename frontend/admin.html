@@ -422,11 +422,14 @@
                                 <i class="ph ph-stack"></i> Add Weight Variants
                             </h4>
                             <div id="addVariantList" style="margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+                            <div class="form-row" style="align-items: flex-end; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <div class="form-group" style="flex: 2; margin-bottom: 0;"><label style="font-size: 0.75rem;">Weight</label><input type="text" id="vWeight" placeholder="500g" style="padding: 0.5rem;"></div>
+                                <div class="form-group" style="flex: 1; margin-bottom: 0;"><label style="font-size: 0.75rem;">Price</label><input type="number" id="vPrice" placeholder="50" style="padding: 0.5rem;"></div>
+                                <div class="form-group" style="flex: 1; margin-bottom: 0;"><label style="font-size: 0.75rem;">Orig. Price</label><input type="number" id="vOriginalPrice" placeholder="60" style="padding: 0.5rem;"></div>
+                            </div>
                             <div class="form-row" style="align-items: flex-end; gap: 0.5rem;">
-                                <div class="form-group" style="flex: 2; margin-bottom: 0;"><label style="font-size: 0.75rem;">Weight</label><input type="text" id="avWeight" placeholder="500g" style="padding: 0.5rem;"></div>
-                                <div class="form-group" style="flex: 1; margin-bottom: 0;"><label style="font-size: 0.75rem;">Price</label><input type="number" id="avPrice" placeholder="50" style="padding: 0.5rem;"></div>
-                                <div class="form-group" style="flex: 1; margin-bottom: 0;"><label style="font-size: 0.75rem;">Orig. Price</label><input type="number" id="avOriginalPrice" placeholder="60" style="padding: 0.5rem;"></div>
-                                <button type="button" class="btn-submit" onclick="addVariantToNewList()" style="width: auto; height: 38px; padding: 0 1rem; font-size: 0.8rem; background: var(--primary);">Add</button>
+                                <div class="form-group" style="flex: 1; margin-bottom: 0;"><label style="font-size: 0.75rem;">Variant Image URL (Optional)</label><input type="text" id="vImgUrl" placeholder="https://..." style="padding: 0.5rem;"></div>
+                                <button type="button" class="btn-submit" onclick="addVariantToTempList()" style="width: auto; height: 38px; padding: 0 1rem; font-size: 0.8rem; background: var(--primary);">Add</button>
                             </div>
                         </div>
 
@@ -462,15 +465,18 @@
                         <div id="quickVariantList" style="margin-bottom: 1.5rem;"></div>
 
                         <div class="form-row"
-                            style="background: white; padding: 1rem; border-radius: 10px; border: 1px solid #E2E8F0; align-items: flex-end;">
-                            <div class="form-group" style="flex: 2;"><label>Weight / Unit</label><input type="text"
+                            style="background: white; padding: 1rem; border-radius: 10px; border: 1px solid #E2E8F0; align-items: flex-end; margin-bottom: 0.5rem;">
+                            <div class="form-group" style="flex: 2; margin-bottom:0;"><label>Weight / Unit</label><input type="text"
                                     id="qvWeight" placeholder="e.g. 1kg"></div>
-                            <div class="form-group" style="flex: 1;"><label>Price (₹)</label><input type="number"
+                            <div class="form-group" style="flex: 1; margin-bottom:0;"><label>Price (₹)</label><input type="number"
                                     id="qvPrice"></div>
-                            <div class="form-group" style="flex: 1;"><label>Orig. Price</label><input type="number"
+                            <div class="form-group" style="flex: 1; margin-bottom:0;"><label>Orig. Price</label><input type="number"
                                     id="qvOriginalPrice"></div>
+                        </div>
+                        <div class="form-row" style="background: white; padding: 0 1rem 1rem; border-radius: 0 0 10px 10px; border: 1px solid #E2E8F0; border-top:none; align-items: flex-end;">
+                            <div class="form-group" style="flex: 1; margin-bottom:0;"><label>Variant Image URL</label><input type="text" id="qvImgUrl" placeholder="https://..."></div>
                             <button type="button" class="btn-submit" onclick="addQuickVariant()"
-                                style="width: auto; padding: 0.6rem 1.5rem; margin-bottom: 1rem;">Add Variant</button>
+                                style="width: auto; padding: 0.6rem 1.5rem;">Add Variant</button>
                         </div>
 
                         <div style="margin-top: 2rem; display: flex; gap: 1rem;">
@@ -990,7 +996,7 @@
                     </h4>
                     <div id="editVariantList" style="margin-bottom: 1rem;"></div>
                     <div class="form-row"
-                        style="background: #F8FAFC; padding: 0.5rem; border-radius: 8px; align-items: flex-end;">
+                        style="background: #F8FAFC; padding: 0.5rem; border-radius: 8px; align-items: flex-end; margin-bottom: 0.5rem;">
                         <div class="form-group" style="flex:1; margin-bottom:0;"><label
                                 style="font-size:0.75rem;">Weight</label><input type="text" id="evWeight"
                                 style="padding:0.4rem;"></div>
@@ -999,6 +1005,9 @@
                                 style="padding:0.4rem;"></div>
                         <div class="form-group" style="flex:1; margin-bottom:0;"><label style="font-size:0.75rem;">Orig.
                                 Price</label><input type="number" id="evOriginalPrice" style="padding:0.4rem;"></div>
+                    </div>
+                    <div class="form-row" style="background: #F8FAFC; padding: 0 0.5rem 0.5rem; border-radius: 0 0 8px 8px; align-items: flex-end;">
+                        <div class="form-group" style="flex:1; margin-bottom:0;"><label style="font-size:0.75rem;">Variant Image URL</label><input type="text" id="evImgUrl" style="padding:0.4rem;"></div>
                         <button type="button" class="btn-submit" onclick="addVariantToEditList()"
                             style="width: auto; height: 35px; padding: 0 1rem; font-size: 0.8rem;">Add</button>
                     </div>

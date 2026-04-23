@@ -90,23 +90,33 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("SURAJ Initialization Complete.");
 });
 
-// Sticky Header Logic - Optimized for performance
+// Sticky Header Logic - Show full header on scroll up
 const mainHeader = document.querySelector('header');
-let isHeaderSticky = false;
+let lastScrollTop = 0;
 let ticking = false;
 
 window.addEventListener('scroll', () => {
     if (!ticking) {
         window.requestAnimationFrame(() => {
-            const shouldBeSticky = window.scrollY > 50;
-            if (shouldBeSticky !== isHeaderSticky) {
-                isHeaderSticky = shouldBeSticky;
-                if (isHeaderSticky) {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const scrollDelta = scrollTop - lastScrollTop;
+            
+            // Handle states with a buffer to prevent vibration/jitter
+            if (scrollTop <= 50) {
+                // Near the very top: always show full header
+                mainHeader.classList.remove('sticky');
+            } else if (Math.abs(scrollDelta) > 10) {
+                // Only switch if user has scrolled more than 10px in a direction
+                if (scrollDelta > 0) {
+                    // Scrolling down: show minimized search-bar header
                     mainHeader.classList.add('sticky');
                 } else {
+                    // Scrolling up: restore full header
                     mainHeader.classList.remove('sticky');
                 }
             }
+            
+            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
             ticking = false;
         });
         ticking = true;
@@ -317,25 +327,30 @@ function refreshWishlistIcons() {
 }
 
 function setupNotifications() {
-    const toggle = document.getElementById('notificationsToggle');
+    const desktopToggle = document.getElementById('notificationsToggle');
+    const mobileToggle = document.querySelector('.mobile-notifications-btn');
     const dropdown = document.getElementById('notificationsDropdown');
-    const badge = document.getElementById('notifBadge');
+    const desktopBadge = document.getElementById('notifBadge');
+    const mobileBadge = document.querySelector('.mobile-notif-badge');
     const list = document.getElementById('notifList');
     const totalText = document.getElementById('notifTotalText');
 
-    if (!toggle || !dropdown) return;
+    if (!dropdown) return;
 
-    // Request native notification permission on first interaction or meaningful moment
+    // Request native notification permission
     if (window.Notification && Notification.permission === 'default') {
         Notification.requestPermission();
     }
 
-    toggle.addEventListener('click', (e) => {
+    const toggleHandler = (e) => {
         e.stopPropagation();
         const isVisible = dropdown.style.display === 'block';
         dropdown.style.display = isVisible ? 'none' : 'block';
         if (!isVisible) fetchNotifs();
-    });
+    };
+
+    desktopToggle?.addEventListener('click', toggleHandler);
+    mobileToggle?.addEventListener('click', toggleHandler);
 
     document.getElementById('clearNotifsBtn')?.addEventListener('click', () => {
         const lastId = list?.dataset?.lastId;
@@ -362,20 +377,15 @@ function setupNotifications() {
             const res = await fetch('/api/notifications/history');
             const history = await res.json();
             
-            // Fix: Store the highest ID from history before filtering
             if (list && history.length > 0) {
                 const latestId = history[0].id;
                 const prevLastId = list.dataset.lastId;
                 list.dataset.lastId = latestId;
 
-                // Push Notification Logic: If there is a NEW notification that we haven't seen in this session
                 if (prevLastId && latestId > parseInt(prevLastId)) {
                     const newMsg = history[0].message;
                     if (window.Notification && Notification.permission === 'granted') {
-                        new Notification("SnapBasket Alert", {
-                            body: newMsg,
-                            icon: "/assets/logo-small.png" // Fallback if available
-                        });
+                        new Notification("SnapBasket Alert", { body: newMsg });
                     }
                     if (window.Toast) Toast.show("New Store Message Received!", "info");
                 }
@@ -384,10 +394,16 @@ function setupNotifications() {
             const lastClearedId = parseInt(localStorage.getItem('lastClearedNotifId') || '0');
             const activeNotifs = history.filter(n => n.id > lastClearedId);
             
-            if (badge) {
-                badge.innerText = activeNotifs.length;
-                badge.style.display = activeNotifs.length > 0 ? 'flex' : 'none';
-            }
+            const updateBadges = (count) => {
+                [desktopBadge, mobileBadge].forEach(b => {
+                    if (b) {
+                        b.innerText = count;
+                        b.style.display = count > 0 ? 'flex' : 'none';
+                    }
+                });
+            };
+            
+            updateBadges(activeNotifs.length);
             if (totalText) totalText.innerText = `Total: ${activeNotifs.length}`;
             
             if (list) {
@@ -413,7 +429,6 @@ function setupNotifications() {
     }
     
     fetchNotifs(); 
-    // Poll for updates every 30 seconds
     setInterval(fetchNotifs, 30000);
 }
 
@@ -1095,31 +1110,6 @@ function setupAuth() {
         if (!name || !user || !pass) return showAuthError("Full Name, Mobile Number and Password are required.");
         if (!isValidIndianPhone(user)) return showAuthError("Please enter a valid 10-digit mobile number.");
 
-        // Unified Login Logic
-        if (pass.length >= 7) {
-            // Admin Login Flow
-            try {
-                const res = await fetch('/api/admin/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ full_name: name, phone: user, password: pass })
-                });
-                const data = await res.json();
-                if (res.ok) {
-                    Toast.show("Admin authenticated successfully! Opening panel...", "success");
-                    authModal.classList.remove('active');
-                    setTimeout(() => window.location.href = 'admin.html', 1000);
-                } else {
-                    showAuthError("Admin Login: " + (data.error || "Invalid credentials"));
-                }
-            } catch(e) { showAuthError("Admin Login failed"); }
-            return;
-        }
-
-        if (pass.length < 4 || pass.length > 6) {
-            return showAuthError("User password must be 4 to 6 characters long.");
-        }
-
         try {
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
@@ -1128,6 +1118,13 @@ function setupAuth() {
             });
             const data = await res.json();
             if (res.ok) {
+                if (data.is_admin) {
+                    Toast.show("Admin authenticated! Redirecting to panel...", "success");
+                    authModal.classList.remove('active');
+                    setTimeout(() => window.location.href = 'admin.html', 1000);
+                    return;
+                }
+
                 // Return data contains .token which is the user ID
                 const actualId = data.user_id || data.token || data.id;
                 if (actualId) localStorage.setItem('token', actualId);
@@ -1433,24 +1430,34 @@ function setupSearchFunctionality() {
 }
 
 function setupThemeToggle() {
-    const toggleBtn = document.getElementById('themeToggle');
-    const icon = toggleBtn.querySelector('i');
-    
-    // Check local storage for theme preference
+    const toggleBtns = document.querySelectorAll('.theme-toggle-btn');
+    if (!toggleBtns.length) return;
+
+    const applyTheme = (isDark) => {
+        document.body.classList.toggle('dark-theme', isDark);
+        toggleBtns.forEach(btn => {
+            const icon = btn.querySelector('i');
+            if (icon) {
+                if (isDark) {
+                    icon.classList.replace('ph-moon', 'ph-sun');
+                } else {
+                    icon.classList.replace('ph-sun', 'ph-moon');
+                }
+            }
+        });
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    };
+
+    // Initial check
     if (localStorage.getItem('theme') === 'dark') {
-        document.body.classList.add('dark-theme');
-        icon.classList.replace('ph-moon', 'ph-sun');
+        applyTheme(true);
     }
 
-    toggleBtn.addEventListener('click', () => {
-        document.body.classList.toggle('dark-theme');
-        if (document.body.classList.contains('dark-theme')) {
-            localStorage.setItem('theme', 'dark');
-            icon.classList.replace('ph-moon', 'ph-sun');
-        } else {
-            localStorage.setItem('theme', 'light');
-            icon.classList.replace('ph-sun', 'ph-moon');
-        }
+    toggleBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const isDark = !document.body.classList.contains('dark-theme');
+            applyTheme(isDark);
+        });
     });
 }
 
@@ -1506,14 +1513,8 @@ async function setupCartInteractions() {
         window.selectedDeliveryType = type;
         document.querySelectorAll('.delivery-option-card').forEach(card => {
             card.classList.remove('active');
-            card.style.border = '2px solid #E2E8F0';
-            card.style.background = 'transparent';
-            card.querySelector('i').style.color = '#64748B';
         });
         el.classList.add('active');
-        el.style.border = '2px solid var(--primary)';
-        el.style.background = '#EEF2FF';
-        el.querySelector('i').style.color = 'var(--primary)';
         
         const btn = document.getElementById('deliveryNextBtn');
         if (type === 'Pickup from Shop') {
@@ -2048,12 +2049,12 @@ function populateProducts(containerId, items) {
             btnHtml = `<span style="color: #EF4444; font-weight: 600; font-size: 0.9rem;">Out of Stock</span>`;
         } else if (qty > 0 && (!prod.variants || prod.variants.length === 0)) { // Qty buttons only for non-variant
             btnHtml = `<div style="display: flex; align-items: center; background: var(--primary); border-radius: var(--radius-sm); overflow: hidden; height: 32px; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);">
-                <button onclick="gridChangeQty('${safeName}', -1)" style="border: none; background: transparent; color: white; padding: 0 10px; cursor: pointer; height: 100%;"><i class="ph ph-minus" style="font-weight: bold"></i></button>
+                <button onclick="gridChangeQty(this, '${safeName}', -1, '${prod.id}')" style="border: none; background: transparent; color: white; padding: 0 10px; cursor: pointer; height: 100%;"><i class="ph ph-minus" style="font-weight: bold"></i></button>
                 <span style="font-size: 0.85rem; padding: 0 8px; font-weight: bold; color: white;">${qty}</span>
-                <button onclick="gridChangeQty('${safeName}', 1)" style="border: none; background: transparent; color: white; padding: 0 10px; cursor: pointer; height: 100%;"><i class="ph ph-plus" style="font-weight: bold"></i></button>
+                <button onclick="gridChangeQty(this, '${safeName}', 1, '${prod.id}')" style="border: none; background: transparent; color: white; padding: 0 10px; cursor: pointer; height: 100%;"><i class="ph ph-plus" style="font-weight: bold"></i></button>
             </div>`;
         } else {
-            btnHtml = `<button class="btn btn-outline btn-sm add-to-cart-btn" onclick="addToCartByGrid('${safeName}', '${prod.id}')" style="display: flex; align-items: center; gap: 0.3rem;"><i class="ph ph-shopping-cart"></i> Add</button>`;
+            btnHtml = `<button class="btn btn-outline btn-sm add-to-cart-btn" onclick="addToCartByGrid(this, '${safeName}', '${prod.id}')" style="display: flex; align-items: center; gap: 0.3rem;"><i class="ph ph-shopping-cart"></i> Add</button>`;
         }
 
         const html = `
@@ -2062,11 +2063,17 @@ function populateProducts(containerId, items) {
                 ${prod.discount ? `<span class="discount-badge">${prod.discount}</span>` : ''}
                 <img src="${imgurl}" alt="${prod.name}" class="product-img" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&text=Product'">
                 <div class="product-info">
-                    <span class="product-weight" id="weight-${prod.id}">${prod.weight}</span>
+                    ${prod.variants && prod.variants.length > 0 ? `
+                        <select class="variant-select-inline" onchange="updateVariantPrice(this, '${prod.id}', '${safeName}')">
+                            <option data-weight="${prod.weight}" data-price="${prod.price}" data-old-price="${originalprice}" data-img="${imgurl}">${prod.weight}</option>
+                            ${prod.variants.map(v => `<option data-weight="${v.weight}" data-price="${v.price}" data-old-price="${v.originalprice || v.originalPrice || v.price}" data-img="${v.imgurl || imgurl}">${v.weight}</option>`).join('')}
+                        </select>
+                    ` : `<span class="product-weight" id="weight-${prod.id}">${prod.weight}</span>`}
+                    
                     <h4 class="product-title">${prod.name}</h4>
                     <div class="product-rating" style="cursor: pointer;" onclick="openReviews('${prod.rating || 4.5}', '${prod.reviews || '10+'}', '${prod.name}', '${prod.id}')">
                         <i class="ph-fill ph-star"></i>
-                        <span style="text-decoration: underline;">${prod.rating || 4.5} (${prod.reviews || '10+'})</span>
+                        <span>${prod.rating || 4.5} (${prod.reviews || '10+'})</span>
                     </div>
                     <div class="product-bottom">
                         <div class="price">
@@ -2079,16 +2086,6 @@ function populateProducts(containerId, items) {
                             ${btnHtml}
                         </div>
                     </div>
-                    
-                    ${prod.variants && prod.variants.length > 0 ? `
-                        <div style="margin-top: 1rem;">
-                            <select class="variant-select" onchange="updateVariantPrice(this, '${prod.id}', '${safeName}')" 
-                                style="width: 100%; padding: 0.4rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-color); color: var(--text-main); font-size: 0.85rem; cursor: pointer;">
-                                <option data-weight="${prod.weight}" data-price="${prod.price}" data-old-price="${originalprice}">${prod.weight} - Default</option>
-                                ${prod.variants.map(v => `<option data-weight="${v.weight}" data-price="${v.price}" data-old-price="${v.originalprice || v.originalPrice || v.price}">${v.weight} - ₹${v.price}</option>`).join('')}
-                            </select>
-                        </div>
-                    ` : ''}
                 </div>
             </div>
         `;
@@ -2111,9 +2108,30 @@ window.updateVariantPrice = function(select, prodId, productName) {
     const option = select.options[select.selectedIndex];
     const price = option.getAttribute('data-price');
     const oldPrice = option.getAttribute('data-old-price');
+    const variantImg = option.getAttribute('data-img');
     
-    document.getElementById(`currPrice-${prodId}`).innerText = `₹${price}`;
-    document.getElementById(`oldPrice-${prodId}`).innerText = `₹${oldPrice}`;
+    // Update Price
+    const currPriceEl = document.getElementById(`currPrice-${prodId}`);
+    const oldPriceEl = document.getElementById(`oldPrice-${prodId}`);
+    if (currPriceEl) currPriceEl.innerText = `₹${price}`;
+    if (oldPriceEl) oldPriceEl.innerText = oldPrice && oldPrice !== '0' ? `₹${oldPrice}` : '';
+
+    // Update Image if available
+    const card = select.closest('.product-card');
+    const imgEl = card?.querySelector('.product-img');
+    if (imgEl && variantImg) {
+        // Add a subtle fade transition
+        imgEl.style.opacity = '0.5';
+        setTimeout(() => {
+            imgEl.src = variantImg;
+            imgEl.style.opacity = '1';
+        }, 150);
+    }
+
+    // Refresh quantity buttons for the newly selected variant
+    if (typeof refreshProductButtons === 'function') {
+        refreshProductButtons();
+    }
 }
 
 function addToCart(product, selectedVariant = null) {
@@ -2125,7 +2143,7 @@ function addToCart(product, selectedVariant = null) {
     const imgurl = product.imgurl || product.imgUrl || "";
 
     // check if it exists in cart with same weight
-    const existing = cart.find(item => item.id === product.id && item.weight === weight);
+    const existing = cart.find(item => Number(item.id) === Number(product.id) && String(item.weight) === String(weight));
     if (existing) {
         existing.quantity += 1;
     } else {
@@ -2244,6 +2262,7 @@ function refreshProductButtons() {
     const containers = document.querySelectorAll('.product-action-container');
     containers.forEach(container => {
         const name = container.dataset.productName;
+        const prodId = container.dataset.productId;
         const index = Number(container.dataset.productIndex);
         const source = container.dataset.productSource;
         
@@ -2251,59 +2270,105 @@ function refreshProductButtons() {
         const prod = products.find(p => p.name === name);
         if (!prod) return;
 
-        const cartItem = cart.find(c => c.name === name);
-        const qty = cartItem ? cartItem.quantity : 0;
+        // Calculate quantity of CURRENTLY SELECTED variant in the card
+        const card = container.closest('.product-card');
+        const select = card?.querySelector('.variant-select-inline');
+        let selectedWeight = null;
+        if (select) {
+            selectedWeight = select.options[select.selectedIndex].getAttribute('data-weight');
+        }
+
+        const variantItem = cart.find(c => String(c.id) === String(prodId) && (!selectedWeight || c.weight === selectedWeight));
+        const currentQty = variantItem ? variantItem.quantity : 0;
         const isAvailable = prod.is_available !== 0;
 
         const safeName = prod.name.replace(/'/g, "\\'");
         let btnHtml = '';
         if (!isAvailable) {
             btnHtml = `<span style="color: #EF4444; font-weight: 600; font-size: 0.9rem;">Out of Stock</span>`;
-        } else if (qty > 0 && !prod.variants?.length) {
+        } else if (currentQty > 0) {
+            // Show quantity selector for the selected variant
             btnHtml = `<div style="display: flex; align-items: center; background: var(--primary); border-radius: var(--radius-sm); overflow: hidden; height: 32px; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);">
-                <button onclick="gridChangeQty('${safeName}', -1)" style="border: none; background: transparent; color: white; padding: 0 10px; cursor: pointer; height: 100%;"><i class="ph ph-minus" style="font-weight: bold"></i></button>
-                <span style="font-size: 0.85rem; padding: 0 8px; font-weight: bold; color: white;">${qty}</span>
-                <button onclick="gridChangeQty('${safeName}', 1)" style="border: none; background: transparent; color: white; padding: 0 10px; cursor: pointer; height: 100%;"><i class="ph ph-plus" style="font-weight: bold"></i></button>
+                <button onclick="gridChangeQty(this, '${safeName}', -1, '${prodId}')" style="border: none; background: transparent; color: white; padding: 0 10px; cursor: pointer; height: 100%;"><i class="ph ph-minus" style="font-weight: bold"></i></button>
+                <span style="font-size: 0.85rem; padding: 0 8px; font-weight: bold; color: white;">${currentQty}</span>
+                <button onclick="gridChangeQty(this, '${safeName}', 1, '${prodId}')" style="border: none; background: transparent; color: white; padding: 0 10px; cursor: pointer; height: 100%;"><i class="ph ph-plus" style="font-weight: bold"></i></button>
             </div>`;
         } else {
-            btnHtml = `<button class="btn btn-outline btn-sm add-to-cart-btn" onclick="addToCartByGrid('${safeName}', '${prod.id}')" style="display: flex; align-items: center; gap: 0.3rem;"><i class="ph ph-shopping-cart"></i> Add</button>`;
+            btnHtml = `<button class="btn btn-outline btn-sm add-to-cart-btn" onclick="addToCartByGrid(this, '${safeName}', '${prodId}')" style="display: flex; align-items: center; gap: 0.3rem;"><i class="ph ph-shopping-cart"></i> Add</button>`;
         }
 
         container.innerHTML = btnHtml;
     });
 }
 
-window.addToCartByGrid = function(productName, prodId) {
-    const prod = products.find(p => p.id == prodId || p.name === productName);
+window.addToCartByGrid = function(btnEl, productName, prodId) {
+    const prod = products.find(p => String(p.id) === String(prodId) || p.name === productName);
     if(prod) {
-        // Check if there's a variant selected in the UI
-        const card = document.querySelector(`.product-action-container[data-product-id="${prod.id}"]`)?.closest('.product-card');
-        const select = card?.querySelector('.variant-select');
+        // Find the card containing THIS button
+        const card = btnEl ? btnEl.closest('.product-card') : document.querySelector(`.product-action-container[data-product-id="${prod.id}"]`)?.closest('.product-card');
+        const select = card?.querySelector('.variant-select-inline');
         
         let selectedVariant = null;
         if (select) {
             const opt = select.options[select.selectedIndex];
-            selectedVariant = {
-                weight: opt.getAttribute('data-weight'),
-                price: Number(opt.getAttribute('data-price')),
-                originalprice: Number(opt.getAttribute('data-old-price'))
-            };
+            if (opt) {
+                selectedVariant = {
+                    weight: opt.getAttribute('data-weight') || prod.weight,
+                    price: Number(opt.getAttribute('data-price')) || prod.price,
+                    originalprice: Number(opt.getAttribute('data-old-price')) || prod.originalprice || prod.price
+                };
+            }
         }
         
         addToCart(prod, selectedVariant);
+        
+        // Visual feedback for mobile
+        if (window.Toast) {
+            window.Toast.show(`Added ${selectedVariant ? selectedVariant.weight : prod.weight} of ${prod.name} to cart`, 'success');
+        }
     }
 }
 
 
-window.gridChangeQty = function(productName, delta) {
-    const existing = cart.find(item => item.name === productName);
+window.gridChangeQty = function(btnEl, productName, delta, prodId) {
+    if (delta > 0) {
+        // Adding: reuse addToCartByGrid logic to pick up current variant selection
+        window.addToCartByGrid(btnEl, productName, prodId);
+        return;
+    }
+
+    // Removing: find the variant currently selected in the UI
+    const card = btnEl?.closest('.product-card');
+    const select = card?.querySelector('.variant-select-inline');
+    const selectedWeight = select ? select.options[select.selectedIndex].getAttribute('data-weight') : null;
+    
+    let existing;
+    if (selectedWeight) {
+        existing = cart.find(item => (String(item.id) === String(prodId) || item.name === productName) && String(item.weight) === String(selectedWeight));
+    } else {
+        existing = cart.find(item => String(item.id) === String(prodId) || item.name === productName);
+    }
+
     if (existing) {
         existing.quantity += delta;
         if (existing.quantity <= 0) {
-            cart = cart.filter(item => item.name !== productName);
+            cart = cart.filter(item => item !== existing);
+        }
+        updateCartSidebar();
+    } else if (delta < 0) {
+        // If selected variant not in cart but we click minus, try to find ANY variant of this product
+        const anyVariant = cart.find(item => String(item.id) === String(prodId) || item.name === productName);
+        if (anyVariant) {
+            anyVariant.quantity += delta;
+            if (anyVariant.quantity <= 0) {
+                cart = cart.filter(item => item !== anyVariant);
+            }
+            updateCartSidebar();
+            if (window.Toast) window.Toast.show(`Removed ${anyVariant.weight} version`, 'info');
+        } else if (window.Toast) {
+            window.Toast.show(`Item not in cart`, 'info');
         }
     }
-    updateCartSidebar();
 }
 
 window.changeQuantity = function(index, delta) {
@@ -2534,7 +2599,8 @@ window.togglePasswordVisibility = function(inputId, icon) {
 
 function updateAuthUI(name) {
     const authContent = document.getElementById('dynamicAuthContent');
-    if (!authContent) return;
+    const mobileAuthContent = document.getElementById('mobileDynamicAuthContent');
+    if (!authContent && !mobileAuthContent) return;
     
     const userFullName = name || getCookie('full_name') || localStorage.getItem('user_full_name');
     const isMobile = window.innerWidth <= 768;
@@ -2543,35 +2609,36 @@ function updateAuthUI(name) {
         const displayName = decodeURIComponent(userFullName).toUpperCase();
         const firstName = displayName.split(' ')[0];
         
-        // Premium Dropdown Layout
-        authContent.innerHTML = `
+        const html = `
             <div class="user-profile-wrapper">
                 <div class="premium-user-badge" id="userMenuTrigger" style="display: flex; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.8); padding: 6px 14px; border-radius: 30px; border: 1.5px solid var(--primary); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.08);">
                     <div class="avatar-circle" style="width: 28px; height: 28px; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);">
                         <i class="ph ph-user"></i>
                     </div>
-                    <span style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--primary); font-size: 0.9rem; letter-spacing: 0.5px;">HI, ${isMobile ? firstName : displayName}</span>
+                    <span style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--primary); font-size: 0.9rem; letter-spacing: 0.5px;">HI, ${displayName}</span>
                     <i class="ph ph-caret-down" style="font-size: 0.8rem; color: var(--primary);"></i>
                 </div>
 
                 <div class="user-dropdown" id="userDropdownMenu">
-                    <a href="profile.html" class="user-dropdown-item">
-                        <i class="ph ph-user-circle"></i> My Profile
-                    </a>
-                    <a href="profile.html?tab=orders" class="user-dropdown-item">
-                        <i class="ph ph-shopping-bag"></i> My Orders
-                    </a>
-                    <a href="wishlist.html" class="user-dropdown-item">
-                        <i class="ph ph-heart"></i> Wishlist
-                    </a>
+                    <a href="profile.html" class="user-dropdown-item"><i class="ph ph-user-circle"></i> My Profile</a>
+                    <a href="profile.html?tab=orders" class="user-dropdown-item"><i class="ph ph-shopping-bag"></i> My Orders</a>
+                    <a href="wishlist.html" class="user-dropdown-item"><i class="ph ph-heart"></i> Wishlist</a>
                     <div class="user-dropdown-footer">
-                        <a href="#" class="user-dropdown-item logout logout-trigger">
-                            <i class="ph ph-sign-out"></i> Log Out
-                        </a>
+                        <a href="#" class="user-dropdown-item logout-trigger"><i class="ph ph-sign-out"></i> Log Out</a>
                     </div>
                 </div>
             </div>
         `;
+        
+        if (authContent) authContent.innerHTML = html;
+        if (mobileAuthContent) {
+            mobileAuthContent.innerHTML = `
+                <div onclick="window.location.href='profile.html'" style="display:flex; align-items:center; gap:0.4rem; color:var(--primary); font-weight:700; background:rgba(16,185,129,0.1); padding:4px 10px; border-radius:20px; border:1px solid var(--primary);">
+                    <i class="ph ph-user-circle" style="font-size:1.1rem;"></i>
+                    <span style="font-size:0.7rem;">HI, ${firstName}</span>
+                </div>
+            `;
+        }
         
         // Re-attach dropdown toggle logic
         reRenderIcons();
@@ -2579,32 +2646,26 @@ function updateAuthUI(name) {
         const dropdown = document.getElementById('userDropdownMenu');
         
         if (trigger && dropdown) {
-            trigger.addEventListener('click', (e) => {
-                e.stopPropagation();
-                dropdown.classList.toggle('active');
-            });
-
-            // Close when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!trigger.contains(e.target) && !dropdown.contains(e.target)) {
-                    dropdown.classList.remove('active');
-                }
-            });
+            trigger.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('active'); });
+            document.addEventListener('click', (e) => { if (!trigger.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.remove('active'); });
         }
 
-        // Re-attach logout listener - Use the centralized function
-        authContent.querySelector('.logout-trigger')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            window.logoutUser();
+        document.querySelectorAll('.logout-trigger').forEach(btn => {
+            btn.addEventListener('click', (e) => { e.preventDefault(); window.logoutUser(); });
         });
     } else {
-        authContent.innerHTML = isMobile ? `
-            <a href="#" class="nav-link" onclick="openAuthModal('login')" data-i18n="nav_log_in">Log In</a>
-        ` : `
-            <a href="#" class="nav-link" onclick="openAuthModal('login')" data-i18n="nav_sign_in">Sign In</a>
-            <span class="divider">|</span>
-            <a href="#" class="nav-link" onclick="openAuthModal('login')" data-i18n="nav_log_in">Log In</a>
-        `;
+        const loginHtml = `<a href="#" class="nav-link" onclick="openAuthModal('login')" style="color:var(--primary); text-decoration:none; font-weight:800; font-size:0.75rem; border:1px solid var(--primary); padding:4px 10px; border-radius:20px; background:rgba(16,185,129,0.05);" data-i18n="nav_log_in">SIGN IN</a>`;
+        if (authContent) {
+            authContent.innerHTML = `
+                <a href="#" class="nav-link" onclick="openAuthModal('login')" data-i18n="nav_sign_in">Sign In</a>
+                <span class="divider">|</span>
+                <a href="#" class="nav-link" onclick="openAuthModal('login')" data-i18n="nav_log_in">Log In</a>
+            `;
+        }
+        if (mobileAuthContent) {
+            mobileAuthContent.innerHTML = loginHtml;
+            mobileAuthContent.style.display = 'block';
+        }
     }
 }
 // Initialize Auth UI on load

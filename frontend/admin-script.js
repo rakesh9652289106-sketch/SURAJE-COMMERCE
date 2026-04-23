@@ -353,7 +353,10 @@ async function fetchAdminProducts() {
                     </td>
                     <td>
                         <div style="font-weight: 600; color: #1E293B; font-size: 0.95rem;">${p.name}</div>
-                        <div style="font-size: 0.75rem; color: #64748B;">${p.weight || 'N/A'}</div>
+                        <div style="display: flex; align-items: center; gap: 0.4rem;">
+                            <span style="font-size: 0.75rem; color: #64748B;">${p.weight || 'N/A'}</span>
+                            ${p.variants && p.variants.length > 0 ? `<span title="${p.variants.length} Variants" style="padding: 1px 4px; border-radius: 4px; background: #E0E7FF; color: #4338CA; font-size: 0.65rem; font-weight: 700;">+${p.variants.length} VAR</span>` : ''}
+                        </div>
                     </td>
                     <td>
                         <span style="display: inline-block; padding: 4px 10px; border-radius: 20px; background: #F1F5F9; color: #475569; font-size: 0.75rem; font-weight: 600;">
@@ -532,31 +535,54 @@ function renderVariantList(containerId, list, type) {
     const container = document.getElementById(containerId);
     if (!container) return;
     container.innerHTML = list.map((v, idx) => `
-        <div class="variant-item" style="display:flex; justify-content:space-between; background:#fff; padding:5px 10px; border:1px solid #eee; margin-bottom:5px; border-radius:4px;">
-            <span>${v.weight} - ₹${v.price}</span>
+        <div class="variant-item" style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:5px 10px; border:1px solid #eee; margin-bottom:5px; border-radius:4px;">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                ${v.imgurl ? `<img src="${v.imgurl}" style="width:24px; height:24px; object-fit:contain; border-radius:4px;">` : '<i class="ph ph-image" style="color:#CBD5E1;"></i>'}
+                <span>${v.weight} - ₹${v.price}</span>
+            </div>
             <button type="button" onclick="removeVariant('${type}', ${idx})" style="border:none; background:none; color:#EF4444;"><i class="ph ph-trash"></i></button>
         </div>
     `).join('');
 }
 
 window.addVariantToTempList = () => {
-    const w = document.getElementById('vWeight').value;
-    const p = Number(document.getElementById('vPrice').value);
-    const op = Number(document.getElementById('vOriginalPrice').value || p);
-    if (!w || !p) return;
-    tempVariants.push({ weight: w, price: p, originalprice: op });
+    const img = document.getElementById('vImgUrl')?.value.trim() || '';
+    
+    if (!w) return Toast.show("Variant weight/size is required", "warning");
+    if (p <= 0) return Toast.show("Variant price must be greater than 0", "warning");
+    
+    // Check for duplicate weight
+    if (tempVariants.find(v => v.weight.toLowerCase() === w.toLowerCase())) {
+        return Toast.show("This variant already exists", "warning");
+    }
+
+    tempVariants.push({ weight: w, price: p, originalprice: op, imgurl: img });
     renderVariantList('addVariantList', tempVariants, 'add');
-    document.getElementById('vWeight').value = ''; document.getElementById('vPrice').value = ''; document.getElementById('vOriginalPrice').value = '';
+    
+    // Clear inputs
+    document.getElementById('vWeight').value = ''; 
+    document.getElementById('vPrice').value = ''; 
+    document.getElementById('vOriginalPrice').value = '';
+    if (document.getElementById('vImgUrl')) document.getElementById('vImgUrl').value = '';
 };
 
 window.addVariantToEditList = () => {
-    const w = document.getElementById('evWeight').value;
-    const p = Number(document.getElementById('evPrice').value);
-    const op = Number(document.getElementById('evOriginalPrice').value || p);
-    if (!w || !p) return;
-    currentEditVariants.push({ weight: w, price: p, originalprice: op });
+    const img = document.getElementById('evImgUrl')?.value.trim() || '';
+    
+    if (!w) return Toast.show("Variant weight/size is required", "warning");
+    if (p <= 0) return Toast.show("Variant price must be greater than 0", "warning");
+
+    if (currentEditVariants.find(v => v.weight.toLowerCase() === w.toLowerCase())) {
+        return Toast.show("This variant already exists", "warning");
+    }
+
+    currentEditVariants.push({ weight: w, price: p, originalprice: op, imgurl: img });
     renderVariantList('editVariantList', currentEditVariants, 'edit');
-    document.getElementById('evWeight').value = ''; document.getElementById('evPrice').value = ''; document.getElementById('evOriginalPrice').value = '';
+    
+    document.getElementById('evWeight').value = ''; 
+    document.getElementById('evPrice').value = ''; 
+    document.getElementById('evOriginalPrice').value = '';
+    if (document.getElementById('evImgUrl')) document.getElementById('evImgUrl').value = '';
 };
 
 window.removeVariant = (type, idx) => {
@@ -624,23 +650,28 @@ function renderQuickVariantList() {
     const container = document.getElementById('quickVariantList');
     if (!container) return;
     container.innerHTML = tempVariants.map((v, idx) => `
-        <div style="display:flex; justify-content:space-between; background:white; padding:8px 12px; border:1px solid #E2E8F0; border-radius:8px; margin-bottom:0.5rem;">
-            <span>${v.weight} - ₹${v.price}</span>
+        <div style="display:flex; justify-content:space-between; align-items:center; background:white; padding:8px 12px; border:1px solid #E2E8F0; border-radius:8px; margin-bottom:0.5rem;">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                ${v.imgurl ? `<img src="${v.imgurl}" style="width:24px; height:24px; object-fit:contain; border-radius:4px;">` : '<i class="ph ph-image" style="color:#CBD5E1;"></i>'}
+                <span>${v.weight} - ₹${v.price}</span>
+            </div>
             <button type="button" onclick="removeQuickVariant(${idx})" style="border:none; background:none; color:#EF4444;"><i class="ph ph-trash"></i></button>
         </div>
     `).join('');
 }
 
 window.addQuickVariant = () => {
-    const w = document.getElementById('qvWeight').value;
+    const w = document.getElementById('qvWeight').value.trim();
     const p = Number(document.getElementById('qvPrice').value);
     const op = Number(document.getElementById('qvOriginalPrice').value || p);
+    const img = document.getElementById('qvImgUrl')?.value.trim() || '';
     if (!w || !p) return;
-    tempVariants.push({ weight: w, price: p, originalprice: op });
+    tempVariants.push({ weight: w, price: p, originalprice: op, imgurl: img });
     renderQuickVariantList();
     document.getElementById('qvWeight').value = ''; 
     document.getElementById('qvPrice').value = ''; 
     document.getElementById('qvOriginalPrice').value = '';
+    if (document.getElementById('qvImgUrl')) document.getElementById('qvImgUrl').value = '';
 };
 
 window.removeQuickVariant = (idx) => {
@@ -706,7 +737,7 @@ async function fetchOrders(date = "") {
         const tbody = document.getElementById('ordersTableBody');
         tbody.innerHTML = orders.map(o => {
             const items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
-            const itemsHtml = items.map(i => `<div class="order-item-badge">${i.name} x${i.quantity}</div>`).join('');
+            const itemsHtml = items.map(i => `<div class="order-item-badge" style="background: linear-gradient(135deg, var(--primary), #059669); color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">${i.name} ${i.weight ? `(${i.weight})` : ''} x${i.quantity}</div>`).join('');
             return `
                 <tr>
                     <td>#${o.id}</td>

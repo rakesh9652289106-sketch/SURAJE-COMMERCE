@@ -145,8 +145,42 @@
         /* Responsive */
         @media (max-width: 992px) {
             .dashboard-wrapper { grid-template-columns: 1fr; }
-            .dash-nav { display: flex; overflow-x: auto; gap: 1rem; padding: 0.5rem; border-radius: 0; }
+            .dash-nav { display: flex; overflow-x: auto; gap: 0.5rem; padding: 0.5rem; border-radius: 0; }
             .dash-nav-item { margin-bottom: 0; white-space: nowrap; width: auto; }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-wrapper { margin: 1rem auto; padding: 0 0.5rem; }
+            .dash-nav-item { font-size: 0.7rem; padding: 0.3rem 0.5rem; gap: 0.2rem; border-radius: 8px; }
+            .dash-nav-item i { display: none; }
+            .dash-card { padding: 1rem; border-radius: 12px; margin-bottom: 0.75rem; }
+            .dash-card-header { margin-bottom: 1rem; padding-bottom: 0.75rem; }
+            .dash-card-header h2 { font-size: 1.2rem; }
+            .stat-card { padding: 1rem; border-radius: 16px; }
+            .stat-card i { font-size: 1.5rem; }
+            .stat-card h3 { font-size: 1.25rem; }
+            .stat-card p { font-size: 0.8rem; }
+            .dash-content h2 { font-size: 1.25rem; margin-bottom: 1rem !important; }
+            .dash-content h3 { font-size: 1.1rem; }
+            .form-control { padding: 0.6rem 0.8rem; font-size: 0.85rem; }
+            .form-group { margin-bottom: 1rem; }
+            .form-group label { font-size: 0.8rem; margin-bottom: 0.3rem; }
+            .profile-avatar { width: 56px !important; height: 56px !important; font-size: 1.5rem !important; }
+            #welcomeName { font-size: 1.15rem; }
+            #userStatusLabel { font-size: 0.75rem; }
+            .address-card { padding: 1rem; border-radius: 12px; }
+            .address-card strong { font-size: 1rem !important; }
+            .address-card p { font-size: 0.85rem !important; }
+            .address-grid { grid-template-columns: 1fr; gap: 1rem; }
+            .tab-content { padding-top: 0.5rem; }
+            
+            /* Order Item specifics */
+            #orderList .dash-card h4 { font-size: 1rem; }
+            #orderList .dash-card span { font-size: 0.8rem !important; }
+            #orderList .dash-card .reorder-btn { padding: 0.6rem; font-size: 0.85rem; }
+            
+            /* Form Grid fixes */
+            #profileForm > div { grid-template-columns: 1fr !important; gap: 0 !important; }
         }
     </style>
 </head>
@@ -161,7 +195,10 @@
                     <i class="ph ph-basket"></i> SURAJ
                 </a>
             </div>
-            <div class="nav-actions">
+            <div class="nav-actions" style="display: flex; align-items: center; gap: 1rem;">
+                <button class="theme-toggle-btn" title="Toggle Dark Mode" style="background:none; border:none; color:var(--text-main); font-size:1.4rem; cursor:pointer;">
+                    <i class="ph ph-sun"></i>
+                </button>
                 <a href="/" class="nav-link"><i class="ph ph-arrow-left"></i> <span data-i18n="view_all">Back to Store</span></a>
             </div>
         </div>

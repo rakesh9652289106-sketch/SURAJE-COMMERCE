@@ -62,8 +62,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="cart-styles.css">
-    <!-- Phosphor Icons -->
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Phosphor Icons (Official Dynamic Loader) -->
+    <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
     <script type="module" src="translations.js"></script>
 </head>
 <body>
@@ -75,7 +75,7 @@
     <!-- Main Navigation -->
     <header class="navbar">
         <div class="nav-container">
-            <div class="nav-left" style="display:flex; align-items:center; gap: 1.2rem;">
+            <div class="nav-left" style="display:flex; align-items:center; gap: 1rem; flex: 1;">
                 <button class="nav-menu-btn" id="navMenuBtn" style="background:none; border:none; color:var(--text-main); font-size:1.75rem; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0.25rem;">
                     <i class="ph ph-list"></i>
                 </button>
@@ -90,6 +90,18 @@
                         <span style="font-size: 0.75rem;" data-i18n="nav_deliver_to">Deliver to</span>
                         <strong style="color: var(--text-main);">Nellore 524004 <i class="ph ph-caret-down"></i></strong>
                     </div>
+                </div>
+            </div>
+
+            <!-- Mobile Only Actions -->
+            <div class="mobile-nav-actions" style="display: none; align-items: center; gap: 0.75rem;">
+                <div id="mobileDynamicAuthContent" style="font-size: 0.75rem; font-weight: 700;"></div>
+                <button class="theme-toggle-btn mobile-theme-btn" style="background:none; border:none; color:var(--text-main); font-size:1.4rem;">
+                    <i class="ph ph-moon"></i>
+                </button>
+                <div class="mobile-notifications-btn" style="position: relative; color:var(--text-main); font-size:1.4rem;">
+                    <i class="ph ph-bell"></i>
+                    <span class="badge mobile-notif-badge" style="position: absolute; top: -5px; right: -5px; background: var(--secondary); color: white; width: 16px; height: 16px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold;">0</span>
                 </div>
             </div>
             
@@ -398,28 +410,34 @@
     <!-- Checkout Modal -->
     <div class="checkout-modal-overlay" id="checkoutModal">
         <div class="checkout-modal" style="max-width: 450px;">
+            <!-- Step 1: Delivery Selection -->
             <div id="checkoutStepDelivery" style="display: none;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <button class="close-cart" id="backToCartBtn" title="Back to Cart" style="background: var(--bg-color); border: none; cursor: pointer; color: var(--primary); font-size: 1.25rem; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="ph ph-arrow-left"></i></button>
-                        <h3 style="font-size: 1.3rem; margin: 0;">How would you like your order?</h3>
-                    </div>
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+                    <button class="back-circle-btn" id="backToCartBtn" style="background: var(--bg-color); border: 1px solid var(--border); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary); cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                        <i class="ph ph-arrow-left" style="font-size: 1.25rem;"></i>
+                    </button>
+                    <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); margin: 0; letter-spacing: -0.5px;">How would you like your order?</h2>
                 </div>
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
-                    <label class="delivery-option-card active" id="optionHome" onclick="selectDeliveryType('Home Delivery', this)" style="cursor: pointer; border: 2px solid var(--primary); border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; background: #EEF2FF;">
-                        <i class="ph ph-house" style="font-size: 2rem; color: var(--primary);"></i>
-                        <span style="font-weight: 700; font-size: 0.9rem;">Home Delivery</span>
-                        <p style="font-size: 0.7rem; color: var(--text-soft); text-align: center;">Delivery to your door in 30 mins</p>
-                    </label>
-                    <label class="delivery-option-card" id="optionPickup" onclick="selectDeliveryType('Pickup from Shop', this)" style="cursor: pointer; border: 2px solid #E2E8F0; border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
-                        <i class="ph ph-storefront" style="font-size: 2rem; color: #64748B;"></i>
-                        <span style="font-weight: 700; font-size: 0.9rem;">Pickup from Shop</span>
-                        <p style="font-size: 0.7rem; color: var(--text-soft); text-align: center;">Pick up from our store yourself</p>
-                    </label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 2.5rem;">
+                    <div class="delivery-option-card active" id="optionHome" onclick="selectDeliveryType('Home Delivery', this)">
+                        <div class="delivery-icon-wrapper">
+                            <i class="ph ph-house" style="font-size: 2.25rem;"></i>
+                        </div>
+                        <span style="font-weight: 800; font-size: 1.1rem; color: #1E293B;">Home Delivery</span>
+                        <p style="font-size: 0.8rem; color: #64748B; text-align: center; line-height: 1.5; margin: 0;">Delivery to your door in 30 mins</p>
+                    </div>
+                    
+                    <div class="delivery-option-card" id="optionPickup" onclick="selectDeliveryType('Pickup from Shop', this)">
+                        <div class="delivery-icon-wrapper">
+                            <i class="ph ph-storefront" style="font-size: 2.25rem; color: var(--text-soft);"></i>
+                        </div>
+                        <span style="font-weight: 800; font-size: 1.1rem; color: #1E293B;">Pickup from Shop</span>
+                        <p style="font-size: 0.8rem; color: #64748B; text-align: center; line-height: 1.5; margin: 0;">Pick up from our store yourself</p>
+                    </div>
                 </div>
 
-                <button class="btn btn-primary" id="deliveryNextBtn" style="width: 100%;">Continue to Details</button>
+                <button class="btn btn-primary" id="deliveryNextBtn" style="width: 100%; padding: 1.25rem; border-radius: 16px; font-size: 1.15rem; font-weight: 800; box-shadow: 0 12px 20px -5px rgba(16, 185, 129, 0.4); transform: translateY(0); transition: all 0.3s ease;">Continue to Details</button>
             </div>
 
             <div id="checkoutStepAddress" style="display: none;">
@@ -754,6 +772,7 @@
             <div class="nav-section">
                 <h5 data-i18n="sidebar_section_others">Others</h5>
                 <a href="#" class="nav-item" style="color: var(--secondary); font-weight: 700;"><i class="ph ph-gift"></i> <span data-i18n="sidebar_refer_earn">Refer & Earn</span></a>
+                <a href="admin.html" class="nav-item" style="color: var(--primary); font-weight: 700;"><i class="ph ph-shield-check"></i> <span>Admin Panel</span></a>
                 <a href="support.html" class="nav-item"><i class="ph ph-info"></i> <span data-i18n="sidebar_help_support">Help & Support</span></a>
                 <a href="#" class="nav-item" id="sidebarLogout" style="display: none;"><i class="ph ph-sign-out"></i> <span data-i18n="sidebar_logout">Logout</span></a>
             </div>

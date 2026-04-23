@@ -94,3 +94,32 @@
     font-size: 1.1rem;
     color: var(--text-main);
 }
+
+/* Dark Mode Support */
+body.dark-theme .cart-sidebar {
+    background-color: #0F172A;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+body.dark-theme .cart-header {
+    border-bottom-color: #1E293B;
+}
+
+body.dark-theme .cart-footer {
+    background-color: #020617;
+    border-top-color: #1E293B;
+}
+
+body.dark-theme .cart-item-row {
+    border-bottom-color: #1E293B !important;
+}
+
+body.dark-theme .cart-item-row h5 {
+    color: #F8FAFC;
+}
+
+body.dark-theme .cart-item-row button {
+    background: #1E293B !important;
+    color: #F8FAFC !important;
+}

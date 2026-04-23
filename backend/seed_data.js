@@ -63,7 +63,11 @@ async function seed() {
         { 
             name: "Amul Gold Milk", category: "Dairy & Bread", weight: "500 ml", price: 33, originalPrice: 33, 
             rating: "4.9", reviews: "12k", imgUrl: "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=300", 
-            discount: null, is_available: 1, is_daily_essential: 1 
+            discount: null, is_available: 1, is_daily_essential: 1,
+            variants: [
+                { weight: "1 Litre", price: 65, originalprice: 66 },
+                { weight: "250 ml", price: 18, originalprice: 18 }
+            ]
         },
         { 
             name: "Brown Bread", category: "Dairy & Bread", weight: "400g", price: 45, originalPrice: 55, 

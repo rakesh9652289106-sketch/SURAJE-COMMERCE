@@ -379,6 +379,13 @@ function setupForms() {
             });
             if (res.ok) {
                 Toast.show("Profile updated successfully!", "success");
+                // Sync updated data to cookies and localStorage for header greeting
+                document.cookie = `full_name=${encodeURIComponent(data.full_name)}; path=/; max-age=31536000`;
+                localStorage.setItem('user_full_name', data.full_name);
+                
+                if (typeof window.updateAuthUI === 'function') {
+                    window.updateAuthUI(data.full_name);
+                }
                 fetchOverview();
             }
         } catch (e) { console.error(e); }
