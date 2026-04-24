@@ -881,6 +881,17 @@ async function fetchShopSettings() {
         document.getElementById('sPhone').value = s.shop_phone || '';
         document.getElementById('sAddress').value = s.shop_address || '';
         document.getElementById('sImage').value = s.shop_image || '';
+        
+        // Loyalty settings
+        if (document.getElementById('manageCoinsActive')) {
+            document.getElementById('manageCoinsActive').checked = s.coins_system_active === 1;
+        }
+        if (document.getElementById('coinRewardRate')) {
+            document.getElementById('coinRewardRate').value = s.coin_reward_rate || 1000;
+        }
+        if (document.getElementById('coinRewardAmount')) {
+            document.getElementById('coinRewardAmount').value = s.coin_reward_amount || 30;
+        }
     }
 
     try {
@@ -907,6 +918,21 @@ async function handleSaveSettings(e) {
         body: JSON.stringify(data)
     });
     refreshWithToast("Settings saved", "success");
+}
+
+async function handleSaveLoyaltySettings(e) {
+    e.preventDefault();
+    const data = {
+        coins_system_active: document.getElementById('manageCoinsActive').checked ? 1 : 0,
+        coin_reward_rate: Number(document.getElementById('coinRewardRate').value),
+        coin_reward_amount: Number(document.getElementById('coinRewardAmount').value)
+    };
+    await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    refreshWithToast("Loyalty settings updated", "success");
 }
 
 async function fetchDeliverySettings() {
@@ -1397,7 +1423,10 @@ window.deleteUser = deleteUser;
 window.deleteReview = deleteReview;
 window.deleteCategory = deleteCategory;
 window.deleteBrand = deleteBrand;
-window.deleteCoupon = deleteCoupon;
+    const loyaltyForm = document.getElementById('loyaltySettingsForm');
+    if (loyaltyForm) loyaltyForm.addEventListener('submit', handleSaveLoyaltySettings);
+
+    window.deleteCoupon = deleteCoupon;
 window.openAddCategoryModal = openAddCategoryModal;
 window.openEditCategoryModal = openEditCategoryModal;
 window.openAddBrandModal = openAddBrandModal;
