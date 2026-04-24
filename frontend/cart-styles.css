@@ -6,7 +6,7 @@
     width: 100vw;
     height: 100vh;
     background-color: rgba(15, 23, 42, 0.5);
-    z-index: 1100;
+    z-index: 15000;
 
     opacity: 0;
     pointer-events: none;
@@ -21,17 +21,23 @@
 .cart-sidebar {
     position: fixed;
     top: 0;
-    right: -400px;
+    right: -100%;
     width: 100%;
     max-width: 400px;
     height: 100vh;
     background-color: var(--card-bg);
-    z-index: 1101;
-
+    z-index: 15001;
     box-shadow: -5px 0 25px rgba(0,0,0,0.1);
     display: flex;
     flex-direction: column;
     transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.cart-sidebar::-webkit-scrollbar {
+    display: none;
 }
 
 .cart-sidebar.active {
@@ -71,6 +77,12 @@
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.cart-items::-webkit-scrollbar {
+    display: none;
 }
 
 .empty-cart {
@@ -82,10 +94,23 @@
     text-align: center;
 }
 
+/* Extra bottom padding for mobile to clear bottom-nav */
+@media (max-width: 768px) {
+    .cart-footer {
+        padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px)) !important;
+        min-height: 25vh; /* Slightly more on mobile to feel 'spacious' */
+    }
+}
+
 .cart-footer {
     padding: 1.5rem;
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
     border-top: 1px solid var(--border);
     background-color: var(--bg-color);
+    min-height: 20vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .cart-summary-line {
@@ -99,20 +124,20 @@
 body.dark-theme .cart-sidebar {
     background-color: #0F172A;
     box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
-    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    border-left: none;
 }
 
 body.dark-theme .cart-header {
-    border-bottom-color: #1E293B;
+    border-bottom-color: rgba(255, 255, 255, 0.05);
 }
 
 body.dark-theme .cart-footer {
     background-color: #020617;
-    border-top-color: #1E293B;
+    border-top-color: rgba(255, 255, 255, 0.05);
 }
 
 body.dark-theme .cart-item-row {
-    border-bottom-color: #1E293B !important;
+    border-bottom-color: rgba(255, 255, 255, 0.05) !important;
 }
 
 body.dark-theme .cart-item-row h5 {

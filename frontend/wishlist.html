@@ -2,12 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>My Wishlist - SURAJ</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="cart-styles.css">
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <script src="theme-manager.js"></script>
 </head>
 <body>
     <header class="navbar">
@@ -44,25 +47,8 @@
     </main>
 
     <script type="module" src="toast.js"></script>
-    <script>
-        // Apply theme early to prevent FOUC
-        if (localStorage.getItem('theme') === 'dark') {
-            document.body.classList.add('dark-theme');
-        }
-    </script>
     <script type="module">
         document.addEventListener("DOMContentLoaded", async () => {
-            // Setup Theme Toggle
-            const toggleBtn = document.querySelector('.theme-toggle-btn');
-            if (toggleBtn) {
-                const icon = toggleBtn.querySelector('i');
-                if (document.body.classList.contains('dark-theme')) icon.className = 'ph-fill ph-moon';
-                toggleBtn.addEventListener('click', () => {
-                    const isDark = document.body.classList.toggle('dark-theme');
-                    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-                    icon.className = isDark ? 'ph-fill ph-moon' : 'ph ph-sun';
-                });
-            }
 
             const wishlistJSON = localStorage.getItem('wishlist');
             let wishlist = wishlistJSON ? JSON.parse(wishlistJSON).map(id => Number(id)) : [];
@@ -414,7 +400,7 @@
                 document.getElementById('cartSidebar').classList.add('active');
                 if (document.getElementById('cartOverlay')) document.getElementById('cartOverlay').classList.add('active');
                 document.body.style.overflow = 'hidden';
-                if (typeof renderCart === 'function') renderCart();
+                if (typeof updateCartSidebar === 'function') updateCartSidebar();
             } else {
                 window.location.href = '/'; 
             }

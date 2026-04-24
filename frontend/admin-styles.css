@@ -131,10 +131,10 @@ body {
 }
 
 .admin-table th, .admin-table td {
-    padding: 1.25rem 1rem;
+    padding: 1rem 0.75rem;
     text-align: left;
     border-bottom: 1px solid #E2E8F0;
-    vertical-align: middle;
+    vertical-align: top; /* Changed from middle to top for multi-line items */
 }
 
 .admin-table th {
@@ -305,14 +305,17 @@ input:checked + .slider:before { transform: translateX(20px); }
 .order-item-badge {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    background: #F8FAFC;
-    border: 1px solid #E2E8F0;
-    padding: 2px 8px;
+    gap: 0.5rem;
+    background: #F0FDF4; /* Light green bg */
+    border: 1px solid #BBF7D0;
+    color: #166534; /* Dark green text for contrast */
+    padding: 4px 10px;
     border-radius: 6px;
-    margin-bottom: 4px;
-    margin-right: 4px;
-    font-size: 0.75rem;
+    margin-bottom: 6px;
+    margin-right: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
 }
 
 /* Action Buttons */

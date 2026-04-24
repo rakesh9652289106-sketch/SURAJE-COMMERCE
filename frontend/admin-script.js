@@ -546,6 +546,9 @@ function renderVariantList(containerId, list, type) {
 }
 
 window.addVariantToTempList = () => {
+    const w = document.getElementById('vWeight')?.value.trim();
+    const p = Number(document.getElementById('vPrice')?.value) || 0;
+    const op = Number(document.getElementById('vOriginalPrice')?.value) || p;
     const img = document.getElementById('vImgUrl')?.value.trim() || '';
     
     if (!w) return Toast.show("Variant weight/size is required", "warning");
@@ -567,6 +570,9 @@ window.addVariantToTempList = () => {
 };
 
 window.addVariantToEditList = () => {
+    const w = document.getElementById('evWeight')?.value.trim();
+    const p = Number(document.getElementById('evPrice')?.value) || 0;
+    const op = Number(document.getElementById('evOriginalPrice')?.value) || p;
     const img = document.getElementById('evImgUrl')?.value.trim() || '';
     
     if (!w) return Toast.show("Variant weight/size is required", "warning");
@@ -737,10 +743,10 @@ async function fetchOrders(date = "") {
         const tbody = document.getElementById('ordersTableBody');
         tbody.innerHTML = orders.map(o => {
             const items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
-            const itemsHtml = items.map(i => `<div class="order-item-badge" style="background: linear-gradient(135deg, var(--primary), #059669); color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">${i.name} ${i.weight ? `(${i.weight})` : ''} x${i.quantity}</div>`).join('');
+            const itemsHtml = items.map(i => `<div class="order-item-badge">${i.name} ${i.weight ? `(${i.weight})` : ''} x${i.quantity}</div>`).join('');
             return `
                 <tr>
-                    <td>#${o.id}</td>
+                    <td>#${o.display_id || o.id}</td>
                     <td><div style="font-weight:600;">${o.full_name || 'Customer'}</div><small style="color:#64748B;">${o.phone || ''}</small></td>
                     <td style="font-weight:700; color:#1E293B;">₹${o.total}</td>
                     <td><div style="display:flex; flex-wrap:wrap; gap:4px;">${itemsHtml}</div></td>
@@ -931,7 +937,7 @@ async function fetchNotificationsHistory(date = "") {
         const url = date ? `/api/notifications/history?date=${date}` : '/api/notifications/history';
         const res = await fetch(url);
         const notifications = await res.json();
-        const tbody = document.getElementById('notificationsTableBody');
+        const tbody = document.getElementById('notifHistoryBody');
         if (!tbody) return;
         tbody.innerHTML = notifications.map(n => `
             <tr>

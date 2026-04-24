@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>SURAJ | Fresh Groceries Delivered in 15 Minutes</title>
     <meta name="description" content="Shop fresh groceries, dairy, snacks, and household essentials at SURAJ. Lightning-fast delivery in 15-45 minutes across Nellore. Best quality and lowest prices!">
     <link rel="canonical" href="https://snapbasket.com/" />
@@ -11,13 +11,18 @@
     <meta property="og:url" content="https://snapbasket.com/">
     <meta property="og:title" content="SURAJ | Fresh Groceries Delivered in 15 Minutes">
     <meta property="og:description" content="Get fresh groceries delivered to your doorstep in minutes. Shop SURAJ for the best deals on daily essentials.">
-    <meta property="og:image" content="https://snapbasket.com/assets/og-image.jpg">
+    <meta property="og:image" content="https://snapbasket.com/assets/og-image.png">
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://snapbasket.com/">
     <meta property="twitter:title" content="SURAJ | Fresh Groceries Delivered in 15 Minutes">
     <meta property="twitter:description" content="Get fresh groceries delivered to your doorstep in minutes. Shop SURAJ for the best deals on daily essentials.">
-    <meta property="twitter:image" content="https://snapbasket.com/assets/og-image.jpg">
+    <meta property="twitter:image" content="https://snapbasket.com/assets/og-image.png">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="apple-touch-icon" href="assets/favicon.png">
+    <meta name="theme-color" content="#059669">
     
     <!-- JSON-LD Structured Data: WebSite & Store Reviews -->
     <script type="application/ld+json">
@@ -37,7 +42,7 @@
         "@context": "https://schema.org",
         "@type": "Store",
         "name": "SURAJ SnapBasket",
-        "image": "https://snapbasket.com/assets/og-image.jpg",
+        "image": "https://snapbasket.com/assets/og-image.png",
         "telephone": "+91-98765-43210",
         "url": "https://snapbasket.com/",
         "address": {
@@ -62,8 +67,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="cart-styles.css">
-    <!-- Phosphor Icons (Official Dynamic Loader) -->
-    <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+    <!-- Phosphor Icons (Stable CSS from jsDelivr) -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css">
+    <script src="theme-manager.js"></script>
     <script type="module" src="translations.js"></script>
 </head>
 <body>
@@ -384,13 +391,6 @@
             <!-- Cart items will be loaded here dynamically -->
         </div>
         <div class="cart-footer">
-            <div id="couponSection" style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
-                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-                    <input type="text" id="couponCodeInput" placeholder="Enter Coupon Code" style="flex: 1; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem;">
-                    <button id="applyCouponBtn" class="btn btn-outline btn-sm" style="width: auto; padding: 0 1rem;">Apply</button>
-                </div>
-                <div id="couponMessage" style="font-size: 0.75rem; margin-top: 0.3rem;"></div>
-            </div>
             <div class="cart-summary-line">
                 <span>Subtotal</span>
                 <strong id="cartSubtotalEl">₹0</strong>
@@ -403,7 +403,7 @@
                 <span>Total Amount</span>
                 <strong id="finalTotalEl">₹0</strong>
             </div>
-            <button class="btn btn-primary" id="checkoutBtn" style="width: 100%; margin-top: 1rem;">Proceed to Checkout</button>
+            <button class="btn btn-primary" id="checkoutBtn" style="width: 100%; margin-top: 1rem; font-weight: 800; letter-spacing: 0.5px;">PROCEED TO CHECKOUT</button>
         </div>
     </aside>
 
@@ -814,7 +814,7 @@
             <span>Cart</span>
         </a>
         <a href="#" class="nav-item" id="mobileBottomProfileBtn">
-            <i class="ph ph-user"></i>
+            <i class="ph ph-user-circle"></i>
             <span>Profile</span>
         </a>
     </div>
@@ -827,7 +827,7 @@
             document.getElementById('cartSidebar').classList.add('active');
             document.getElementById('cartOverlay').classList.add('active');
             document.body.style.overflow = 'hidden';
-            if (typeof renderCart === 'function') renderCart();
+            if (typeof updateCartSidebar === 'function') updateCartSidebar();
         });
         
         // Link bottom profile btn

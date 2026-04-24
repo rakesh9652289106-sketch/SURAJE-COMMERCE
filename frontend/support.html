@@ -2,10 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Customer Support - SURAJ</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/style.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <script src="theme-manager.js"></script>
     <style>
         .support-container {
             max-width: 800px;
@@ -158,7 +161,10 @@
                     <i class="ph ph-shopping-basket"></i>
                     SURAJ
                 </a>
-                <div class="nav-right">
+                <div class="nav-right" style="display: flex; align-items: center; gap: 1rem;">
+                    <button class="theme-toggle-btn" title="Toggle Dark Mode" style="background:none; border:none; color:var(--text-main); font-size:1.4rem; cursor:pointer;">
+                        <i class="ph ph-sun"></i>
+                    </button>
                     <a href="/" class="back-link"><i class="ph ph-arrow-left"></i> Back to Store</a>
                 </div>
             </nav>
@@ -322,7 +328,7 @@
                 document.getElementById('cartSidebar').classList.add('active');
                 if (document.getElementById('cartOverlay')) document.getElementById('cartOverlay').classList.add('active');
                 document.body.style.overflow = 'hidden';
-                if (typeof renderCart === 'function') renderCart();
+                if (typeof updateCartSidebar === 'function') updateCartSidebar();
             } else {
                 window.location.href = '/'; 
             }

@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     setupCartInteractions();
     updateCartSidebar(); 
-    setupThemeToggle();
+    // setupThemeToggle(); // Now handled by theme-manager.js automatically
     setupSearchFunctionality();
     setupAuth();
     setupNotifications();
@@ -88,40 +88,46 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     console.log("SURAJ Initialization Complete.");
-});
 
-// Sticky Header Logic - Show full header on scroll up
-const mainHeader = document.querySelector('header');
-let lastScrollTop = 0;
-let ticking = false;
+    // Sticky Header Logic - Show full header on scroll up
+    const mainHeader = document.querySelector('header');
+    let lastScrollTop = 0;
+    let ticking = false;
 
-window.addEventListener('scroll', () => {
-    if (!ticking) {
-        window.requestAnimationFrame(() => {
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            const scrollDelta = scrollTop - lastScrollTop;
-            
-            // Handle states with a buffer to prevent vibration/jitter
-            if (scrollTop <= 50) {
-                // Near the very top: always show full header
-                mainHeader.classList.remove('sticky');
-            } else if (Math.abs(scrollDelta) > 10) {
-                // Only switch if user has scrolled more than 10px in a direction
-                if (scrollDelta > 0) {
-                    // Scrolling down: show minimized search-bar header
-                    mainHeader.classList.add('sticky');
-                } else {
-                    // Scrolling up: restore full header
-                    mainHeader.classList.remove('sticky');
-                }
+    if (mainHeader) {
+        window.addEventListener('scroll', () => {
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    const scrollDelta = scrollTop - lastScrollTop;
+                    
+                    if (scrollTop <= 50) {
+                        if (mainHeader.classList.contains('sticky')) {
+                            console.log("Sticky Header: OFF (Top)");
+                            mainHeader.classList.remove('sticky');
+                        }
+                    } else if (Math.abs(scrollDelta) > 5) {
+                        if (scrollDelta > 0) {
+                            if (!mainHeader.classList.contains('sticky')) {
+                                console.log("Sticky Header: ON (Scroll Down)");
+                                mainHeader.classList.add('sticky');
+                            }
+                        } else {
+                            if (mainHeader.classList.contains('sticky')) {
+                                console.log("Sticky Header: OFF (Scroll Up)");
+                                mainHeader.classList.remove('sticky');
+                            }
+                        }
+                    }
+                    
+                    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+                    ticking = false;
+                });
+                ticking = true;
             }
-            
-            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
-            ticking = false;
-        });
-        ticking = true;
+        }, { passive: true });
     }
-}, { passive: true });
+});
 
 // Re-order Functionality
 window.reorder = async function(itemsJson) {
@@ -1429,37 +1435,8 @@ function setupSearchFunctionality() {
     });
 }
 
-function setupThemeToggle() {
-    const toggleBtns = document.querySelectorAll('.theme-toggle-btn');
-    if (!toggleBtns.length) return;
+    // Theme setup is now handled by theme-manager.js
 
-    const applyTheme = (isDark) => {
-        document.body.classList.toggle('dark-theme', isDark);
-        toggleBtns.forEach(btn => {
-            const icon = btn.querySelector('i');
-            if (icon) {
-                if (isDark) {
-                    icon.classList.replace('ph-moon', 'ph-sun');
-                } else {
-                    icon.classList.replace('ph-sun', 'ph-moon');
-                }
-            }
-        });
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    };
-
-    // Initial check
-    if (localStorage.getItem('theme') === 'dark') {
-        applyTheme(true);
-    }
-
-    toggleBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const isDark = !document.body.classList.contains('dark-theme');
-            applyTheme(isDark);
-        });
-    });
-}
 
 async function setupCartInteractions() {
     const cartOverlay = document.getElementById('cartOverlay');
@@ -1867,20 +1844,20 @@ async function fetchBanners() {
         const slider = document.getElementById('bannerSlider');
         if (slider && sliderBanners.length > 0) {
             slider.innerHTML = '';
-            sliderBanners.forEach(b => {
-                const slide = document.createElement('div');
-                slide.className = 'banner-slide slide-1';
-                slide.innerHTML = `
-                    <div class="banner-content">
-                        <span class="badge">${b.badge || ''}</span>
-                        <h2>${b.title || ''}</h2>
-                        ${b.description ? `<p>${b.description}</p>` : ''}
-                        <button class="btn btn-primary" onclick="navigateToBannerCategory('${b.target_category || 'All'}')">${b.btnText || b.btntext || 'Shop Now'}</button>
-                    </div>
-                    <img src="${b.imgurl || b.imgUrl}" alt="Promo Banner" class="banner-image" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200'">
-                `;
-                slider.appendChild(slide);
-            });
+            // Only show the FIRST banner in the slider as per user request
+            const b = sliderBanners[0];
+            const slide = document.createElement('div');
+            slide.className = 'banner-slide slide-1';
+            slide.innerHTML = `
+                <div class="banner-content">
+                    <span class="badge">${b.badge || ''}</span>
+                    <h2>${b.title || ''}</h2>
+                    ${b.description ? `<p>${b.description}</p>` : ''}
+                    <button class="btn btn-primary" onclick="navigateToBannerCategory('${b.target_category || 'All'}')">${b.btnText || b.btntext || 'Shop Now'}</button>
+                </div>
+                <img src="${b.imgurl || b.imgUrl}" alt="Promo Banner" class="banner-image" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200'">
+            `;
+            slider.appendChild(slide);
         }
 
         // Render Morning Fresh banner in its new home under Daily Essentials
@@ -2164,6 +2141,7 @@ function updateCartSidebar() {
     const emptyState = document.getElementById('emptyCartMessage');
     const itemsContainer = document.querySelector('.cart-items');
     const badge = document.getElementById('cartBadge');
+    const bottomBadge = document.getElementById('bottomCartBadge');
     const totalEl = document.querySelector('.cart-total');
     const summaryTotalEl = document.querySelector('.cart-summary-line strong');
     
@@ -2196,7 +2174,7 @@ function updateCartSidebar() {
             itemHTML.style.borderBottom = '1px solid var(--border)';
             
             itemHTML.innerHTML = `
-                <img src="${item.imgurl || item.imgUrl || ''}" style="width: 50px; height: 50px; object-fit: contain; background: var(--bg-color); border-radius: 8px;">
+                <img src="${item.imgurl || item.imgUrl || ''}" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&text=Product'" style="width: 50px; height: 50px; object-fit: contain; background: var(--bg-color); border-radius: 8px;">
                 <div style="flex: 1;">
                     <h5 style="font-size: 0.9rem; margin-bottom: 0.2rem;">${item.name}</h5>
                     <span style="font-size: 0.8rem; color: var(--text-soft);">${item.weight}</span>
@@ -2215,6 +2193,10 @@ function updateCartSidebar() {
     }
 
     if (badge) badge.innerText = totalItems;
+    if (bottomBadge) {
+        bottomBadge.innerText = totalItems;
+        bottomBadge.style.display = totalItems > 0 ? 'flex' : 'none';
+    }
     if (totalEl) totalEl.innerText = '₹' + subtotal;
     
     // Coupon Logic
