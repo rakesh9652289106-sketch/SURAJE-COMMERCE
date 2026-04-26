@@ -1142,7 +1142,7 @@ async function fetchAdminCategories() {
             <td><i class="ph ${c.iconUrl || c.iconurl}" style="font-size:1.2rem;"></i></td>
             <td>${c.name}</td>
             <td>
-                <button onclick="openEditCategoryModal(${c.id}, '${c.name}', '${c.iconUrl || c.iconurl}')" class="action-btn" style="background:#4F46E5;"><i class="ph ph-pencil"></i></button>
+                <button onclick="openEditCategoryModal(${c.id}, '${c.name}', '${c.iconUrl || c.iconurl}')" class="action-btn" style="background:#4F46E5;"><i class="ph ph-pencil-simple"></i></button>
                 <button onclick="deleteCategory(${c.id})" class="action-btn" style="background:#EF4444;"><i class="ph ph-trash"></i></button>
             </td>
         </tr>
