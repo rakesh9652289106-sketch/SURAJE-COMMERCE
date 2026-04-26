@@ -733,13 +733,36 @@ window.closeQuickVariantEditor = () => {
 
 async function fetchOrders(date = "") {
     try {
-        const statsRes = await fetch('/api/admin/orders/summary');
-        const stats = await statsRes.json();
-        document.getElementById('statOrdersToday').innerText = stats.ordersToday;
-        document.getElementById('statOrdersDelivered').innerText = stats.totalDelivered;
-
         const res = await fetch(date ? `/api/admin/orders?date=${date}` : '/api/admin/orders');
         const orders = await res.json();
+        
+        const todayStr = new Date().toISOString().split('T')[0];
+        
+        // Calculate stats
+        let displayCount, deliveredCount;
+        
+        if (date) {
+            // If a specific date is selected, show stats for that date
+            displayCount = orders.length;
+            deliveredCount = orders.filter(o => o.status === 'delivered').length;
+            // Update labels to be specific
+            document.querySelector('#statOrdersToday').parentElement.querySelector('p').innerText = "Orders on " + date;
+            document.querySelector('#statOrdersDelivered').parentElement.querySelector('p').innerText = "Delivered on " + date;
+        } else {
+            // If no date selected, 'Total Orders Today' should only count today's orders
+            displayCount = orders.filter(o => o.created_at.startsWith(todayStr)).length;
+            deliveredCount = orders.filter(o => o.status === 'delivered' && o.created_at.startsWith(todayStr)).length;
+            // Reset labels to default
+            document.querySelector('#statOrdersToday').parentElement.querySelector('p').innerText = "Total Orders Today";
+            document.querySelector('#statOrdersDelivered').parentElement.querySelector('p').innerText = "Orders Delivered Today";
+        }
+        
+        const statToday = document.getElementById('statOrdersToday');
+        const statDelivered = document.getElementById('statOrdersDelivered');
+        
+        if (statToday) statToday.innerText = displayCount;
+        if (statDelivered) statDelivered.innerText = deliveredCount;
+
         const tbody = document.getElementById('ordersTableBody');
         tbody.innerHTML = orders.map(o => {
             const items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
@@ -881,6 +904,10 @@ async function fetchShopSettings() {
         document.getElementById('sPhone').value = s.shop_phone || '';
         document.getElementById('sAddress').value = s.shop_address || '';
         document.getElementById('sImage').value = s.shop_image || '';
+        
+        // App Config
+        if (document.getElementById('defaultLanguage')) document.getElementById('defaultLanguage').value = s.default_language || 'en';
+        if (document.getElementById('privacyPolicyText')) document.getElementById('privacyPolicyText').value = s.privacy_policy || '';
     }
 
     try {
@@ -907,6 +934,20 @@ async function handleSaveSettings(e) {
         body: JSON.stringify(data)
     });
     refreshWithToast("Settings saved", "success");
+}
+
+async function handleSaveAppConfig(e) {
+    e.preventDefault();
+    const data = {
+        default_language: document.getElementById('defaultLanguage').value,
+        privacy_policy: document.getElementById('privacyPolicyText').value
+    };
+    await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    refreshWithToast("App configuration updated", "success");
 }
 
 async function fetchDeliverySettings() {
@@ -1319,6 +1360,7 @@ function setupEventListeners() {
     document.getElementById('brandForm')?.addEventListener('submit', handleBrandSubmit);
     document.getElementById('couponForm')?.addEventListener('submit', handleCouponSubmit);
     document.getElementById('adminSecurityForm')?.addEventListener('submit', handleSecurityUpdate);
+    document.getElementById('appFeaturesForm')?.addEventListener('submit', handleSaveAppConfig);
 }
 
 async function handleSecurityUpdate(e) {

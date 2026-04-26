@@ -68,8 +68,8 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="cart-styles.css">
     <!-- Phosphor Icons (Stable CSS from jsDelivr) -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css">
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
     <script src="theme-manager.js"></script>
     <script type="module" src="translations.js"></script>
 </head>
@@ -101,7 +101,7 @@
             </div>
 
             <!-- Mobile Only Actions -->
-            <div class="mobile-nav-actions" style="display: none; align-items: center; gap: 0.75rem;">
+            <div class="mobile-nav-actions" style="display: flex; align-items: center; gap: 0.75rem;">
                 <div id="mobileDynamicAuthContent" style="font-size: 0.75rem; font-weight: 700;"></div>
                 <button class="theme-toggle-btn mobile-theme-btn" style="background:none; border:none; color:var(--text-main); font-size:1.4rem;">
                     <i class="ph ph-moon"></i>
@@ -134,19 +134,7 @@
                     <div class="notifications-btn" id="notificationsToggle" style="position: relative; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); transition: var(--transition);">
                         <i class="ph ph-bell" style="font-size: 1.25rem;"></i>
                         <span id="notifBadge" class="badge" style="position: absolute; top: -5px; right: -5px; background-color: var(--secondary); color: white; width: 18px; height: 18px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; border: 2px solid var(--card-bg);">0</span>
-                        <!-- Notifications Dropdown -->
-                        <div id="notificationsDropdown" style="display: none; position: absolute; top: 45px; right: 0; width: 300px; background: var(--card-bg); border: 1px solid var(--border); box-shadow: var(--shadow-md); border-radius: var(--radius-md); padding: 1rem; z-index: 200;">
-                            <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
-                                <span style="display: flex; align-items: center; gap: 0.4rem;"><i class="ph-fill ph-megaphone" style="color: var(--secondary);"></i> Store Alerts</span>
-                                <div style="display: flex; align-items: center; gap: 0.8rem;">
-                                    <span id="notifTotalText" style="font-size: 0.7rem; font-weight: normal; color: var(--text-soft);">Total: 0</span>
-                                    <button id="clearNotifsBtn" style="background: none; border: none; color: var(--primary); font-size: 0.7rem; font-weight: 600; cursor: pointer; padding: 0;">Clear All</button>
-                                </div>
-                            </h4>
-                            <ul id="notifList" style="list-style: none; margin: 0; padding: 0; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.5rem; color: var(--text-soft); max-height: 250px; overflow-y: auto;">
-                                <li style="text-align: center; padding: 1rem;">Loading...</li>
-                            </ul>
-                        </div>
+                        <!-- Notifications Dropdown moved to body end for mobile support -->
                     </div>
                 </div>
 
@@ -185,17 +173,7 @@
             <button onclick="dismissOrderStatus()" style="background: none; border: none; color: #10B981; cursor: pointer; font-size: 1.25rem;"><i class="ph ph-x"></i></button>
         </div>
 
-        <!-- Professional Refer & Earn Banner (Mobile Only) -->
-        <div class="mobile-refer-banner">
-            <div class="refer-content">
-                <h4>Refer & Earn ₹100</h4>
-                <p>Share with friends and get rewards on their first order!</p>
-                <button class="refer-btn">Invite Now</button>
-            </div>
-            <div class="refer-image">
-                <i class="ph ph-gift"></i>
-            </div>
-        </div>
+        <!-- Category Section -->
 
         <!-- Dynamic Category Section -->
         <section class="category-section">
@@ -213,8 +191,8 @@
         </section>
 
         <!-- Special Offers -->
-        <section class="special-offers">
-            <h3 class="section-title">Special Offers</h3>
+        <section class="special-offers" style="margin-top: 2rem; padding: 1.5rem 0; clear: both; position: relative; z-index: 1;">
+            <h3 class="section-title" style="margin-bottom: 2rem;">Special Offers</h3>
             <div class="offers-grid" id="specialOffersGrid">
                 <!-- Populated by JS -->
             </div>
@@ -485,10 +463,10 @@
                     </div>
                 </div>
                 
-                <div id="checkoutPaymentCouponSection" style="margin: 1rem 0; padding: 1rem; background: #F8FAFC; border: 1px solid var(--border); border-radius: var(--radius-md);">
+                <div id="checkoutPaymentCouponSection" class="checkout-section-card">
                     <h4 style="font-size: 0.9rem; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem;"><i class="ph ph-ticket" style="color: var(--primary);"></i> Have a Coupon?</h4>
                     <div style="display: flex; gap: 0.5rem; margin-bottom: 0.8rem;">
-                        <input type="text" id="checkoutCouponInput" placeholder="Enter Coupon Code" style="flex: 1; padding: 0.6rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem;">
+                        <input type="text" id="checkoutCouponInput" placeholder="Enter Coupon Code" class="form-control" style="flex: 1; padding: 0.6rem; border-radius: 4px; font-size: 0.85rem;">
                         <button id="checkoutCouponBtn" class="btn btn-primary btn-sm" style="width: auto; padding: 0 1rem; border-radius: 4px;">Apply</button>
                     </div>
                     <div id="checkoutCouponMsg" style="font-size: 0.75rem; margin-bottom: 0.8rem;"></div>
@@ -500,7 +478,7 @@
                 </div>
 
                 <!-- Order Summary Integrated into Payment Step -->
-                <div id="checkoutOrderSummary" style="margin: 1.5rem 0; padding: 1rem; background: #EEF2FF; border-radius: var(--radius-md); border: 1px solid #C3DAFE;">
+                <div id="checkoutOrderSummary" class="checkout-summary-card">
                     <h4 style="font-size: 0.9rem; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem;"><i class="ph ph-receipt" style="color: var(--primary);"></i> Order Total</h4>
                     <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem;">
                         <div style="display: flex; justify-content: space-between;">
@@ -586,29 +564,29 @@
             <div id="authFields">
                 <!-- Mobile Number (Required for Login & Register) -->
                 <div id="loginIdentifierField">
-                    <input type="text" id="usernameInput" placeholder="10-digit Mobile Number" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '');" style="width: 100%; padding: 0.75rem; margin-bottom: 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 1rem;">
+                    <input type="text" id="usernameInput" placeholder="10-digit Mobile Number" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '');" class="form-control" style="width: 100%; padding: 0.75rem; margin-bottom: 1rem; font-size: 1rem;">
                 </div>
                 
                 <!-- Full Name (Required for Login & Register) -->
                 <div id="nameField">
-                    <input type="text" id="fullNameInput" placeholder="Full Name" style="width: 100%; padding: 0.75rem; margin-bottom: 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 1rem;">
+                    <input type="text" id="fullNameInput" placeholder="Full Name" class="form-control" style="width: 100%; padding: 0.75rem; margin-bottom: 1rem; font-size: 1rem;">
                 </div>
                 
                 <!-- Phone Number (for Register/Forgot) -->
                 <div id="phoneField" style="display: none;">
                     <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                        <input type="text" value="+91" disabled style="width: 50px; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 1rem; text-align: center; background: #f8fafc;">
-                        <input type="text" id="phoneInput" placeholder="10-digit Mobile Number" maxlength="10" style="flex: 1; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 1rem;">
+                        <input type="text" value="+91" disabled class="form-control" style="width: 60px; padding: 0.75rem; font-size: 1rem; text-align: center;">
+                        <input type="text" id="phoneInput" placeholder="10-digit Mobile Number" maxlength="10" class="form-control" style="flex: 1; padding: 0.75rem; font-size: 1rem;">
                     </div>
                 </div>
 
                 <div style="position: relative; margin-bottom: 1rem;">
-                    <input type="password" id="passwordInput" placeholder="Password" autocomplete="new-password" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 1rem;">
+                    <input type="password" id="passwordInput" placeholder="Password" autocomplete="new-password" class="form-control" style="width: 100%; padding: 0.75rem; font-size: 1rem;">
                     <i class="ph ph-eye password-toggle" onclick="togglePasswordVisibility('passwordInput', this)" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-soft); font-size: 1.1rem;"></i>
                 </div>
                 
                 <div id="confirmPasswordField" style="display: none; position: relative; margin-bottom: 1rem;">
-                    <input type="password" id="confirmPasswordInput" placeholder="Confirm Password" autocomplete="new-password" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 1rem;">
+                    <input type="password" id="confirmPasswordInput" placeholder="Confirm Password" autocomplete="new-password" class="form-control" style="width: 100%; padding: 0.75rem; font-size: 1rem;">
                     <i class="ph ph-eye password-toggle" onclick="togglePasswordVisibility('confirmPasswordInput', this)" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-soft); font-size: 1.1rem;"></i>
                 </div>
                 
@@ -662,8 +640,6 @@
             </div>
             
             <div id="authErrorMsg" style="color: #ef4444; margin-top: 1rem; display: none; font-size: 0.9rem; padding: 0.5rem; background: #fef2f2; border-radius: 4px; border: 1px solid #fee2e2;"></div>
-        </div>
-    </div>
         </div>
     </div>
 
@@ -762,16 +738,19 @@
             <div class="nav-section">
                 <h5 data-i18n="sidebar_section_settings">Settings & Privacy</h5>
                 <a href="#" class="nav-item" id="nav-language"><i class="ph ph-translate"></i> <span data-i18n="sidebar_app_language">App Language</span></a>
-                <a href="#" class="nav-item" id="nav-notifications"><i class="ph ph-bell-ringing"></i> <span data-i18n="sidebar_notification_settings">Notification Settings</span></a>
+                <a href="notifications.html" class="nav-item"><i class="ph ph-bell-ringing"></i> <span data-i18n="sidebar_notification_settings">Notifications</span></a>
                 <a href="#" class="nav-item" id="nav-privacy"><i class="ph ph-shield-check"></i> <span data-i18n="sidebar_privacy_center">Privacy Center</span></a>
-                <a href="#" class="nav-item" id="nav-activity"><i class="ph ph-clock-counter-clockwise"></i> <span data-i18n="sidebar_my_activity">My Activity</span></a>
+                <a href="#" class="nav-item" id="nav-activity" style="position: relative;">
+                    <i class="ph ph-clock-counter-clockwise"></i> 
+                    <span data-i18n="sidebar_my_activity">My Activity</span>
+                    <span id="activityDot" style="display: none; position: absolute; right: 15px; top: 50%; transform: translateY(-50%); width: 8px; height: 8px; background: #10B981; border-radius: 50%; border: 2px solid var(--card-bg); box-shadow: 0 0 5px rgba(16, 185, 129, 0.5);"></span>
+                </a>
             </div>
 
             <div class="nav-divider"></div>
             
             <div class="nav-section">
                 <h5 data-i18n="sidebar_section_others">Others</h5>
-                <a href="#" class="nav-item" style="color: var(--secondary); font-weight: 700;"><i class="ph ph-gift"></i> <span data-i18n="sidebar_refer_earn">Refer & Earn</span></a>
                 <a href="admin.html" class="nav-item" style="color: var(--primary); font-weight: 700;"><i class="ph ph-shield-check"></i> <span>Admin Panel</span></a>
                 <a href="support.html" class="nav-item"><i class="ph ph-info"></i> <span data-i18n="sidebar_help_support">Help & Support</span></a>
                 <a href="#" class="nav-item" id="sidebarLogout" style="display: none;"><i class="ph ph-sign-out"></i> <span data-i18n="sidebar_logout">Logout</span></a>
@@ -842,5 +821,29 @@
             }
         });
     </script>
+    <!-- Notifications Dropdown (Global) -->
+    <div id="notificationsDropdown" style="display: none; position: fixed; top: 80px; right: 20px; width: 350px; max-width: calc(100vw - 40px); background: #0F172A; border: 1px solid #1E293B; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); border-radius: 16px; padding: 1.25rem; z-index: 10000; animation: slideInDown 0.3s cubic-bezier(0, 0, 0.2, 1);">
+        <h4 style="font-size: 1.1rem; margin-bottom: 1rem; border-bottom: 1px solid #1E293B; padding-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; color: #F8FAFC; font-family: 'Outfit', sans-serif;">
+            <span style="display: flex; align-items: center; gap: 0.6rem;"><i class="ph-fill ph-megaphone" style="color: #F59E0B;"></i> Store Alerts</span>
+            <div style="display: flex; align-items: center; gap: 0.8rem;">
+                <span id="notifTotalText" style="font-size: 0.8rem; font-weight: 400; color: #94A3B8;">Total: 0</span>
+                <button id="clearNotifsBtn" style="background: none; border: none; color: #10B981; font-size: 0.85rem; font-weight: 700; cursor: pointer; padding: 0; transition: opacity 0.2s;">Clear All</button>
+            </div>
+        </h4>
+        <ul id="notifList" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0; max-height: 400px; overflow-y: auto; scrollbar-width: none;">
+            <li style="text-align: center; padding: 2rem; color: #64748B;">Loading alerts...</li>
+        </ul>
+        <div style="margin-top: 1rem; border-top: 1px solid #1E293B; padding-top: 1rem; text-align: center;">
+            <a href="notifications.html" style="color: #10B981; font-size: 0.95rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: transform 0.2s;">
+                Read Full Alerts <i class="ph ph-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+        <div style="margin-top: 0.75rem; border-top: 1px solid var(--border); padding-top: 0.75rem; text-align: center;">
+            <a href="notifications.html" style="color: var(--primary); font-size: 0.85rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+                Read Full Alerts <i class="ph ph-arrow-right"></i>
+            </a>
+        </div>
+    </div>
 </body>
 </html>

@@ -6,8 +6,8 @@
     <title>My Account - SURAJ</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="cart-styles.css">
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css">
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <script src="theme-manager.js"></script>
     <script type="module" src="translations.js"></script>
@@ -154,8 +154,36 @@
 
         @media (max-width: 480px) {
             .dashboard-wrapper { margin: 1rem auto; padding: 0 0.5rem; }
-            .dash-nav-item { font-size: 0.7rem; padding: 0.3rem 0.5rem; gap: 0.2rem; border-radius: 8px; }
-            .dash-nav-item i { display: none; }
+            .dash-nav { 
+                margin-bottom: 0.5rem; 
+                border-bottom: 1px solid var(--border); 
+                padding: 0.25rem 0.5rem;
+                display: flex;
+                overflow-x: auto;
+                gap: 0.6rem;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+                mask-image: linear-gradient(to right, black 85%, transparent 100%);
+                -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+            }
+            .dash-nav::-webkit-scrollbar { display: none; }
+            .dash-nav-item { 
+                font-size: 0.6rem; 
+                padding: 0.3rem 0.6rem; 
+                gap: 0.25rem; 
+                border-radius: 20px; 
+                background: var(--bg-color);
+                border: 1px solid var(--border);
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+            .dash-nav-item.active {
+                background: var(--primary);
+                color: white;
+                border-color: var(--primary);
+                box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+            }
+            .dash-nav-item i { display: inline-block; font-size: 0.75rem; }
             .dash-card { padding: 1rem; border-radius: 12px; margin-bottom: 0.75rem; }
             .dash-card-header { margin-bottom: 1rem; padding-bottom: 0.75rem; }
             .dash-card-header h2 { font-size: 1.2rem; }
@@ -181,6 +209,24 @@
             #orderList .dash-card h4 { font-size: 1rem; }
             #orderList .dash-card span { font-size: 0.8rem !important; }
             #orderList .dash-card .reorder-btn { padding: 0.6rem; font-size: 0.85rem; }
+            
+            /* Profile Avatar */
+            .profile-avatar {
+                width: 70px;
+                height: 70px;
+                background: var(--primary-light);
+                color: var(--primary);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.75rem;
+                font-weight: 700;
+            }
+            body.dark-theme .profile-avatar {
+                background: rgba(16, 185, 129, 0.2);
+                color: #00ff99;
+            }
             
             /* Form Grid fixes */
             #profileForm > div { grid-template-columns: 1fr !important; gap: 0 !important; }
@@ -225,6 +271,9 @@
             <button class="dash-nav-item" data-tab="coupons">
                 <i class="ph ph-ticket"></i> My Coupons
             </button>
+            <button class="dash-nav-item" onclick="window.location.href='support.html'">
+                <i class="ph ph-headset"></i> Customer Support
+            </button>
             <button class="dash-nav-item" data-tab="profile">
                 <i class="ph ph-user-circle"></i> Edit Profile
             </button>
@@ -245,7 +294,7 @@
             <div class="tab-content" id="overview">
                 <div class="dash-card">
                     <div style="display:flex; align-items:center; gap:1.5rem;">
-                        <div class="profile-avatar" id="profileAvatarInitial" style="width:70px; height:70px; background:var(--primary-light); color:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.75rem; font-weight:700;">U</div>
+                        <div class="profile-avatar" id="profileAvatarInitial">U</div>
                         <div>
                             <h2 id="welcomeName">Welcome!</h2>
                             <p id="userStatusLabel" style="color:var(--text-soft);">SURAJ Premium Member</p>
@@ -510,5 +559,11 @@
             window.location.href = 'profile.html';
         });
     </script>
+    <!-- Floating Support Symbol -->
+    <a href="support.html" class="support-fixed-container" id="supportSymbol">
+        <div class="support-symbol">
+            <i class="ph ph-headset"></i>
+        </div>
+    </a>
 </body>
 </html>

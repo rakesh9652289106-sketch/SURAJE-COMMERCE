@@ -72,6 +72,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     setupCustomerService();
     populateTestimonials();
     setupNavMenu();
+    setupFeatureModal();
     
     // Initialize Translation
     const savedLang = localStorage.getItem('language') || 'en';
@@ -258,6 +259,7 @@ function updateWishlistBadge() {
 
 window.toggleWishlist = async function(e, productId) {
     e.stopPropagation();
+    window.logActivity?.(`Wishlist action on product #${productId}`);
     const isLogged = !!getCookie('user_id');
     const pid = Number(productId);
     
@@ -417,12 +419,16 @@ function setupNotifications() {
                     list.innerHTML = '<li style="text-align: center; padding: 1.5rem; color: var(--text-soft); font-size: 0.8rem;">No new notifications</li>';
                 } else {
                     const newListHtml = activeNotifs.map(n => `
-                        <li style="padding: 0.75rem; border-bottom: 1px solid var(--border); transition: background 0.2s; cursor: default;" onmouseover="this.style.background='var(--primary-light)'" onmouseout="this.style.background='transparent'">
-                            <div style="font-weight: 500; color: var(--text-main); line-height: 1.4; display: flex; gap: 0.5rem; align-items: flex-start;">
-                                <i class="ph ph-info" style="color: var(--primary); margin-top: 0.2rem;"></i>
-                                ${n.message}
+                        <li onclick="window.location.href='notifications.html?id=${n.id}'" style="padding: 1rem 0; border-bottom: 1px solid #1E293B; transition: background 0.2s; cursor: pointer;" onmouseover="this.style.background='rgba(30, 41, 59, 0.5)'" onmouseout="this.style.background='transparent'">
+                            <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                                <div style="width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid #10B981; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+                                    <i class="ph ph-info" style="color: #10B981; font-size: 0.9rem;"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; color: #F1F5F9; line-height: 1.4; font-size: 0.95rem;">${n.message}</div>
+                                    <div style="font-size: 0.75rem; color: #64748B; margin-top: 0.4rem;">${new Date(n.created_at).toLocaleString()}</div>
+                                </div>
                             </div>
-                            <div style="font-size: 0.7rem; color: var(--text-soft); margin-top: 0.3rem; margin-left: 1.5rem;">${new Date(n.created_at).toLocaleString()}</div>
                         </li>
                     `).join('');
                     
@@ -584,7 +590,21 @@ function openFeatureModal(category) {
                 { name: "Marathi", code: "mr" },
                 { name: "Gujarati", code: "gu" },
                 { name: "Bengali", code: "bn" },
-                { name: "Malayalam", code: "ml" }
+                { name: "Malayalam", code: "ml" },
+                { name: "Punjabi", code: "pa" },
+                { name: "Urdu", code: "ur" },
+                { name: "Odia", code: "or" },
+                { name: "Assamese", code: "as" },
+                { name: "Maithili", code: "mai" },
+                { name: "Santali", code: "sat" },
+                { name: "Kashmiri", code: "ks" },
+                { name: "Nepali", code: "ne" },
+                { name: "Sindhi", code: "sd" },
+                { name: "Konkani", code: "kok" },
+                { name: "Dogri", code: "doi" },
+                { name: "Manipuri", code: "mni" },
+                { name: "Sanskrit", code: "sa" },
+                { name: "Bodo", code: "brx" }
             ];
             content.innerHTML = `<div class="language-grid">
                 ${langs.map(l => `<div class="language-card ${l.code === (localStorage.getItem('language') || 'en') ? 'active' : ''}" onclick="window.changeLanguage('${l.code}', true); this.parentElement.querySelectorAll('.language-card').forEach(c => c.classList.remove('active')); this.classList.add('active');">
@@ -635,6 +655,14 @@ function openFeatureModal(category) {
                 fetch('/api/user/activity').then(r => r.json()),
                 fetch('/api/user/inquiries').then(r => r.json())
             ]).then(([reviews, inquiries]) => {
+                // Clear the unread dot when user views activity
+                const replied = inquiries.filter(i => i.status === 'replied');
+                if (replied.length > 0) {
+                    const latestId = Math.max(...replied.map(i => i.id));
+                    localStorage.setItem('lastSeenReplyId', latestId);
+                    const dot = document.getElementById('activityDot');
+                    if (dot) dot.style.display = 'none';
+                }
                 if ((!reviews || reviews.length === 0) && (!inquiries || inquiries.length === 0)) {
                     content.innerHTML = `<div class="empty-state" style="text-align:center; padding: 3rem;">
                         <i class="ph ph-clock-counter-clockwise" style="font-size: 3rem; color: var(--text-soft); margin-bottom: 1rem; display:block;"></i>
@@ -667,25 +695,43 @@ function openFeatureModal(category) {
                         <!-- Inquiry Section -->
                         ${inquiries.length > 0 ? `
                         <div class="activity-section">
-                            <h4 style="margin-bottom: 1rem; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;"><i class="ph ph-chat-circle-text" style="color: var(--primary);"></i> Support Inquiries (${inquiries.length})</h4>
+                            <h4 style="margin-bottom: 1.25rem; color: var(--text-main); display: flex; align-items: center; gap: 0.6rem; font-family: 'Outfit'; font-size: 1.1rem;">
+                                <i class="ph ph-chat-circle-dots" style="color: var(--primary); font-size: 1.3rem;"></i> Support Center (${inquiries.length})
+                            </h4>
                             ${inquiries.map(item => `
-                                <div class="activity-item" style="background: var(--bg-color); border: 1px solid var(--border); padding: 1.25rem; border-radius: 12px; margin-bottom: 1rem;">
-                                    <div class="activity-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                                        <strong>Ref #${item.id}: ${item.subject}</strong>
-                                        <span class="status-badge" style="font-size: 0.7rem; color: ${item.status === 'replied' ? '#10B981' : '#F59E0B'}; background: ${item.status === 'replied' ? '#D1FAE5' : '#FEF3C7'}; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">${item.status}</span>
+                                <div class="activity-item" style="background: var(--card-bg); border: 1px solid var(--border); padding: 1.5rem; border-radius: 20px; margin-bottom: 1.25rem; box-shadow: var(--shadow-sm); position: relative; overflow: hidden;">
+                                    <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: ${item.status === 'replied' ? '#10B981' : '#F59E0B'};"></div>
+                                    
+                                    <div class="activity-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                        <div style="display: flex; flex-direction: column;">
+                                            <span style="font-size: 0.75rem; color: var(--text-soft); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Ref #${item.id}</span>
+                                            <strong style="font-size: 1.05rem; color: var(--text-main); margin-top: 2px;">${item.subject}</strong>
+                                        </div>
+                                        <span class="status-badge" style="font-size: 0.7rem; color: ${item.status === 'replied' ? '#065F46' : '#92400E'}; background: ${item.status === 'replied' ? '#D1FAE5' : '#FEF3C7'}; padding: 4px 10px; border-radius: 20px; font-weight: 800; text-transform: uppercase; border: 1px solid ${item.status === 'replied' ? '#A7F3D0' : '#FDE68A'};">${item.status}</span>
                                     </div>
-                                    <p style="font-size: 0.85rem; color: var(--text-soft); line-height: 1.4;">" ${item.message} "</p>
+
+                                    <!-- User's Original Message -->
+                                    <div class="user-query" style="background: var(--bg-color); padding: 1rem; border-radius: 12px; border-left: 3px solid var(--border); margin-bottom: 1rem;">
+                                        <div style="font-size: 0.7rem; color: var(--text-soft); font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+                                            <i class="ph-fill ph-user-circle"></i> YOUR MESSAGE • ${new Date(item.created_at).toLocaleDateString()}
+                                        </div>
+                                        <p style="font-size: 0.95rem; color: var(--text-main); line-height: 1.5; font-style: italic;">"${item.message}"</p>
+                                    </div>
                                     
                                     ${item.reply ? `
-                                        <div class="admin-reply-box" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--border);">
-                                            <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--primary); font-weight: 700; font-size: 0.8rem; margin-bottom: 0.4rem;">
-                                                <i class="ph ph-arrow-u-up-left"></i> Official Support Reply
+                                        <div class="admin-reply-box" style="margin-top: 1rem; padding: 1rem; border-radius: 12px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2);">
+                                            <div style="display: flex; align-items: center; gap: 0.5rem; color: #059669; font-weight: 800; font-size: 0.75rem; margin-bottom: 0.6rem; text-transform: uppercase;">
+                                                <i class="ph-fill ph-shield-check"></i> Official Support Response
                                             </div>
-                                            <p style="font-size: 0.9rem; color: var(--text-main); font-style: italic;">${item.reply}</p>
-                                            <div style="font-size: 0.7rem; color: var(--text-soft); margin-top: 0.4rem;">Answered on ${new Date(item.replied_at).toLocaleDateString()}</div>
+                                            <p style="font-size: 1rem; color: var(--text-main); font-weight: 500; line-height: 1.5;">${item.reply}</p>
+                                            <div style="font-size: 0.7rem; color: var(--text-soft); margin-top: 0.8rem; display: flex; align-items: center; gap: 0.4rem;">
+                                                <i class="ph ph-calendar"></i> Answered on ${new Date(item.replied_at).toLocaleString()}
+                                            </div>
                                         </div>
                                     ` : `
-                                        <div style="margin-top: 0.8rem; font-size: 0.75rem; color: var(--text-soft); font-style: italic;">Our team is reviewing your inquiry. We'll get back to you soon!</div>
+                                        <div style="margin-top: 0.8rem; font-size: 0.8rem; color: var(--text-soft); font-style: italic; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem;">
+                                            <i class="ph ph-hourglass" style="animation: spin 3s linear infinite;"></i> Our team is reviewing your message. Usually replies within 24 hours.
+                                        </div>
                                     `}
                                 </div>
                             `).join('')}
@@ -700,31 +746,39 @@ function openFeatureModal(category) {
 
         case 'privacy':
             title.innerText = "Privacy Center";
-            content.innerHTML = `<div class="settings-list">
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <strong>Personalized Ads</strong>
-                        <span>Show ads based on your interests</span>
-                    </div>
-                    <div class="switch on" onclick="this.classList.toggle('on')"><div class="toggle"></div></div>
-                </div>
-                <div class="danger-section" style="margin-top: 2rem; background: #FEF2F2; padding: 1.5rem; border-radius: 12px; border: 1px solid #FEE2E2;">
-                    <h5 style="color: #EF4444; margin-bottom: 0.5rem; display:flex; align-items:center; gap:0.5rem;">
-                        <i class="ph ph-warning-circle"></i> Danger Zone
-                    </h5>
-                    <p style="font-size: 0.85rem; color: var(--text-soft); margin-bottom: 1.25rem;">Actions taken here affect your entire account data.</p>
-                    <div style="display: flex; flex-direction: column; gap: 1rem;">
-                        <button class="btn btn-outline" style="color: #6B7280; border-color: #D1D5DB; width: 100%; text-align: left; padding: 0.75rem 1rem;" 
-                            onclick="if(confirm('Are you sure you want to deactivate your account? You will be logged out.')) window.deactivateAccount();">
-                            <i class="ph ph-user-minus"></i> De-activate My Account
-                        </button>
-                        <button class="btn" style="background: #EF4444; color: white; width: 100%; text-align: left; padding: 0.75rem 1rem;" 
-                            onclick="if(prompt('Type DELETE to confirm permanent account deletion') === 'DELETE') window.deleteAccount();">
-                            <i class="ph ph-trash"></i> Delete My Account Permanently
-                        </button>
-                    </div>
-                </div>
-            </div>`;
+            content.innerHTML = `<div style="text-align:center; padding:2rem;"><i class="ph ph-spinner-gap ph-spin" style="font-size:2rem; color:var(--primary);"></i></div>`;
+            
+            fetch('/api/settings').then(r => r.json()).then(s => {
+                const policy = s.privacy_policy || "At SURAJ, we are committed to protecting your personal data. Your shopping history and payment information are encrypted and never shared with third parties.";
+                content.innerHTML = `
+                    <div style="color: var(--text-soft); font-size: 0.9rem; line-height: 1.6;">
+                        <div style="text-align: center; margin-bottom: 1.5rem;">
+                            <i class="ph-fill ph-shield-check" style="font-size: 3rem; color: var(--primary);"></i>
+                            <h3 style="color: var(--text-main); margin-top: 0.5rem;">Your Privacy Matters</h3>
+                        </div>
+                        <p>${policy}</p>
+                        <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-color); border-radius: 8px;">
+                            <h4 style="color: var(--text-main); font-size: 0.85rem; margin-bottom: 0.5rem;">Data Collected:</h4>
+                            <ul style="padding-left: 1.2rem; margin: 0;">
+                                <li>Order History & Preferences</li>
+                                <li>Saved Delivery Addresses</li>
+                                <li>Payment Status (Tokenized)</li>
+                            </ul>
+                        </div>
+                        <div class="danger-section" style="margin-top: 2rem; background: #FEF2F2; padding: 1.5rem; border-radius: 12px; border: 1px solid #FEE2E2;">
+                            <h5 style="color: #EF4444; margin-bottom: 0.5rem; display:flex; align-items:center; gap:0.5rem;">
+                                <i class="ph ph-warning-circle"></i> Danger Zone
+                            </h5>
+                            <p style="font-size: 0.85rem; color: #EF4444; margin-bottom: 1.25rem;">Actions taken here affect your entire account data.</p>
+                            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                                <button class="btn btn-outline" style="color: #6B7280; border-color: #D1D5DB; width: 100%; text-align: left; padding: 0.75rem 1rem;" 
+                                    onclick="if(confirm('Are you sure you want to deactivate your account?')) window.deactivateAccount();">
+                                    <i class="ph ph-user-minus"></i> De-activate My Account
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
             break;
     }
 }
@@ -779,7 +833,7 @@ window.changeLanguage = (lang, syncToServer = false) => {
     originalChangeLanguage(lang);
     if (syncToServer) {
         fetch('/api/user/settings', {
-            method: 'POST',
+            method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ language: lang })
         }).then(r => r.json()).then(d => {
@@ -787,7 +841,7 @@ window.changeLanguage = (lang, syncToServer = false) => {
              setTimeout(() => location.reload(), 1000);
         });
     } else {
-        location.reload();
+        setTimeout(() => location.reload(), 1000);
     }
 };
 
@@ -1457,16 +1511,12 @@ async function setupCartInteractions() {
     const openCart = () => {
         if (cartSidebar) cartSidebar.classList.add('active');
         if (cartOverlay) cartOverlay.classList.add('active');
-        const supportSymbol = document.getElementById('supportSymbol');
-        if (supportSymbol) supportSymbol.style.display = 'none';
         document.body.style.overflow = 'hidden'; 
     };
 
     const closeCart = () => {
         if (cartSidebar) cartSidebar.classList.remove('active');
         if (cartOverlay) cartOverlay.classList.remove('active');
-        const supportSymbol = document.getElementById('supportSymbol');
-        if (supportSymbol) supportSymbol.style.display = 'flex';
         document.body.style.overflow = '';
     };
 
@@ -1626,10 +1676,8 @@ async function setupCartInteractions() {
             
             if (coupons && coupons.length > 0) {
                 const couponHTML = coupons.map(c => `
-                    <div onclick="document.getElementById('checkoutCouponInput').value='${c.code}'; document.getElementById('checkoutCouponBtn').click();" 
-                         style="background: white; border: 1px solid var(--secondary); color: var(--secondary); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; border-style: dashed; transition: all 0.2s;"
-                         onmouseover="this.style.background='var(--secondary-light-alpha)'" 
-                         onmouseout="this.style.background='white'">
+                    <div class="checkout-coupon-badge" 
+                         onclick="document.getElementById('checkoutCouponInput').value='${c.code}'; document.getElementById('checkoutCouponBtn').click();">
                         ${c.code}
                     </div>
                 `).join('');
@@ -1659,9 +1707,6 @@ async function setupCartInteractions() {
 
             closeCart();
             document.body.classList.add('no-scroll');
-            
-            const supportSymbol = document.getElementById('supportSymbol');
-            if (supportSymbol) supportSymbol.style.display = 'none';
             
             // Show Delivery Step first
             showCheckoutStep('delivery');
@@ -1791,6 +1836,7 @@ async function setupCartInteractions() {
                 
                 if (res.ok) {
                     Toast.show("Order placed successfully!", "success");
+                    window.logActivity?.("Placed a new order: " + (data.orderId || ''));
                     showCheckoutStep('success');
                     
                     if (document.getElementById('successOrderId')) document.getElementById('successOrderId').innerText = `#${data.orderId || '0000'}`;
@@ -1826,8 +1872,6 @@ async function setupCartInteractions() {
     if (closeSuccessBtn) closeSuccessBtn.onclick = () => {
         if (checkoutModal) checkoutModal.classList.remove('active');
         document.body.classList.remove('no-scroll');
-        const supportSymbol = document.getElementById('supportSymbol');
-        if (supportSymbol) supportSymbol.style.display = 'flex';
         location.reload();
     };
 }
@@ -2113,6 +2157,7 @@ window.updateVariantPrice = function(select, prodId, productName) {
 
 function addToCart(product, selectedVariant = null) {
     console.log("Adding to cart:", product.name, "Variant:", selectedVariant?.weight);
+    window.logActivity?.(`Added ${product.name} to cart`);
     
     const weight = selectedVariant ? selectedVariant.weight : product.weight;
     const price = selectedVariant ? selectedVariant.price : product.price;
@@ -2825,22 +2870,75 @@ function setupFeatureModal() {
     // Bind Sidebar Links
     document.getElementById('nav-language')?.addEventListener('click', (e) => {
         e.preventDefault();
+        const currentLang = localStorage.getItem('language') || 'en';
         window.openFeatureModal('App Language', `
-            <div class="language-options" style="display: flex; flex-direction: column; gap: 1rem;">
-                <label style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+            <div class="lang-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                <label style="display: flex; justify-content: space-between; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
                     <span>English</span>
-                    <input type="radio" name="lang" value="en" checked>
+                    <input type="radio" name="lang" value="en" ${currentLang === 'en' ? 'checked' : ''}>
                 </label>
-                <label style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
-                    <span>Telugu (తెలుగు)</span>
-                    <input type="radio" name="lang" value="te">
-                </label>
-                <label style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                <label style="display: flex; justify-content: space-between; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
                     <span>Hindi (हिन्दी)</span>
-                    <input type="radio" name="lang" value="hi">
+                    <input type="radio" name="lang" value="hi" ${currentLang === 'hi' ? 'checked' : ''}>
                 </label>
-                <button class="btn btn-primary" style="margin-top: 1rem;" onclick="Toast.show('Language updated!', 'success'); document.getElementById('featureModalOverlay').classList.remove('active');">Apply Language</button>
+                <label style="display: flex; justify-content: space-between; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                    <span>Telugu (తెలుగు)</span>
+                    <input type="radio" name="lang" value="te" ${currentLang === 'te' ? 'checked' : ''}>
+                </label>
+                <label style="display: flex; justify-content: space-between; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                    <span>Tamil (தமிழ்)</span>
+                    <input type="radio" name="lang" value="ta" ${currentLang === 'ta' ? 'checked' : ''}>
+                </label>
+                <label style="display: flex; justify-content: space-between; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                    <span>Kannada (ಕನ್ನಡ)</span>
+                    <input type="radio" name="lang" value="kn" ${currentLang === 'kn' ? 'checked' : ''}>
+                </label>
+                <label style="display: flex; justify-content: space-between; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                    <span>Gujarati (ગુજરાતી)</span>
+                    <input type="radio" name="lang" value="gu" ${currentLang === 'gu' ? 'checked' : ''}>
+                </label>
+                <label style="display: flex; justify-content: space-between; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                    <span>Malayalam (മലയാളം)</span>
+                    <input type="radio" name="lang" value="ml" ${currentLang === 'ml' ? 'checked' : ''}>
+                </label>
+                <label style="display: flex; justify-content: space-between; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                    <span>Bengali (বাংলা)</span>
+                    <input type="radio" name="lang" value="bn" ${currentLang === 'bn' ? 'checked' : ''}>
+                </label>
+                <label style="display: flex; justify-content: space-between; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                    <span>Marathi (मराठी)</span>
+                    <input type="radio" name="lang" value="mr" ${currentLang === 'mr' ? 'checked' : ''}>
+                </label>
+                <label style="display: flex; justify-content: space-between; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                    <span>Urdu (اردو)</span>
+                    <input type="radio" name="lang" value="ur" ${currentLang === 'ur' ? 'checked' : ''}>
+                </label>
+                <label style="display: flex; justify-content: space-between; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                    <span>Odia (ଓଡ଼ିଆ)</span>
+                    <input type="radio" name="lang" value="or" ${currentLang === 'or' ? 'checked' : ''}>
+                </label>
+                <label style="display: flex; justify-content: space-between; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                    <span>Punjabi (ਪੰਜਾਬੀ)</span>
+                    <input type="radio" name="lang" value="pa" ${currentLang === 'pa' ? 'checked' : ''}>
+                </label>
+                <label style="display: flex; justify-content: space-between; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                    <span>Assamese (অসমীয়া)</span>
+                    <input type="radio" name="lang" value="as" ${currentLang === 'as' ? 'checked' : ''}>
+                </label>
+                <label style="display: flex; justify-content: space-between; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                    <span>Kashmiri (کٲشُر)</span>
+                    <input type="radio" name="lang" value="ks" ${currentLang === 'ks' ? 'checked' : ''}>
+                </label>
+                <label style="display: flex; justify-content: space-between; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                    <span>Nepali (नेपाली)</span>
+                    <input type="radio" name="lang" value="ne" ${currentLang === 'ne' ? 'checked' : ''}>
+                </label>
+                <label style="display: flex; justify-content: space-between; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                    <span>Sanskrit (संस्कृतम्)</span>
+                    <input type="radio" name="lang" value="sa" ${currentLang === 'sa' ? 'checked' : ''}>
+                </label>
             </div>
+            <button class="btn btn-primary" style="margin-top: 1.5rem; width: 100%;" onclick="const l=document.querySelector('input[name=lang]:checked').value; changeLangAndClose(l);">Apply Language</button>
         `);
     });
 
@@ -2853,17 +2951,148 @@ function setupFeatureModal() {
                         <h4 style="font-size: 1rem; margin-bottom: 0.2rem;">Order Updates</h4>
                         <p style="font-size: 0.8rem; color: var(--text-soft);">Get real-time tracking alerts</p>
                     </div>
-                    <input type="checkbox" checked style="width: 20px; height: 20px; accent-color: var(--primary);">
+                    <label class="toggle-switch-small"><input type="checkbox" checked><span></span></label>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <h4 style="font-size: 1rem; margin-bottom: 0.2rem;">Offers & Promos</h4>
                         <p style="font-size: 0.8rem; color: var(--text-soft);">Never miss a big discount</p>
                     </div>
-                    <input type="checkbox" checked style="width: 20px; height: 20px; accent-color: var(--primary);">
+                    <label class="toggle-switch-small"><input type="checkbox" checked><span></span></label>
                 </div>
                 <button class="btn btn-primary" onclick="Toast.show('Preferences saved!', 'success'); document.getElementById('featureModalOverlay').classList.remove('active');">Save Preferences</button>
             </div>
         `);
     });
+
+    document.getElementById('nav-privacy')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.openFeatureModal('Privacy Center', `
+            <div style="color: var(--text-soft); font-size: 0.9rem; line-height: 1.6;">
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <i class="ph-fill ph-shield-check" style="font-size: 3rem; color: var(--primary);"></i>
+                    <h3 style="color: var(--text-main); margin-top: 0.5rem;">Your Privacy Matters</h3>
+                </div>
+                <p>At SURAJ, we are committed to protecting your personal data. Your shopping history and payment information are encrypted and never shared with third parties.</p>
+                <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-color); border-radius: 8px;">
+                    <h4 style="color: var(--text-main); font-size: 0.85rem; margin-bottom: 0.5rem;">Data Collected:</h4>
+                    <ul style="padding-left: 1.2rem; margin: 0;">
+                        <li>Order History & Preferences</li>
+                        <li>Saved Delivery Addresses</li>
+                        <li>Payment Status (Tokenized)</li>
+                    </ul>
+                </div>
+                <button class="btn btn-primary" style="margin-top: 1.5rem; width: 100%;" onclick="document.getElementById('featureModalOverlay').classList.remove('active');">I Understand</button>
+            </div>
+        `);
+    });
+
+    document.getElementById('nav-activity')?.addEventListener('click', async (e) => {
+        e.preventDefault();
+        window.openFeatureModal('My Activity', '<div style="text-align:center; padding:2rem;"><i class="ph ph-spinner-gap ph-spin" style="font-size:2rem; color:var(--primary);"></i></div>');
+        
+        try {
+            const localActivity = JSON.parse(localStorage.getItem('user_activity') || '[]');
+            const res = await fetch('/api/user/inquiries');
+            const inquiries = await res.json();
+            
+            const inquiryActivity = inquiries.map(iq => ({
+                event: iq.subject || "Support Request",
+                time: iq.created_at,
+                type: 'inquiry',
+                message: iq.message,
+                reply: iq.reply
+            }));
+
+            const combined = [...localActivity, ...inquiryActivity].sort((a,b) => new Date(b.time) - new Date(a.time));
+            
+            let html = '';
+            if (combined.length === 0) {
+                html = '<div style="text-align: center; padding: 2rem; color: var(--text-soft);"><i class="ph ph-clock-counter-clockwise" style="font-size: 2rem;"></i><p>No recent activity found.</p></div>';
+            } else {
+                html = '<div style="display: flex; flex-direction: column; gap: 1rem;">' + 
+                    combined.slice(0, 15).map(a => `
+                        <div style="padding: 0.8rem; border-left: 3px solid ${a.type === 'inquiry' ? '#4F46E5' : 'var(--primary)'}; background: var(--bg-color); border-radius: 0 8px 8px 0;">
+                            <div style="font-weight: 600; color: var(--text-main); font-size: 0.85rem; display:flex; align-items:center; gap:0.4rem;">
+                                <i class="${a.type === 'inquiry' ? 'ph ph-chat-circle-dots' : 'ph ph-lightning'}"></i>
+                                ${a.event}
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-soft);">${new Date(a.time).toLocaleString()}</div>
+                            ${a.reply ? `
+                                <div style="margin-top: 0.6rem; padding: 0.6rem; background: var(--primary-light); border-radius: 6px; font-size: 0.8rem; color: var(--text-main); border-left: 2px solid var(--primary);">
+                                    <strong style="color: var(--primary); display:block; margin-bottom:2px;">Admin Reply:</strong>
+                                    ${a.reply}
+                                </div>
+                            ` : (a.type === 'inquiry' ? '<small style="color:#94A3B8; font-style:italic; margin-top:0.4rem; display:block;">Awaiting response...</small>' : '')}
+                        </div>
+                    `).join('') + '</div>';
+            }
+            window.openFeatureModal('My Activity', html);
+        } catch(e) {
+            const local = JSON.parse(localStorage.getItem('user_activity') || '[]').reverse();
+            let h = local.length ? local.map(a => `<div style="padding:0.8rem; border-left:3px solid var(--primary); background:var(--bg-color); border-radius:0 8px 8px 0; margin-bottom:0.5rem;"><div style="font-weight:600; color:var(--text-main); font-size:0.85rem;">${a.event}</div><div style="font-size:0.75rem; color:var(--text-soft);">${new Date(a.time).toLocaleString()}</div></div>`).join('') : '<p>No activity.</p>';
+            window.openFeatureModal('My Activity', h);
+        }
+    });
 }
+
+window.logActivity = function(event) {
+    const activity = JSON.parse(localStorage.getItem('user_activity') || '[]');
+    activity.push({ event, time: new Date().toISOString() });
+    // Keep only last 50 activities
+    if (activity.length > 50) activity.shift();
+    localStorage.setItem('user_activity', JSON.stringify(activity));
+};
+
+function changeLangAndClose(lang) {
+    if (window.changeLanguage) {
+        window.changeLanguage(lang);
+        Toast.show('Language updated!', 'success');
+        document.getElementById('featureModalOverlay').classList.remove('active');
+    }
+}
+
+async function checkUnreadActivity() {
+    try {
+        const dot = document.getElementById('activityDot');
+        if (!dot) return;
+
+        const res = await fetch('/api/user/inquiries');
+        if (!res.ok) return;
+        const inquiries = await res.json();
+        
+        // Find if any inquiry has a reply that we haven't seen yet
+        const lastSeenReplyId = localStorage.getItem('lastSeenReplyId');
+        const latestRepliedInquiry = inquiries
+            .filter(iq => iq.reply)
+            .sort((a, b) => new Date(b.replied_at || b.created_at) - new Date(a.replied_at || a.created_at))[0];
+
+        if (latestRepliedInquiry && latestRepliedInquiry.id.toString() !== lastSeenReplyId) {
+            dot.style.display = 'block';
+            // Also store the ID so we can clear it when they click
+            window.latestUnseenReplyId = latestRepliedInquiry.id;
+        } else {
+            dot.style.display = 'none';
+        }
+    } catch (e) {
+        console.error("Activity check failed", e);
+    }
+}
+
+// Update the nav-activity click listener to clear the dot
+document.addEventListener('DOMContentLoaded', () => {
+    const navActivity = document.getElementById('nav-activity');
+    if (navActivity) {
+        navActivity.addEventListener('click', () => {
+            const dot = document.getElementById('activityDot');
+            if (dot) dot.style.display = 'none';
+            if (window.latestUnseenReplyId) {
+                localStorage.setItem('lastSeenReplyId', window.latestUnseenReplyId.toString());
+            }
+        });
+    }
+    
+    // Initial check and then periodic
+    checkUnreadActivity();
+    setInterval(checkUnreadActivity, 60000); // Every minute
+});

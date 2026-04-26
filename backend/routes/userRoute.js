@@ -217,7 +217,7 @@ router.get('/coupons', async (req, res) => {
 });
 
 router.get('/settings', async (req, res) => {
-    const { data, error } = await supabase.from('users').select('order_reminders, sms_permissions, flash_sale_alerts').eq('id', req.userId).single();
+    const { data, error } = await supabase.from('users').select('language, order_reminders, sms_permissions, flash_sale_alerts').eq('id', req.userId).single();
     if (error) return res.status(500).json({ error: error.message });
     res.json(data);
 });

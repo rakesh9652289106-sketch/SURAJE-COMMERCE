@@ -127,8 +127,8 @@
             filter: brightness(0.95);
         }
     </style>
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css">
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -914,6 +914,45 @@
                             <div class="form-group"><label>Shop Address</label><input type="text" id="sAddress"></div>
                             <div class="form-group"><label>Hero Image URL</label><input type="text" id="sImage"></div>
                             <button type="submit" class="btn-submit" style="margin-top: 1rem;">Save Shop Settings</button>
+                        </form>
+                    </div>
+
+                    <div class="form-card" style="margin-top: 2rem; border-top: 4px solid var(--primary);">
+                        <h3 class="section-title"><i class="ph ph-toggle-left"></i> App Features & Privacy</h3>
+                        <form id="appFeaturesForm">
+                            <div class="form-group">
+                                <label>Default Platform Language</label>
+                                <select id="defaultLanguage" class="admin-input" style="width:100%">
+                                    <option value="en">English</option>
+                                    <option value="hi">Hindi (हिन्दी)</option>
+                                    <option value="bn">Bengali (বাংলা)</option>
+                                    <option value="te">Telugu (తెలుగు)</option>
+                                    <option value="mr">Marathi (मराठी)</option>
+                                    <option value="ta">Tamil (தமிழ்)</option>
+                                    <option value="ur">Urdu (اردو)</option>
+                                    <option value="gu">Gujarati (ગુજરાતી)</option>
+                                    <option value="kn">Kannada (ಕನ್ನಡ)</option>
+                                    <option value="or">Odia (ଓଡ଼ିଆ)</option>
+                                    <option value="ml">Malayalam (മലയാളം)</option>
+                                    <option value="pa">Punjabi (ਪੰਜਾਬੀ)</option>
+                                    <option value="as">Assamese (অসমীয়া)</option>
+                                    <option value="mai">Maithili (मैथिली)</option>
+                                    <option value="sat">Santali (संताली)</option>
+                                    <option value="ks">Kashmiri (کٲشُر)</option>
+                                    <option value="ne">Nepali (नेपाली)</option>
+                                    <option value="kok">Konkani (कोंकणी)</option>
+                                    <option value="sd">Sindhi (सिन्धी)</option>
+                                    <option value="doi">Dogri (डोगरी)</option>
+                                    <option value="mni">Manipuri (মৈতৈলোন্)</option>
+                                    <option value="brx">Bodo (बर')</option>
+                                    <option value="sa">Sanskrit (संस्कृतम्)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Privacy Policy Content (Quick Info)</label>
+                                <textarea id="privacyPolicyText" class="admin-input" style="width:100%; height: 100px; resize: vertical;" placeholder="Enter summary or full policy..."></textarea>
+                            </div>
+                            <button type="submit" class="btn-submit">Save App Configuration</button>
                         </form>
                     </div>
 

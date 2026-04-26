@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Customer Support - SURAJ</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css">
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <script src="theme-manager.js"></script>
     <style>
@@ -44,7 +44,7 @@
             gap: 20px;
         }
         .support-card-page {
-            background: white;
+            background: var(--card-bg);
             padding: 30px;
             border-radius: var(--radius-md);
             box-shadow: var(--shadow-sm);
@@ -80,7 +80,7 @@
         }
         .contact-section {
             margin-top: 60px;
-            background: white;
+            background: var(--card-bg);
             padding: 40px;
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-md);
@@ -340,5 +340,11 @@
             window.location.href = 'profile.html';
         });
     </script>
+    <!-- Floating Support Symbol -->
+    <a href="support.html" class="support-fixed-container" id="supportSymbol">
+        <div class="support-symbol">
+            <i class="ph ph-headset"></i>
+        </div>
+    </a>
 </body>
 </html>
