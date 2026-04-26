@@ -1024,6 +1024,27 @@ function setupAuth() {
     // Check if user is logged in via cookies
     let username = getCookie('username');
     updateAuthUI(username);
+    if (username) fetchUserCoins();
+
+    window.fetchUserCoins = async function() {
+        try {
+            const res = await fetch('/api/user-info');
+            if (res.ok) {
+                const data = await res.json();
+                window.userCoins = data.coins || 0;
+                
+                // Fetch settings to check if system is active
+                const sRes = await fetch('/api/settings');
+                const settings = await sRes.json();
+                
+                const block = document.getElementById('coinRewardsBlock');
+                if (block) block.style.display = (settings && settings.coins_system_active === 1) ? 'block' : 'none';
+                
+                const balEl = document.getElementById('userCoinBalance');
+                if (balEl) balEl.innerText = window.userCoins;
+            }
+        } catch(e) { console.error("Coin fetch failed", e); }
+    };
 
     const authModal = document.getElementById('authModal');
     const closeAuthBtn = document.getElementById('closeAuthBtn');
@@ -1534,6 +1555,16 @@ async function setupCartInteractions() {
     if (cartOverlay) cartOverlay.onclick = closeCart;
     if (startShoppingBtn) startShoppingBtn.onclick = closeCart;
 
+    // Coin Redemption Logic
+    const useCoinsToggle = document.getElementById('useCoinsToggle');
+    if (useCoinsToggle) {
+        useCoinsToggle.onchange = () => {
+            const info = document.getElementById('coinDiscountInfo');
+            if (info) info.style.display = useCoinsToggle.checked ? 'block' : 'none';
+            updateCartSidebar();
+        };
+    }
+
     // Delivery Selection Functionality
     window.selectedDeliveryType = 'Home Delivery';
     window.selectDeliveryType = function(type, el) {
@@ -1623,6 +1654,8 @@ async function setupCartInteractions() {
         const modalSubtotal = document.getElementById('modalSubtotal');
         const modalDiscountRow = document.getElementById('modalDiscountRow');
         const modalDiscount = document.getElementById('modalDiscount');
+        const modalCoinDiscountRow = document.getElementById('modalCoinDiscountRow');
+        const modalCoinDiscount = document.getElementById('modalCoinDiscount');
         const modalFinalTotal = document.getElementById('modalFinalTotal');
         
         const parsePrice = (p) => typeof p === 'string' ? parseFloat(p.replace(/[^0-9.]/g, '')) : Number(p);
@@ -1634,18 +1667,29 @@ async function setupCartInteractions() {
         if (window.appliedCoupon) {
             let discountValue = window.appliedCoupon.discount_value;
             if (window.appliedCoupon.discount_type === 'percent') {
-                // Use original_value (e.g. 20) for the percentage calculation, not the already calculated discount_value
                 const percent = window.appliedCoupon.original_value || window.appliedCoupon.discount_value;
                 discountValue = Math.round((subtotal * percent) / 100);
             }
-            // Ensure discount doesn't exceed subtotal
             discountValue = Math.min(discountValue, subtotal);
-            finalTotal = subtotal - discountValue;
+            finalTotal -= discountValue;
             
             if (modalDiscountRow) modalDiscountRow.style.display = 'flex';
             if (modalDiscount) modalDiscount.innerText = `-₹${Math.round(discountValue)}`;
         } else {
             if (modalDiscountRow) modalDiscountRow.style.display = 'none';
+        }
+
+        // Coins Discount in Checkout
+        const useCoins = document.getElementById('useCoinsToggle')?.checked;
+        if (useCoins && window.userCoins > 0) {
+            const coinDiscount = Math.floor(window.userCoins / 10);
+            const actualCoinDiscount = Math.min(coinDiscount, finalTotal);
+            finalTotal -= actualCoinDiscount;
+
+            if (modalCoinDiscountRow) modalCoinDiscountRow.style.display = 'flex';
+            if (modalCoinDiscount) modalCoinDiscount.innerText = `-₹${actualCoinDiscount}`;
+        } else {
+            if (modalCoinDiscountRow) modalCoinDiscountRow.style.display = 'none';
         }
         
         if (modalFinalTotal) modalFinalTotal.innerText = `₹${Math.round(finalTotal)}`;
@@ -1822,7 +1866,8 @@ async function setupCartInteractions() {
                 paymentMethod: selectedPaymentMethod,
                 items: cart,
                 couponId: window.appliedCoupon ? window.appliedCoupon.id : null,
-                deliveryType: window.selectedDeliveryType
+                deliveryType: window.selectedDeliveryType,
+                coinsUsed: document.getElementById('useCoinsToggle')?.checked ? window.userCoins : 0
             };
 
             try {
@@ -2221,7 +2266,10 @@ function updateCartSidebar() {
             itemHTML.innerHTML = `
                 <img src="${item.imgurl || item.imgUrl || ''}" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&text=Product'" style="width: 50px; height: 50px; object-fit: contain; background: var(--bg-color); border-radius: 8px;">
                 <div style="flex: 1;">
-                    <h5 style="font-size: 0.9rem; margin-bottom: 0.2rem;">${item.name}</h5>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <h5 style="font-size: 0.9rem; margin-bottom: 0.2rem;">${item.name}</h5>
+                        <img src="suraj-coin.png" alt="Coin" style="width: 14px; height: 14px; margin-top: 2px;" title="Earn Coins with this purchase">
+                    </div>
                     <span style="font-size: 0.8rem; color: var(--text-soft);">${item.weight}</span>
                     <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; align-items: center;">
                         <span style="font-weight: 600;">₹${itemPrice}</span>
@@ -2275,6 +2323,22 @@ function updateCartSidebar() {
     } else {
         if (discountLine) discountLine.style.display = 'none';
     }
+
+    // Suraj Coins Logic in Sidebar
+    let coinDiscount = 0;
+    const useCoins = document.getElementById('useCoinsToggle')?.checked;
+    const coinValuePerRupee = 10; // Default or fetch from settings
+
+    if (useCoins && window.userCoins > 0) {
+        coinDiscount = Math.floor(window.userCoins / coinValuePerRupee);
+        coinDiscount = Math.min(coinDiscount, finalTotal);
+        finalTotal -= coinDiscount;
+        const infoVal = document.getElementById('coinDiscountValue');
+        if (infoVal) infoVal.innerText = coinDiscount;
+    }
+    
+    const balEl = document.getElementById('userCoinBalance');
+    if (balEl && typeof window.userCoins !== 'undefined') balEl.innerText = window.userCoins;
 
     if (finalTotalEl) finalTotalEl.innerText = '₹' + finalTotal;
     
