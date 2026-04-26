@@ -42,7 +42,6 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Inter', sans-serif;
 }
 
 h1, h2, h3, h4, .brand-logo, .nav-link {
@@ -59,7 +58,42 @@ body {
     background-color: var(--bg-color);
     color: var(--text-main);
     line-height: 1.5;
+    font-family: 'Inter', sans-serif;
 }
+
+/* --- Global Phosphor Icon System Fix --- */
+@font-face {
+    font-family: "Phosphor";
+    src: url("https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/Phosphor.woff2") format("woff2");
+    font-weight: normal; font-style: normal; font-display: swap;
+}
+@font-face {
+    font-family: "Phosphor-Fill";
+    src: url("https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/Phosphor-Fill.woff2") format("woff2");
+    font-weight: normal; font-style: normal; font-display: swap;
+}
+@font-face {
+    font-family: "Phosphor-Bold";
+    src: url("https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/bold/Phosphor-Bold.woff2") format("woff2");
+    font-weight: normal; font-style: normal; font-display: swap;
+}
+@font-face {
+    font-family: "Phosphor-Light";
+    src: url("https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/light/Phosphor-Light.woff2") format("woff2");
+    font-weight: normal; font-style: normal; font-display: swap;
+}
+@font-face {
+    font-family: "Phosphor-Thin";
+    src: url("https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/thin/Phosphor-Thin.woff2") format("woff2");
+    font-weight: normal; font-style: normal; font-display: swap;
+}
+
+.ph, .ph-regular { font-family: "Phosphor" !important; }
+.ph-fill { font-family: "Phosphor-Fill" !important; }
+.ph-bold { font-family: "Phosphor-Bold" !important; }
+.ph-light { font-family: "Phosphor-Light" !important; }
+.ph-thin { font-family: "Phosphor-Thin" !important; }
+/* -------------------------------------- */
 body.no-scroll {
     overflow: hidden;
 }
