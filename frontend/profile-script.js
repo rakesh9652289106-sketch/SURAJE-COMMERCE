@@ -105,6 +105,7 @@ async function fetchOverview() {
                     `;
                 }).join('');
             }
+            reRenderIcons();
         }
 
         // Auto-fill profile form if it's open
@@ -185,7 +186,7 @@ async function fetchOrders() {
                 </div>
             `;
         }).join('');
-
+        reRenderIcons();
     } catch (e) { listEl.innerHTML = '<p>Error loading orders.</p>'; }
 }
 
@@ -216,6 +217,7 @@ async function fetchAddresses() {
                 </div>
             </div>
         `).join('');
+        reRenderIcons();
     } catch (e) { console.error(e); }
 }
 
@@ -255,6 +257,7 @@ async function fetchWishlist() {
                 </div>
             </div>
         `).join('');
+        reRenderIcons();
     } catch (e) { console.error(e); }
 }
 
@@ -543,4 +546,10 @@ function setupNavMenu() {
             });
         }
     });
+}
+
+function reRenderIcons() {
+    if (window.phosphor && window.phosphor.replace) {
+        window.phosphor.replace();
+    }
 }

@@ -127,8 +127,8 @@
             filter: brightness(0.95);
         }
     </style>
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+    <!-- Phosphor Icons Script -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -160,29 +160,22 @@
                         class="ph ph-x"></i></button>
             </div>
             <ul class="sidebar-menu">
-                <li class="active" onclick="showSection('view-dashboard')"><i class="ph ph-chart-pie"></i> Dashboard
-                    Overview</li>
+                <li class="active" onclick="showSection('view-dashboard')"><i class="ph ph-chart-pie"></i> Dashboard Overview</li>
                 <li onclick="showSection('view-orders')"><i class="ph ph-receipt"></i> Recent Orders</li>
-                <li onclick="showSection('view-payment')"><i class="ph ph-currency-circle-dollar"></i> Payment Tracking
-                </li>
+                <li onclick="showSection('view-payment')"><i class="ph ph-currency-circle-dollar"></i> Payment Tracking</li>
                 <li onclick="showSection('view-categories')"><i class="ph ph-list-bullets"></i> Product Categories</li>
                 <li onclick="showSection('view-brands')"><i class="ph ph-copyright"></i> Brand Partners</li>
                 <li onclick="showSection('view-products')"><i class="ph ph-package"></i> Manage Products</li>
                 <li onclick="showSection('view-notifications')"><i class="ph ph-bell"></i> Push Notifications</li>
                 <li onclick="showSection('view-promo')"><i class="ph ph-presentation"></i> Promotional Ads</li>
                 <li onclick="showSection('view-orders', true)"><i class="ph ph-truck"></i> Manage Delivery</li>
-                <li onclick="showSection('view-inquiries')"><i class="ph ph-chat-circle-text"></i> Customer Inquiries
-                </li>
+                <li onclick="showSection('view-inquiries')"><i class="ph ph-chat-circle-text"></i> Customer Inquiries</li>
                 <li onclick="showSection('view-reviews')"><i class="ph ph-star-half"></i> Product Reviews</li>
                 <li onclick="showSection('view-users')"><i class="ph ph-users"></i> Manage Users</li>
                 <li onclick="showSection('view-coupons')"><i class="ph ph-ticket"></i> Coupon Codes</li>
                 <li onclick="showSection('view-settings')"><i class="ph ph-gear"></i> App Settings</li>
-                <li><a href="/"
-                        style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.5rem;"><i
-                            class="ph ph-storefront"></i> View Store</a></li>
-                <li onclick="adminLogout()"
-                    style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem; color: #FDA4AF;">
-                    <i class="ph ph-sign-out"></i> Admin Logout</li>
+                <li><a href="/" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.5rem;"><i class="ph ph-storefront"></i> View Store</a></li>
+                <li onclick="adminLogout()" style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem; color: #FDA4AF;"><i class="ph ph-sign-out"></i> Admin Logout</li>
             </ul>
         </aside>
 
@@ -201,15 +194,6 @@
                 <!-- Stats Grid -->
                 <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
                     <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
-                        <div style="background: #EEF2FF; color: #4F46E5; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
-                            <i class="ph ph-heartbeat"></i>
-                        </div>
-                        <div>
-                            <p style="font-size: 0.85rem; color: #64748B; font-weight: 600;">System Health</p>
-                            <h3 id="statHealthStatus" style="font-size: 1.5rem; color: #0F172A;">Checking...</h3>
-                        </div>
-                    </div>
-                    <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
                         <div style="background: #E0E7FF; color: #4F46E5; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
                             <i class="ph ph-currency-circle-dollar"></i>
                         </div>
@@ -219,21 +203,16 @@
                         </div>
                     </div>
                     <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
-                        <div style="background: #DCFCE7; color: #16A34A; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
-                            <i class="ph ph-shopping-bag"></i>
-                        </div>
-                        <div>
-                            <p style="font-size: 0.85rem; color: #64748B; font-weight: 600;">Active Orders</p>
-                            <h3 id="statOrdersToday" style="font-size: 1.5rem; color: #0F172A;">0</h3>
-                        </div>
+                        <div style="background: #DCFCE7; color: #16A34A; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;"><i class="ph ph-shopping-bag"></i></div>
+                        <div><p style="font-size: 0.85rem; color: #64748B; font-weight: 600;">Total Orders</p><h3 id="statOrders" style="font-size: 1.5rem; color: #0F172A;">0</h3></div>
                     </div>
                     <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
-                        <div style="background: #FEE2E2; color: #DC2626; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
-                            <i class="ph ph-chat-circle-dots"></i></div>
-                        <div>
-                            <p style="font-size: 0.85rem; color: #64748B; font-weight: 600;">Inquiries</p>
-                            <h3 id="statMessages" style="font-size: 1.5rem; color: #0F172A;">0</h3>
-                        </div>
+                        <div style="background: #FEF3C7; color: #D97706; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;"><i class="ph ph-package"></i></div>
+                        <div><p style="font-size: 0.85rem; color: #64748B; font-weight: 600;">Products Live</p><h3 id="statProducts" style="font-size: 1.5rem; color: #0F172A;">0</h3></div>
+                    </div>
+                    <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 1.25rem;">
+                        <div style="background: #FEE2E2; color: #DC2626; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;"><i class="ph ph-chat-circle-dots"></i></div>
+                        <div><p style="font-size: 0.85rem; color: #64748B; font-weight: 600;">Support Inquiries</p><h3 id="statMessages" style="font-size: 1.5rem; color: #0F172A;">0</h3></div>
                     </div>
                 </div>
 

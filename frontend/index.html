@@ -67,9 +67,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="cart-styles.css">
-    <!-- Phosphor Icons (Stable CSS from unpkg) -->
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+    <!-- Phosphor Icons Script -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="theme-manager.js"></script>
     <script type="module" src="translations.js"></script>
 </head>
@@ -116,9 +115,7 @@
                 <i class="ph ph-magnifying-glass search-icon"></i>
                 <input type="text" id="mainSearchInput" autocomplete="off" data-i18n="nav_search_placeholder" placeholder="Search for 'Atta', 'Maggi' or 'Milk'...">
                 <span class="search-brand-watermark">SURAJ</span>
-            </div>
-
-            <div class="nav-actions">
+            </div>            <div class="nav-actions">
                 <!-- User requested authentication links -->
                 <div class="auth-links">
                     <button class="theme-toggle-btn" id="themeToggle" title="Toggle Dark Mode">
@@ -134,7 +131,19 @@
                     <div class="notifications-btn" id="notificationsToggle" style="position: relative; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); transition: var(--transition);">
                         <i class="ph ph-bell" style="font-size: 1.25rem;"></i>
                         <span id="notifBadge" class="badge" style="position: absolute; top: -5px; right: -5px; background-color: var(--secondary); color: white; width: 18px; height: 18px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; border: 2px solid var(--card-bg);">0</span>
-                        <!-- Notifications Dropdown moved to body end for mobile support -->
+                        <!-- Notifications Dropdown -->
+                        <div id="notificationsDropdown" style="display: none; position: absolute; top: 45px; right: 0; width: 300px; background: var(--card-bg); border: 1px solid var(--border); box-shadow: var(--shadow-md); border-radius: var(--radius-md); padding: 1rem; z-index: 200;">
+                            <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="display: flex; align-items: center; gap: 0.4rem;"><i class="ph-fill ph-megaphone" style="color: var(--secondary);"></i> Store Alerts</span>
+                                <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                    <span id="notifTotalText" style="font-size: 0.7rem; font-weight: normal; color: var(--text-soft);">Total: 0</span>
+                                    <button id="clearNotifsBtn" style="background: none; border: none; color: var(--primary); font-size: 0.7rem; font-weight: 600; cursor: pointer; padding: 0;">Clear All</button>
+                                </div>
+                            </h4>
+                            <ul id="notifList" style="list-style: none; margin: 0; padding: 0; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.5rem; color: var(--text-soft); max-height: 250px; overflow-y: auto;">
+                                <li style="text-align: center; padding: 1rem;">Loading...</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
 
@@ -148,7 +157,7 @@
                     <span class="cart-badge" id="cartBadge">0</span>
                     <div class="cart-info">
                         <span class="cart-label" data-i18n="nav_my_cart">My Cart</span>
-                        <span class="cart-total">₹450</span>
+                        <span class="cart-total">₹0</span>
                     </div>
                 </a>
             </div>
