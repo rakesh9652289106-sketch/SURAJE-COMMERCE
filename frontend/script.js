@@ -259,7 +259,7 @@ function updateWishlistBadge() {
 
 window.toggleWishlist = async function(e, productId) {
     e.stopPropagation();
-    window.logActivity?.(`Wishlist action on product #${productId}`);
+
     const isLogged = !!getCookie('user_id');
     const pid = Number(productId);
     
@@ -484,6 +484,7 @@ function setupNavMenu() {
         sidebar.classList.add('active');
         if (overlay) overlay.classList.add('active');
         document.body.style.overflow = 'hidden';
+        document.body.classList.add('sidebar-active');
 
         const name = getCookie('full_name');
         const username = getCookie('username');
@@ -499,6 +500,7 @@ function setupNavMenu() {
         sidebar.classList.remove('active');
         if (overlay) overlay.classList.remove('active');
         document.body.style.overflow = 'auto';
+        document.body.classList.remove('sidebar-active');
     };
 
     navBtn.addEventListener('click', openNav);
@@ -1023,28 +1025,8 @@ window.openReviews = async function(rating, revCount, prodName, prodId) {
 function setupAuth() {
     // Check if user is logged in via cookies
     let username = getCookie('username');
-    updateAuthUI(username);
-    if (username) fetchUserCoins();
-
-    window.fetchUserCoins = async function() {
-        try {
-            const res = await fetch('/api/user-info');
-            if (res.ok) {
-                const data = await res.json();
-                window.userCoins = data.coins || 0;
-                
-                // Fetch settings to check if system is active
-                const sRes = await fetch('/api/settings');
-                const settings = await sRes.json();
-                
-                const block = document.getElementById('coinRewardsBlock');
-                if (block) block.style.display = (settings && settings.coins_system_active === 1) ? 'block' : 'none';
-                
-                const balEl = document.getElementById('userCoinBalance');
-                if (balEl) balEl.innerText = window.userCoins;
-            }
-        } catch(e) { console.error("Coin fetch failed", e); }
-    };
+    let fullName = getCookie('full_name');
+    updateAuthUI(fullName);
 
     const authModal = document.getElementById('authModal');
     const closeAuthBtn = document.getElementById('closeAuthBtn');
@@ -1866,8 +1848,7 @@ async function setupCartInteractions() {
                 paymentMethod: selectedPaymentMethod,
                 items: cart,
                 couponId: window.appliedCoupon ? window.appliedCoupon.id : null,
-                deliveryType: window.selectedDeliveryType,
-                coinsUsed: document.getElementById('useCoinsToggle')?.checked ? window.userCoins : 0
+                deliveryType: window.selectedDeliveryType
             };
 
             try {
@@ -1881,10 +1862,12 @@ async function setupCartInteractions() {
                 
                 if (res.ok) {
                     Toast.show("Order placed successfully!", "success");
-                    window.logActivity?.("Placed a new order: " + (data.orderId || ''));
+
                     showCheckoutStep('success');
                     
-                    if (document.getElementById('successOrderId')) document.getElementById('successOrderId').innerText = `#${data.orderId || '0000'}`;
+                    if (document.getElementById('successOrderId')) {
+                        document.getElementById('successOrderId').innerText = `#${data.dailySeq || data.orderId || '0000'}`;
+                    }
                     if (document.getElementById('successMethod')) document.getElementById('successMethod').innerText = selectedPaymentMethod === 'cash' ? 'Cash on Delivery' : selectedPaymentMethod.toUpperCase();
                     if (document.getElementById('successTotalAmount')) document.getElementById('successTotalAmount').innerText = document.getElementById('modalFinalTotal').innerText;
 
@@ -2202,7 +2185,7 @@ window.updateVariantPrice = function(select, prodId, productName) {
 
 function addToCart(product, selectedVariant = null) {
     console.log("Adding to cart:", product.name, "Variant:", selectedVariant?.weight);
-    window.logActivity?.(`Added ${product.name} to cart`);
+
     
     const weight = selectedVariant ? selectedVariant.weight : product.weight;
     const price = selectedVariant ? selectedVariant.price : product.price;
@@ -2268,7 +2251,6 @@ function updateCartSidebar() {
                 <div style="flex: 1;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <h5 style="font-size: 0.9rem; margin-bottom: 0.2rem;">${item.name}</h5>
-                        <img src="suraj-coin.png" alt="Coin" style="width: 14px; height: 14px; margin-top: 2px;" title="Earn Coins with this purchase">
                     </div>
                     <span style="font-size: 0.8rem; color: var(--text-soft);">${item.weight}</span>
                     <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; align-items: center;">
@@ -2324,21 +2306,7 @@ function updateCartSidebar() {
         if (discountLine) discountLine.style.display = 'none';
     }
 
-    // Suraj Coins Logic in Sidebar
-    let coinDiscount = 0;
-    const useCoins = document.getElementById('useCoinsToggle')?.checked;
-    const coinValuePerRupee = 10; // Default or fetch from settings
-
-    if (useCoins && window.userCoins > 0) {
-        coinDiscount = Math.floor(window.userCoins / coinValuePerRupee);
-        coinDiscount = Math.min(coinDiscount, finalTotal);
-        finalTotal -= coinDiscount;
-        const infoVal = document.getElementById('coinDiscountValue');
-        if (infoVal) infoVal.innerText = coinDiscount;
-    }
     
-    const balEl = document.getElementById('userCoinBalance');
-    if (balEl && typeof window.userCoins !== 'undefined') balEl.innerText = window.userCoins;
 
     if (finalTotalEl) finalTotalEl.innerText = '₹' + finalTotal;
     
@@ -3056,56 +3024,34 @@ function setupFeatureModal() {
         window.openFeatureModal('My Activity', '<div style="text-align:center; padding:2rem;"><i class="ph ph-spinner-gap ph-spin" style="font-size:2rem; color:var(--primary);"></i></div>');
         
         try {
-            const localActivity = JSON.parse(localStorage.getItem('user_activity') || '[]');
-            const res = await fetch('/api/user/inquiries');
-            const inquiries = await res.json();
-            
-            const inquiryActivity = inquiries.map(iq => ({
-                event: iq.subject || "Support Request",
-                time: iq.created_at,
-                type: 'inquiry',
-                message: iq.message,
-                reply: iq.reply
-            }));
-
-            const combined = [...localActivity, ...inquiryActivity].sort((a,b) => new Date(b.time) - new Date(a.time));
+            const res = await fetch('/api/user/activity');
+            const activity = await res.json();
             
             let html = '';
-            if (combined.length === 0) {
+            if (!activity || activity.length === 0) {
                 html = '<div style="text-align: center; padding: 2rem; color: var(--text-soft);"><i class="ph ph-clock-counter-clockwise" style="font-size: 2rem;"></i><p>No recent activity found.</p></div>';
             } else {
                 html = '<div style="display: flex; flex-direction: column; gap: 1rem;">' + 
-                    combined.slice(0, 15).map(a => `
-                        <div style="padding: 0.8rem; border-left: 3px solid ${a.type === 'inquiry' ? '#4F46E5' : 'var(--primary)'}; background: var(--bg-color); border-radius: 0 8px 8px 0;">
+                    activity.slice(0, 20).map(a => `
+                        <div style="padding: 0.8rem; border-left: 3px solid ${a.type === 'support_reply' ? 'var(--primary)' : '#6366F1'}; background: var(--bg-color); border-radius: 0 8px 8px 0;">
                             <div style="font-weight: 600; color: var(--text-main); font-size: 0.85rem; display:flex; align-items:center; gap:0.4rem;">
-                                <i class="${a.type === 'inquiry' ? 'ph ph-chat-circle-dots' : 'ph ph-lightning'}"></i>
-                                ${a.event}
+                                <i class="${a.type === 'support_reply' ? 'ph ph-chat-circle-dots' : 'ph ph-question'}"></i>
+                                ${a.title}
                             </div>
-                            <div style="font-size: 0.75rem; color: var(--text-soft);">${new Date(a.time).toLocaleString()}</div>
-                            ${a.reply ? `
-                                <div style="margin-top: 0.6rem; padding: 0.6rem; background: var(--primary-light); border-radius: 6px; font-size: 0.8rem; color: var(--text-main); border-left: 2px solid var(--primary);">
-                                    <strong style="color: var(--primary); display:block; margin-bottom:2px;">Admin Reply:</strong>
-                                    ${a.reply}
-                                </div>
-                            ` : (a.type === 'inquiry' ? '<small style="color:#94A3B8; font-style:italic; margin-top:0.4rem; display:block;">Awaiting response...</small>' : '')}
+                            <div style="font-size: 0.75rem; color: var(--text-soft);">${new Date(a.date).toLocaleString()}</div>
+                            <div style="margin-top: 0.4rem; font-size: 0.85rem; color: var(--text-soft); line-height: 1.4;">${a.message}</div>
                         </div>
                     `).join('') + '</div>';
             }
             window.openFeatureModal('My Activity', html);
         } catch(e) {
-            const local = JSON.parse(localStorage.getItem('user_activity') || '[]').reverse();
-            let h = local.length ? local.map(a => `<div style="padding:0.8rem; border-left:3px solid var(--primary); background:var(--bg-color); border-radius:0 8px 8px 0; margin-bottom:0.5rem;"><div style="font-weight:600; color:var(--text-main); font-size:0.85rem;">${a.event}</div><div style="font-size:0.75rem; color:var(--text-soft);">${new Date(a.time).toLocaleString()}</div></div>`).join('') : '<p>No activity.</p>';
-            window.openFeatureModal('My Activity', h);
+            window.openFeatureModal('My Activity', '<p style="text-align:center; padding:2rem; color:red;">Failed to load activity.</p>');
         }
     });
 }
 
 window.logActivity = function(event) {
-    const activity = JSON.parse(localStorage.getItem('user_activity') || '[]');
-    activity.push({ event, time: new Date().toISOString() });
-    // Keep only last 50 activities
-    if (activity.length > 50) activity.shift();
-    localStorage.setItem('user_activity', JSON.stringify(activity));
+    // Disabled as per user request to only show inquiries and replies
 };
 
 function changeLangAndClose(lang) {

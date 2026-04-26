@@ -67,9 +67,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="cart-styles.css">
-    <!-- Phosphor Icons (Stable CSS from jsDelivr) -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css">
+    <!-- Phosphor Icons (Stable CSS from unpkg) -->
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
     <script src="theme-manager.js"></script>
     <script type="module" src="translations.js"></script>
 </head>
@@ -191,7 +191,7 @@
         </section>
 
         <!-- Special Offers -->
-        <section class="special-offers" style="margin-top: 2rem; padding: 1.5rem 0; clear: both; position: relative; z-index: 1;">
+        <section class="special-offers" style="margin-top: 0.5rem; padding: 0.5rem 0; clear: both; position: relative; z-index: 1;">
             <h3 class="section-title" style="margin-bottom: 2rem;">Special Offers</h3>
             <div class="offers-grid" id="specialOffersGrid">
                 <!-- Populated by JS -->
@@ -378,26 +378,6 @@
                 <strong id="discountAmountEl">-₹0</strong>
             </div>
             
-            <!-- Suraj Coins Block -->
-            <div id="coinRewardsBlock" style="margin: 1rem 0; padding: 1rem; background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%); border-radius: 12px; border: 1px solid #FDE68A; display: none;">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <img src="suraj-coin.png" alt="Coin" style="width: 24px; height: 24px;">
-                        <strong style="color: #92400E; font-size: 0.9rem;">Suraj Coins</strong>
-                    </div>
-                    <span id="userCoinBalance" style="background: #F59E0B; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;">0</span>
-                </div>
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <span style="font-size: 0.8rem; color: #B45309;">Use coins for discount?</span>
-                    <label class="toggle-switch" style="transform: scale(0.8);">
-                        <input type="checkbox" id="useCoinsToggle">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div id="coinDiscountInfo" style="display: none; margin-top: 0.5rem; font-size: 0.75rem; color: #D97706; font-weight: 600; text-align: right;">
-                    -₹<span id="coinDiscountValue">0</span> Applied
-                </div>
-            </div>
             <div class="cart-summary-line" style="border-top: 1px solid var(--border); margin-top: 0.5rem; padding-top: 0.5rem;">
                 <span>Total Amount</span>
                 <strong id="finalTotalEl">₹0</strong>
@@ -423,15 +403,15 @@
                         <div class="delivery-icon-wrapper">
                             <i class="ph ph-house" style="font-size: 2.25rem;"></i>
                         </div>
-                        <span style="font-weight: 800; font-size: 1.1rem; color: #1E293B;">Home Delivery</span>
+                        <span style="font-weight: 800; font-size: 1.1rem; color: var(--text-main);">Home Delivery</span>
                         <p style="font-size: 0.8rem; color: #64748B; text-align: center; line-height: 1.5; margin: 0;">Delivery to your door in 30 mins</p>
                     </div>
                     
                     <div class="delivery-option-card" id="optionPickup" onclick="selectDeliveryType('Pickup from Shop', this)">
                         <div class="delivery-icon-wrapper">
-                            <i class="ph ph-storefront" style="font-size: 2.25rem; color: var(--text-soft);"></i>
+                            <i class="ph ph-storefront" style="font-size: 2.25rem;"></i>
                         </div>
-                        <span style="font-weight: 800; font-size: 1.1rem; color: #1E293B;">Pickup from Shop</span>
+                        <span style="font-weight: 800; font-size: 1.1rem; color: var(--text-main);">Pickup from Shop</span>
                         <p style="font-size: 0.8rem; color: #64748B; text-align: center; line-height: 1.5; margin: 0;">Pick up from our store yourself</p>
                     </div>
                 </div>
@@ -509,10 +489,6 @@
                         <div id="modalDiscountRow" style="display: none; justify-content: space-between; color: #10B981; font-weight: 600;">
                             <span>Coupon Discount</span>
                             <span id="modalDiscount">-₹0</span>
-                        </div>
-                        <div id="modalCoinDiscountRow" style="display: none; justify-content: space-between; color: #F59E0B; font-weight: 600;">
-                            <span>Coins Discount</span>
-                            <span id="modalCoinDiscount">-₹0</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; border-top: 1px dashed #CBD5E1; padding-top: 0.5rem; margin-top: 0.2rem; font-weight: 700; font-size: 1.1rem; color: var(--text-main);">
                             <span>Final Total</span>

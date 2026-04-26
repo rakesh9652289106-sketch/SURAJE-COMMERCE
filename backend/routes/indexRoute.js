@@ -148,7 +148,7 @@ router.get('/user-info', async (req, res) => {
     if (!userId) return res.status(401).json({ error: "Not logged in" });
 
     try {
-        const { data: user, error } = await supabase.from('users').select('id, full_name, coins').eq('id', userId).single();
+        const { data: user, error } = await supabase.from('users').select('id, full_name').eq('id', userId).single();
         if (error) throw error;
         res.json(user);
     } catch (err) {
@@ -178,23 +178,7 @@ router.post('/orders', async (req, res) => {
         return res.status(400).json({ error: "Invalid items in cart" }); 
     }
 
-    let { coinsUsed } = req.body;
     let finalTotal = subtotal;
-    let coinDiscount = 0;
-
-    // Fetch coin settings
-    const { data: settings } = await supabase.from('settings').select('*').single();
-    
-    if (coinsUsed && userId && settings && settings.coins_system_active === 1) {
-        // Verify user has enough coins
-        const { data: user } = await supabase.from('users').select('coins').eq('id', userId).single();
-        if (user && user.coins >= coinsUsed) {
-            coinDiscount = Math.floor(coinsUsed / (settings.coin_value_per_rupee || 10));
-            finalTotal = Math.max(0, finalTotal - coinDiscount);
-        } else {
-            coinsUsed = 0;
-        }
-    }
 
     if (couponId) {
         const { data: coupon, error } = await supabase.from('coupons').select('*').eq('id', couponId).single();
@@ -206,21 +190,26 @@ router.post('/orders', async (req, res) => {
                 discount = coupon.discount_value;
             }
             finalTotal = Math.max(0, finalTotal - discount);
-            return await saveOrder(finalTotal, coupon.id, coinsUsed, settings);
+            return await saveOrder(finalTotal, coupon.id);
         }
     }
-    return await saveOrder(finalTotal, null, coinsUsed, settings);
+    return await saveOrder(finalTotal, null);
 
-    async function saveOrder(calculatedTotal, confirmedCouponId = null, confirmedCoinsUsed = 0, settings = null) {
+    async function saveOrder(calculatedTotal, confirmedCouponId = null) {
         const discountAmount = Math.round(subtotal - calculatedTotal);
         
-        // Calculate coins earned
-        let coinsEarned = 0;
-        if (settings && settings.coins_system_active === 1) {
-            const rewardRate = settings.coin_reward_rate || 1000;
-            const rewardAmt = settings.coin_reward_amount || 30;
-            coinsEarned = Math.floor(subtotal / rewardRate) * rewardAmt;
-        }
+        const today = new Date().toISOString().split('T')[0];
+        const start = `${today}T00:00:00.000Z`;
+        const end = `${today}T23:59:59.999Z`;
+
+        // Count how many orders exist for today
+        const { count, error: countError } = await supabase
+            .from('orders')
+            .select('*', { count: 'exact', head: true })
+            .gte('created_at', start)
+            .lte('created_at', end);
+
+        const nextSeq = (count || 0) + 1;
 
         const insertData = {
             total: Math.round(calculatedTotal),
@@ -228,8 +217,7 @@ router.post('/orders', async (req, res) => {
             payment_method: paymentMethod,
             address: address,
             discount_amount: discountAmount,
-            coins_earned: coinsEarned,
-            coins_used: confirmedCoinsUsed
+            coupon_id: confirmedCouponId
         };
 
         // Try adding delivery_type if it likely exists
@@ -256,16 +244,7 @@ router.post('/orders', async (req, res) => {
             await supabase.from('coupon_usage').insert([{ user_id: userId, coupon_id: confirmedCouponId }]);
         }
 
-        // Update user coin balance
-        if (userId && settings && settings.coins_system_active === 1) {
-            const { data: user } = await supabase.from('users').select('coins').eq('id', userId).single();
-            if (user) {
-                const newBalance = Math.max(0, user.coins - confirmedCoinsUsed + coinsEarned);
-                await supabase.from('users').update({ coins: newBalance }).eq('id', userId);
-            }
-        }
-
-        res.status(201).json({ message: "Order placed successfully!", orderId: data.id, coinsEarned });
+        res.status(201).json({ message: "Order placed successfully!", orderId: data.id, dailySeq: nextSeq });
     }
 });
 

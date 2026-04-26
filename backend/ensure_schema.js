@@ -48,6 +48,12 @@ async function ensureSchema() {
         console.log("ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS discount_amount INTEGER DEFAULT 0;");
     }
 
+    if (!orderColumns.includes('daily_seq')) {
+        console.log("⚠️ Column 'daily_seq' is missing in 'orders' table.");
+        console.log("👉 PLEASE RUN THIS SQL:");
+        console.log("ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS daily_seq INTEGER DEFAULT 1;");
+    }
+
     // Check sessions/auth setup
     const { count: adminCount } = await supabase.from('admin_users').select('*', { count: 'exact', head: true });
     console.log("Total Admin Users:", adminCount);

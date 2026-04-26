@@ -127,8 +127,8 @@
             filter: brightness(0.95);
         }
     </style>
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css">
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -769,8 +769,9 @@
                                 <th>ID</th>
                                 <th>Username</th>
                                 <th>Email</th>
-                                <th>Date Joined</th>
+                                <th>Mobile Number</th>
                                 <th>Status</th>
+                                <th>Joined Date</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -887,9 +888,9 @@
                             <tr>
                                 <th>Code</th>
                                 <th>Value</th>
-                                <th>Type</th>
-                                <th>Min. Amt</th>
+                                <th>Type & Min. Purchase</th>
                                 <th>Uses</th>
+                                <th>Amount Saved</th>
                                 <th>Expiry</th>
                                 <th>Action</th>
                             </tr>
@@ -914,39 +915,6 @@
                             <div class="form-group"><label>Shop Address</label><input type="text" id="sAddress"></div>
                             <div class="form-group"><label>Hero Image URL</label><input type="text" id="sImage"></div>
                             <button type="submit" class="btn-submit" style="margin-top: 1rem;">Save Shop Settings</button>
-                        </form>
-                    </div>
-
-                    <div class="form-card" style="margin-top: 2rem; border-top: 4px solid #F59E0B;">
-                        <h3 class="section-title"><i class="ph ph-coins"></i> Loyalty & Suraj Coins</h3>
-                        <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1.5rem;">Configure how users earn and spend Suraj Coins. 10 Coins = ₹1 value.</p>
-                        
-                        <form id="loyaltySettingsForm">
-                            <div style="display:flex; align-items:center; justify-content:space-between; padding:1rem; background:#FFFBEB; border-radius:8px; margin-bottom:1.5rem; border:1px solid #FEF3C7;">
-                                <div>
-                                    <h4 style="margin:0; font-size:0.95rem; color:#92400E;">Suraj Coins System</h4>
-                                    <p style="margin:0; font-size:0.8rem; color:#B45309;">Toggle coin visibility and usage in store</p>
-                                </div>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="manageCoinsActive">
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-
-                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
-                                <div class="form-group">
-                                    <label>Spending Amount (₹)</label>
-                                    <input type="number" id="coinRewardRate" placeholder="e.g. 1000">
-                                    <small style="font-size:0.75rem; color:#64748B;">Amount user spends to earn coins</small>
-                                </div>
-                                <div class="form-group">
-                                    <label>Coins Earned</label>
-                                    <input type="number" id="coinRewardAmount" placeholder="e.g. 30">
-                                    <small style="font-size:0.75rem; color:#64748B;">Coins granted for the above spend</small>
-                                </div>
-                            </div>
-
-                            <button type="submit" class="btn-submit" style="margin-top: 1rem; background: #F59E0B;">Save Loyalty Settings</button>
                         </form>
                     </div>
 

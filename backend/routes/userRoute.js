@@ -155,38 +155,39 @@ router.get('/inquiries', async (req, res) => {
 
 router.get('/activity', async (req, res) => {
     try {
-        const [reviews, inquiries] = await Promise.all([
-            supabase
-                .from('reviews')
-                .select(`*, products(name)`)
-                .eq('username', req.cookies.username)
-                .order('created_at', { ascending: false }),
-            supabase
-                .from('support_messages')
-                .select('*')
-                .eq('user_id', req.userId)
-                .order('created_at', { ascending: false })
-        ]);
+        const { data: inquiries, error: inqError } = await supabase
+            .from('support_messages')
+            .select('*')
+            .eq('user_id', req.userId)
+            .order('created_at', { ascending: false });
 
-        if (reviews.error) throw reviews.error;
-        if (inquiries.error) throw inquiries.error;
+        if (inqError) throw inqError;
 
-        const formattedReviews = reviews.data.map(r => ({
-            ...r,
-            product_name: r.products?.name || 'Product',
-            type: 'review',
-            date: r.created_at
-        }));
+        const combined = [];
+        inquiries.forEach(i => {
+            // Add the inquiry itself
+            combined.push({
+                ...i,
+                type: 'support_inquiry',
+                title: i.subject || 'Support Inquiry',
+                message: i.message,
+                date: i.created_at
+            });
 
-        const formattedInquiries = inquiries.data.filter(i => i.reply).map(i => ({
-            ...i,
-            type: 'support_reply',
-            title: i.subject || 'Support Reply',
-            message: i.reply,
-            date: i.created_reply_at || i.created_at // Fallback to created_at if created_reply_at missing
-        }));
+            // If there's a reply, add the reply as a separate activity item
+            if (i.reply) {
+                combined.push({
+                    ...i,
+                    type: 'support_reply',
+                    title: i.subject || 'Support Reply',
+                    message: i.reply,
+                    date: i.replied_at || i.created_at
+                });
+            }
+        });
 
-        const combined = [...formattedReviews, ...formattedInquiries].sort((a, b) => new Date(b.date) - new Date(a.date));
+        // Sort by date descending
+        combined.sort((a, b) => new Date(b.date) - new Date(a.date));
 
         res.json(combined);
     } catch (err) {

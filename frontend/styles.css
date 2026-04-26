@@ -1056,7 +1056,8 @@ body.dark-theme header.sticky .search-brand-watermark {
 
 .offer-content .btn {
     background-color: white;
-    color: var(--text-main);
+    color: #1E293B; /* Hardcoded dark color for visibility on white background */
+    font-weight: 700;
 }
 
 /* Trending Horizontal List */
@@ -2012,6 +2013,20 @@ body.dark-theme .delivery-option-card.active {
     box-shadow: 0 8px 20px rgba(16, 185, 129, 0.1);
 }
 
+body.dark-theme .delivery-option-card {
+    background: #1e293b;
+    border-color: rgba(255,255,255,0.1);
+}
+
+body.dark-theme .delivery-option-card.active {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: var(--primary);
+}
+
+body.dark-theme .delivery-icon-wrapper {
+    background: #0f172a;
+}
+
 .checkout-section-card {
     margin: 1rem 0;
     padding: 1.25rem;
@@ -2094,6 +2109,14 @@ body.dark-theme .delivery-option-card.active {
 .nav-overlay.active {
     opacity: 1;
     visibility: visible;
+}
+
+body.sidebar-active {
+    overflow: hidden !important;
+    height: 100vh !important;
+    width: 100% !important;
+    position: fixed !important;
+    touch-action: none;
 }
 
 .nav-sidebar {
@@ -3021,7 +3044,7 @@ body.dark-theme .delivery-option-card.active {
 }
 
 .category-section {
-    margin-bottom: 2.5rem !important;
+    margin-bottom: 0.5rem !important;
 }
 
 .trending-section {

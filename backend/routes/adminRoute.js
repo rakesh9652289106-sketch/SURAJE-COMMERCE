@@ -318,7 +318,6 @@ router.get('/orders', async (req, res) => {
         o.display_id = dateGroups[dateKey];
     });
 
-    // Return in original requested order (usually descending by ID)
     res.json(formattedData);
 });
 
@@ -522,15 +521,19 @@ router.get('/coupons', async (req, res) => {
     const { data: coupons, error } = await query.order('id', { ascending: false });
     if (error) return res.status(500).json({ error: error.message });
     
-    // Fetch usage counts
-    const { data: usageData } = await supabase.from('coupon_usage').select('coupon_id');
-    const usageMap = (usageData || []).reduce((acc, curr) => {
-        acc[curr.coupon_id] = (acc[curr.coupon_id] || 0) + 1;
+    // Fetch usage counts and total saved per coupon
+    const { data: usageData } = await supabase.from('orders').select('coupon_id, discount_amount').not('coupon_id', 'is', null);
+    const usageStats = (usageData || []).reduce((acc, curr) => {
+        if (!acc[curr.coupon_id]) acc[curr.coupon_id] = { count: 0, saved: 0 };
+        acc[curr.coupon_id].count += 1;
+        acc[curr.coupon_id].saved += (curr.discount_amount || 0);
         return acc;
     }, {});
 
     const formatted = coupons.map(c => ({
-        ...c, useCount: usageMap[c.id] || 0
+        ...c, 
+        useCount: usageStats[c.id]?.count || 0,
+        totalSaved: usageStats[c.id]?.saved || 0
     }));
     res.json(formatted);
 });
@@ -668,17 +671,11 @@ router.get('/system/health', async (req, res) => {
         // Check users table
         const { data: uData, error: uErr } = await supabase.from('users').select('*').limit(1);
         if (uErr) throw uErr;
-        const uCols = uData.length > 0 ? Object.keys(uData[0]) : [];
-        if (!uCols.includes('coins')) health.missing_columns.push({ table: 'users', column: 'coins', sql: "ALTER TABLE public.users ADD COLUMN IF NOT EXISTS coins BIGINT DEFAULT 0;" });
 
         // Check settings table
         const { data: sData, error: sErr } = await supabase.from('settings').select('*').limit(1);
         if (sErr) throw sErr;
         const sCols = sData.length > 0 ? Object.keys(sData[0]) : [];
-        if (!sCols.includes('coin_reward_rate')) health.missing_columns.push({ table: 'settings', column: 'coin_reward_rate', sql: "ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS coin_reward_rate INTEGER DEFAULT 1000;" });
-        if (!sCols.includes('coin_reward_amount')) health.missing_columns.push({ table: 'settings', column: 'coin_reward_amount', sql: "ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS coin_reward_amount INTEGER DEFAULT 30;" });
-        if (!sCols.includes('coin_value_per_rupee')) health.missing_columns.push({ table: 'settings', column: 'coin_value_per_rupee', sql: "ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS coin_value_per_rupee INTEGER DEFAULT 10;" });
-        if (!sCols.includes('coins_system_active')) health.missing_columns.push({ table: 'settings', column: 'coins_system_active', sql: "ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS coins_system_active INTEGER DEFAULT 1;" });
 
         // Check orders table
         const { data: oData, error: oErr } = await supabase.from('orders').select('*').limit(1);
@@ -686,8 +683,7 @@ router.get('/system/health', async (req, res) => {
         const oCols = oData.length > 0 ? Object.keys(oData[0]) : [];
         if (!oCols.includes('delivery_type')) health.missing_columns.push({ table: 'orders', column: 'delivery_type', sql: "ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS delivery_type TEXT DEFAULT 'Home Delivery';" });
         if (!oCols.includes('discount_amount')) health.missing_columns.push({ table: 'orders', column: 'discount_amount', sql: "ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS discount_amount INTEGER DEFAULT 0;" });
-        if (!oCols.includes('coins_earned')) health.missing_columns.push({ table: 'orders', column: 'coins_earned', sql: "ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS coins_earned INTEGER DEFAULT 0;" });
-        if (!oCols.includes('coins_used')) health.missing_columns.push({ table: 'orders', column: 'coins_used', sql: "ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS coins_used INTEGER DEFAULT 0;" });
+        if (!oCols.includes('coupon_id')) health.missing_columns.push({ table: 'orders', column: 'coupon_id', sql: "ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS coupon_id INTEGER REFERENCES public.coupons(id);" });
 
         if (health.missing_columns.length > 0) health.status = "degraded";
 

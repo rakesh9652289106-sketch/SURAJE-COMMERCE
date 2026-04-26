@@ -909,16 +909,6 @@ async function fetchShopSettings() {
         if (document.getElementById('defaultLanguage')) document.getElementById('defaultLanguage').value = s.default_language || 'en';
         if (document.getElementById('privacyPolicyText')) document.getElementById('privacyPolicyText').value = s.privacy_policy || '';
 
-        // Loyalty settings
-        if (document.getElementById('manageCoinsActive')) {
-            document.getElementById('manageCoinsActive').checked = s.coins_system_active === 1;
-        }
-        if (document.getElementById('coinRewardRate')) {
-            document.getElementById('coinRewardRate').value = s.coin_reward_rate || 1000;
-        }
-        if (document.getElementById('coinRewardAmount')) {
-            document.getElementById('coinRewardAmount').value = s.coin_reward_amount || 30;
-        }
     }
 
     try {
@@ -961,20 +951,6 @@ async function handleSaveAppConfig(e) {
     refreshWithToast("App configuration updated", "success");
 }
 
-async function handleSaveLoyaltySettings(e) {
-    e.preventDefault();
-    const data = {
-        coins_system_active: document.getElementById('manageCoinsActive').checked ? 1 : 0,
-        coin_reward_rate: Number(document.getElementById('coinRewardRate').value),
-        coin_reward_amount: Number(document.getElementById('coinRewardAmount').value)
-    };
-    await fetch('/api/admin/settings', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    });
-    refreshWithToast("Loyalty settings updated", "success");
-}
 
 async function fetchDeliverySettings() {
     const res = await fetch('/api/settings');
@@ -1255,8 +1231,12 @@ async function fetchAdminCoupons(date = "") {
             <tr>
                 <td><div style="font-weight:700; color:#1E293B;">${c.code}</div></td>
                 <td><span class="badge" style="background:#F1F5F9; color:#475569;">${c.discount_type === 'percent' ? c.discount_value + '%' : '₹' + c.discount_value}</span></td>
-                <td>₹${c.min_amount}</td>
-                <td>${c.useCount}</td>
+                <td>
+                    <div style="font-size:0.85rem; font-weight:600; color:var(--text-main);">${c.discount_type === 'percent' ? 'Percentage' : 'Fixed Amount'}</div>
+                    <div style="font-size:0.75rem; color:#64748B;">Min: ₹${c.min_amount}</div>
+                </td>
+                <td><span style="font-weight:600;">${c.useCount}</span></td>
+                <td><span style="font-weight:700; color:#16A34A;">₹${Math.round(c.totalSaved || 0)}</span></td>
                 <td style="font-size:0.85rem; color:#64748B;">${new Date(c.expiry_date).toLocaleDateString()}</td>
                 <td>
                     <button onclick="deleteCoupon(${c.id})" class="action-btn" style="background:#EF4444;"><i class="ph ph-trash"></i></button>
@@ -1302,7 +1282,7 @@ async function fetchUsers(search = "", date = "") {
         <tr>
             <td>#${u.id}</td>
             <td><div style="font-weight:600;">${u.full_name || 'User'}</div><small>${u.username}</small></td>
-            <td>${u.email}</td>
+            <td>${u.email || 'N/A'}</td>
             <td>${u.phone || 'N/A'}</td>
             <td><span class="badge ${u.status || 'active'}">${u.status || 'active'}</span></td>
             <td><small>${new Date(u.created_at).toLocaleDateString()}</small></td>
@@ -1387,7 +1367,6 @@ function setupEventListeners() {
     document.getElementById('couponForm')?.addEventListener('submit', handleCouponSubmit);
     document.getElementById('adminSecurityForm')?.addEventListener('submit', handleSecurityUpdate);
     document.getElementById('appFeaturesForm')?.addEventListener('submit', handleSaveAppConfig);
-    document.getElementById('loyaltySettingsForm')?.addEventListener('submit', handleSaveLoyaltySettings);
 }
 
 async function handleSecurityUpdate(e) {

@@ -84,14 +84,14 @@ async function fetchOverview() {
             } else {
                 actList.innerHTML = activity.slice(0, 5).map(act => {
                     const isReply = act.type === 'support_reply';
-                    const icon = isReply ? 'ph ph-chat-circle-dots' : 'ph ph-star';
-                    const color = isReply ? 'var(--primary)' : '#F59E0B';
-                    const title = isReply ? `Admin Reply: ${act.title}` : `Review: ${act.product_name}`;
-                    const msg = isReply ? act.message : `You rated it ${act.rating} stars`;
+                    const icon = isReply ? 'ph ph-chat-circle-dots' : 'ph ph-question';
+                    const color = isReply ? 'var(--primary)' : '#6366F1';
+                    const title = isReply ? `Admin Reply: ${act.title}` : `Inquiry: ${act.title}`;
+                    const msg = act.message;
                     
                     return `
-                        <div style="display:flex; gap:1rem; margin-bottom:1rem; padding-bottom:1rem; border-bottom:1px solid #f1f5f9;">
-                            <div style="width:36px; height:36px; border-radius:50%; background:#f8fafc; display:flex; align-items:center; justify-content:center; color:${color}; font-size:1.25rem; flex-shrink:0;">
+                        <div style="display:flex; gap:1rem; margin-bottom:1rem; padding-bottom:1rem; border-bottom:1px solid var(--border);">
+                            <div style="width:36px; height:36px; border-radius:50%; background:var(--bg-color); display:flex; align-items:center; justify-content:center; color:${color}; font-size:1.25rem; flex-shrink:0;">
                                 <i class="${icon}"></i>
                             </div>
                             <div style="flex:1;">
