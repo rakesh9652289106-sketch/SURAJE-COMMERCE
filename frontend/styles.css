@@ -3139,3 +3139,18 @@ body.sidebar-active {
         width: calc(100vw - 20px) !important;
     }
 }
+
+/* Custom Scrollbar for Notification List */
+#notifList::-webkit-scrollbar {
+    width: 6px;
+}
+#notifList::-webkit-scrollbar-track {
+    background: transparent;
+}
+#notifList::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
+    border-radius: 10px;
+}
+#notifList::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.5);
+}
