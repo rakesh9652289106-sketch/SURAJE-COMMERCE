@@ -114,6 +114,8 @@ CREATE TABLE IF NOT EXISTS public.orders (
     payment_status TEXT DEFAULT 'pending',
     discount_amount INTEGER DEFAULT 0,
     delivery_type TEXT DEFAULT 'Home Delivery',
+    coupon_id INTEGER REFERENCES public.coupons(id),
+    daily_seq INTEGER DEFAULT 1,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 

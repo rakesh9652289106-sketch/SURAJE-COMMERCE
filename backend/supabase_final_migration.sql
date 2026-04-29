@@ -134,6 +134,8 @@ CREATE TABLE IF NOT EXISTS public.orders (
     payment_status TEXT DEFAULT 'pending',
     discount_amount INTEGER DEFAULT 0,
     delivery_type TEXT DEFAULT 'Home Delivery',
+    coupon_id INTEGER REFERENCES public.coupons(id),
+    daily_seq INTEGER DEFAULT 1,
     coins_earned INTEGER DEFAULT 0, -- Coins earned from this order
     coins_used INTEGER DEFAULT 0,   -- Coins redeemed for this order
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
@@ -236,6 +238,12 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='delivery_type') THEN
         ALTER TABLE public.orders ADD COLUMN delivery_type TEXT DEFAULT 'Home Delivery';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='coupon_id') THEN
+        ALTER TABLE public.orders ADD COLUMN coupon_id INTEGER REFERENCES public.coupons(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='daily_seq') THEN
+        ALTER TABLE public.orders ADD COLUMN daily_seq INTEGER DEFAULT 1;
     END IF;
 END $$;
 

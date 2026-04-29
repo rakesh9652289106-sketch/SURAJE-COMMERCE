@@ -243,25 +243,29 @@ async function fetchWishlist() {
             return;
         }
 
-        grid.innerHTML = wishlist.map(p => `
-            <div class="product-card">
-                <button class="wishlist-btn active" onclick="removeFromWishlist(${p.id})"><i class="ph-fill ph-heart"></i></button>
-                <img src="${p.imgUrl}" alt="${p.name}" class="product-img">
+        grid.innerHTML = wishlist.map(p => {
+            const imgUrl = p.imgUrl || p.imgurl || "";
+            return `
+            <div class="product-card" style="position: relative;">
+                <i class="ph-fill ph-heart" style="position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; color: #EF4444; z-index: 2; cursor: pointer;" onclick="removeFromWishlist('${p.id}')"></i>
+                <img src="${imgUrl}" alt="${p.name}" class="product-img" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&text=Product'">
                 <div class="product-info">
-                    <h4 class="product-name">${p.name}</h4>
-                    <p class="product-weight">${p.weight}</p>
-                    <div class="product-price-row">
-                        <span class="curr-price">₹${p.price}</span>
-                        ${p.originalPrice ? `<span class="orig-price">₹${p.originalPrice}</span>` : ''}
+                    <h4 class="product-title">${p.name}</h4>
+                    <span class="product-weight">${p.weight}</span>
+                    <div class="product-bottom">
+                        <div class="price">
+                            <span class="current-price">₹${p.price}</span>
+                            ${p.originalPrice || p.originalprice ? `<span class="old-price">₹${p.originalPrice || p.originalprice}</span>` : ''}
+                        </div>
                     </div>
                 </div>
             </div>
-        `).join('');
+        `;}).join('');
         reRenderIcons();
     } catch (e) { console.error(e); }
 }
 
-async function removeFromWishlist(pid) {
+window.removeFromWishlist = async function(pid) {
     try {
         await fetch(`/api/user/wishlist/${pid}`, { method: 'DELETE' });
         Toast.show("Removed from favorites", "info");
@@ -443,21 +447,10 @@ function toggleModal(id, show) {
 }
 
 // Global functions
-// Updated sidebar logout logic
-if (sidebarLogout) {
-    sidebarLogout.addEventListener('click', async (e) => {
-        e.preventDefault();
-        if (typeof window.logoutUser === 'function') {
-            window.logoutUser();
-        } else {
-            // Fallback if script.js not loaded
-            if (confirm("Are you sure you want to log out?")) {
-                await fetch('/api/auth/logout', { method: 'POST' });
-                location.href = "/";
-            }
-        }
-    });
-}
+window.openAddressModal = function() {
+    const el = document.getElementById('addressModalOverlay');
+    if (el) el.classList.add('active');
+};
 
 window.setDefaultAddress = async (id) => {
     try {
@@ -549,7 +542,9 @@ function setupNavMenu() {
 }
 
 function reRenderIcons() {
-    if (window.phosphor && window.phosphor.replace) {
+    // Phosphor 2.x uses CSS classes, no replacement script needed.
+    // However, if using the JS library version, we check for it.
+    if (window.phosphor && typeof window.phosphor.replace === 'function') {
         window.phosphor.replace();
     }
 }

@@ -15,6 +15,18 @@
 
     // 2. Global Setup Function
     window.setupThemeToggle = function() {
+        // Inject Support Button if missing
+        if (!document.getElementById('supportSymbol')) {
+            const supportHTML = `
+                <a href="support.html" class="support-fixed-container" id="supportSymbol">
+                    <div class="support-symbol">
+                        <i class="ph ph-headset"></i>
+                    </div>
+                </a>
+            `;
+            document.body.insertAdjacentHTML('beforeend', supportHTML);
+        }
+
         const toggleBtns = document.querySelectorAll('.theme-toggle-btn');
         if (!toggleBtns.length) return;
 
@@ -60,59 +72,19 @@
         });
     };
 
-    // 3. Global Scroll Behaviors (Support Button Visibility)
-    let lastScrollTop = 0;
-    let scrollStopTimer;
-
-    const updateSupportVisibility = (scrollingDown = false) => {
+    // 3. Global Scroll Behaviors (Simplified - Always Visible)
+    const updateSupportVisibility = () => {
         const supportBtn = document.getElementById('supportSymbol');
         if (!supportBtn) return;
-
-        // 1. Check if any major UI component is open/active
-        const isModalOpen = !!document.querySelector('.nav-sidebar.active, .cart-sidebar.active, .checkout-modal-overlay.active, .feature-modal-overlay.active, .auth-modal-overlay.active');
-        const isNotifOpen = document.getElementById('notificationsDropdown')?.style.display === 'block';
-        const isSearchActive = document.getElementById('mainSearchInput')?.value.trim() !== '';
-
-        // 2. Decide visibility
-        // Show ONLY while scrolling down AND no UI "function" is active
-        if (scrollingDown && !isModalOpen && !isNotifOpen && !isSearchActive) {
-            supportBtn.classList.add('visible');
-        } else {
-            supportBtn.classList.remove('visible');
-        }
+        supportBtn.classList.add('visible');
     };
 
-    document.addEventListener('scroll', () => {
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const scrollingDown = scrollTop > lastScrollTop && scrollTop > 50;
-        
-        updateSupportVisibility(scrollingDown);
-        
-        lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
-
-        // Auto-hide after scroll stops (if you want it to disappear when stationary)
-        clearTimeout(scrollStopTimer);
-        scrollStopTimer = setTimeout(() => {
-            updateSupportVisibility(false);
-        }, 1500); 
-    }, { passive: true });
-    
-    // Also listen for clicks that might open/close modals
-    document.addEventListener('click', () => setTimeout(updateSupportVisibility, 100));
-    
-    // Listen for search input
-    document.addEventListener('input', (e) => {
-        if (e.target.id === 'mainSearchInput') updateSupportVisibility();
-    });
-
-    // Auto-init on DOMContentLoaded if not manually called
+    // Remove complex scroll listeners that hide the button
     document.addEventListener('DOMContentLoaded', () => {
         if (localStorage.getItem('theme') === 'dark') {
             document.body.classList.add('dark-theme');
         }
         window.setupThemeToggle();
-
-        // Initial Support Button Check
         updateSupportVisibility();
     });
 })();

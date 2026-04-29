@@ -134,7 +134,7 @@ async function handleAuthSubmit(mode) {
                     setAuthMode('login');
                 }
             } else {
-                refreshWithToast(data.message || "Login successful", "success");
+                refreshWithToast(data.message || "Login successful", "success", true);
             }
         } else {
             Toast.show(data.error || "Failed", "error");
@@ -151,7 +151,7 @@ async function adminLogout() {
             localStorage.removeItem('admin_last_fulfillment');
             
             // Show toast and reload to trigger auth check
-            refreshWithToast("Admin session ended safely", "info");
+            refreshWithToast("Admin session ended safely", "info", true);
         } catch (e) {
             location.reload();
         }
@@ -230,9 +230,29 @@ async function initDashboard() {
     setupCharts();
 }
 
-function refreshWithToast(message, type = 'success') {
-    localStorage.setItem('admin_pending_toast', JSON.stringify({ message, type }));
-    location.reload();
+function refreshWithToast(message, type = 'success', forceReload = false) {
+    if (forceReload) {
+        localStorage.setItem('admin_pending_toast', JSON.stringify({ message, type }));
+        location.reload();
+        return;
+    }
+
+    // 1. Show Toast Immediately
+    if (window.Toast) {
+        Toast.show(message, type);
+    } else {
+        localStorage.setItem('admin_pending_toast', JSON.stringify({ message, type }));
+    }
+    
+    // 2. Trigger Soft Refresh of Current Section
+    const lastSection = localStorage.getItem('admin_last_section') || 'view-dashboard';
+    const lastFulfillment = localStorage.getItem('admin_last_fulfillment') === 'true';
+    showSection(lastSection, lastFulfillment);
+
+    // 3. Close Any Open Modals
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+        modal.style.display = 'none';
+    });
 }
 
 async function fetchDashboardStats(date = "") {

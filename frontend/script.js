@@ -419,14 +419,14 @@ function setupNotifications() {
                     list.innerHTML = '<li style="text-align: center; padding: 1.5rem; color: var(--text-soft); font-size: 0.8rem;">No new notifications</li>';
                 } else {
                     const newListHtml = activeNotifs.map(n => `
-                        <li onclick="window.location.href='notifications.html?id=${n.id}'" style="padding: 1rem 0; border-bottom: 1px solid #1E293B; transition: background 0.2s; cursor: pointer;" onmouseover="this.style.background='rgba(30, 41, 59, 0.5)'" onmouseout="this.style.background='transparent'">
+                        <li onclick="window.location.href='notifications.html?id=${n.id}'" style="padding: 1rem 0; border-bottom: 1px solid var(--border); transition: background 0.2s; cursor: pointer;" onmouseover="this.style.background='var(--primary-light-alpha)'" onmouseout="this.style.background='transparent'">
                             <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
                                 <div style="width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid #10B981; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
                                     <i class="ph ph-info" style="color: #10B981; font-size: 0.9rem;"></i>
                                 </div>
                                 <div style="flex: 1;">
-                                    <div style="font-weight: 600; color: #F1F5F9; line-height: 1.4; font-size: 0.95rem;">${n.message}</div>
-                                    <div style="font-size: 0.75rem; color: #64748B; margin-top: 0.4rem;">${new Date(n.created_at).toLocaleString()}</div>
+                                    <div style="font-weight: 600; color: var(--text-main); line-height: 1.4; font-size: 0.95rem;">${n.message}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-soft); margin-top: 0.4rem;">${new Date(n.created_at).toLocaleString()}</div>
                                 </div>
                             </div>
                         </li>
@@ -2692,9 +2692,23 @@ function updateAuthUI(name) {
         if (authContent) authContent.innerHTML = html;
         if (mobileAuthContent) {
             mobileAuthContent.innerHTML = `
-                <div onclick="window.location.href='profile.html'" style="display:flex; align-items:center; gap:0.4rem; color:var(--primary); font-weight:700; background:rgba(16,185,129,0.1); padding:4px 10px; border-radius:20px; border:1px solid var(--primary);">
-                    <i class="ph ph-user-circle" style="font-size:1.1rem;"></i>
-                    <span style="font-size:0.7rem;">HI, ${firstName}</span>
+                <div class="user-profile-wrapper" style="position: relative;">
+                    <div class="premium-user-badge" id="mobileUserMenuTrigger" style="display: flex; align-items: center; gap: 0.6rem; background: rgba(255,255,255,0.8); padding: 4px 10px; border-radius: 30px; border: 1px solid var(--primary); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.08);">
+                        <div class="avatar-circle" style="width: 24px; height: 24px; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);">
+                            <i class="ph ph-user"></i>
+                        </div>
+                        <span style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--primary); font-size: 0.75rem; letter-spacing: 0.5px;">HI, ${firstName}</span>
+                        <i class="ph ph-caret-down" style="font-size: 0.7rem; color: var(--primary);"></i>
+                    </div>
+
+                    <div class="user-dropdown" id="mobileUserDropdownMenu">
+                        <a href="profile.html" class="user-dropdown-item"><i class="ph ph-user-circle"></i> My Profile</a>
+                        <a href="profile.html?tab=orders" class="user-dropdown-item"><i class="ph ph-shopping-bag"></i> My Orders</a>
+                        <a href="wishlist.html" class="user-dropdown-item"><i class="ph ph-heart"></i> Wishlist</a>
+                        <div class="user-dropdown-footer">
+                            <a href="#" class="user-dropdown-item logout-trigger"><i class="ph ph-sign-out"></i> Log Out</a>
+                        </div>
+                    </div>
                 </div>
             `;
         }
@@ -2707,6 +2721,13 @@ function updateAuthUI(name) {
         if (trigger && dropdown) {
             trigger.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('active'); });
             document.addEventListener('click', (e) => { if (!trigger.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.remove('active'); });
+        }
+
+        const mTrigger = document.getElementById('mobileUserMenuTrigger');
+        const mDropdown = document.getElementById('mobileUserDropdownMenu');
+        if (mTrigger && mDropdown) {
+            mTrigger.addEventListener('click', (e) => { e.stopPropagation(); mDropdown.classList.toggle('active'); });
+            document.addEventListener('click', (e) => { if (!mTrigger.contains(e.target) && !mDropdown.contains(e.target)) mDropdown.classList.remove('active'); });
         }
 
         document.querySelectorAll('.logout-trigger').forEach(btn => {

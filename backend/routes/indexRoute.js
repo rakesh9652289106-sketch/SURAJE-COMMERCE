@@ -228,10 +228,11 @@ router.post('/orders', async (req, res) => {
         let { data, error } = await supabase.from('orders').insert([insertData]).select().single();
         
         if (error) {
-            console.warn("Retrying order insertion without delivery_type due to error:", error.message);
-            // If the error is about missing column, retry without it
-            if (error.message.includes('delivery_type') || error.code === '42703') {
+            console.warn("Retrying order insertion due to error:", error.message);
+            // If the error is about missing column (delivery_type or coupon_id), retry without them
+            if (error.message.includes('delivery_type') || error.message.includes('coupon_id') || error.code === '42703') {
                 delete insertData.delivery_type;
+                delete insertData.coupon_id;
                 const retry = await supabase.from('orders').insert([insertData]).select().single();
                 data = retry.data;
                 error = retry.error;

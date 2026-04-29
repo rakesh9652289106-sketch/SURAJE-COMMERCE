@@ -1,0 +1,238 @@
+﻿diff --git a/frontend/profile-script.js b/frontend/profile-script.js
+index 6f566bf..78ae373 100644
+--- a/frontend/profile-script.js
++++ b/frontend/profile-script.js
+@@ -243,25 +243,29 @@ async function fetchWishlist() {
+             return;
+         }
+ 
+-        grid.innerHTML = wishlist.map(p => `
+-            <div class="product-card">
+-                <button class="wishlist-btn active" onclick="removeFromWishlist(${p.id})"><i class="ph-fill ph-heart"></i></button>
+-                <img src="${p.imgUrl}" alt="${p.name}" class="product-img">
++        grid.innerHTML = wishlist.map(p => {
++            const imgUrl = p.imgUrl || p.imgurl || "";
++            return `
++            <div class="product-card" style="position: relative;">
++                <i class="ph-fill ph-heart" style="position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; color: #EF4444; z-index: 2; cursor: pointer;" onclick="removeFromWishlist('${p.id}')"></i>
++                <img src="${imgUrl}" alt="${p.name}" class="product-img" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&text=Product'">
+                 <div class="product-info">
+-                    <h4 class="product-name">${p.name}</h4>
+-                    <p class="product-weight">${p.weight}</p>
+-                    <div class="product-price-row">
+-                        <span class="curr-price">Γé╣${p.price}</span>
+-                        ${p.originalPrice ? `<span class="orig-price">Γé╣${p.originalPrice}</span>` : ''}
++                    <h4 class="product-title">${p.name}</h4>
++                    <span class="product-weight">${p.weight}</span>
++                    <div class="product-bottom">
++                        <div class="price">
++                            <span class="current-price">Γé╣${p.price}</span>
++                            ${p.originalPrice || p.originalprice ? `<span class="old-price">Γé╣${p.originalPrice || p.originalprice}</span>` : ''}
++                        </div>
+                     </div>
+                 </div>
+             </div>
+-        `).join('');
++        `;}).join('');
+         reRenderIcons();
+     } catch (e) { console.error(e); }
+ }
+ 
+-async function removeFromWishlist(pid) {
++window.removeFromWishlist = async function(pid) {
+     try {
+         await fetch(`/api/user/wishlist/${pid}`, { method: 'DELETE' });
+         Toast.show("Removed from favorites", "info");
+@@ -443,21 +447,10 @@ function toggleModal(id, show) {
+ }
+ 
+ // Global functions
+-// Updated sidebar logout logic
+-if (sidebarLogout) {
+-    sidebarLogout.addEventListener('click', async (e) => {
+-        e.preventDefault();
+-        if (typeof window.logoutUser === 'function') {
+-            window.logoutUser();
+-        } else {
+-            // Fallback if script.js not loaded
+-            if (confirm("Are you sure you want to log out?")) {
+-                await fetch('/api/auth/logout', { method: 'POST' });
+-                location.href = "/";
+-            }
+-        }
+-    });
+-}
++window.openAddressModal = function() {
++    const el = document.getElementById('addressModalOverlay');
++    if (el) el.classList.add('active');
++};
+ 
+ window.setDefaultAddress = async (id) => {
+     try {
+@@ -549,7 +542,9 @@ function setupNavMenu() {
+ }
+ 
+ function reRenderIcons() {
+-    if (window.phosphor && window.phosphor.replace) {
++    // Phosphor 2.x uses CSS classes, no replacement script needed.
++    // However, if using the JS library version, we check for it.
++    if (window.phosphor && typeof window.phosphor.replace === 'function') {
+         window.phosphor.replace();
+     }
+ }
+diff --git a/frontend/profile.html b/frontend/profile.html
+index 3ff0952..3576f82 100644
+--- a/frontend/profile.html
++++ b/frontend/profile.html
+@@ -17,13 +17,26 @@
+     <script src="theme-manager.js"></script>
+     <script type="module" src="translations.js"></script>
+     <style>
++        html, body {
++            overflow: hidden !important;
++            height: 100vh !important;
++            margin: 0;
++            padding: 0;
++            display: flex;
++            flex-direction: column;
++        }
++        
+         .dashboard-wrapper {
+             display: grid;
+             grid-template-columns: 280px 1fr;
+             gap: 2rem;
+             max-width: 1200px;
+-            margin: 2rem auto;
+-            padding: 0 1rem;
++            margin: 0 auto !important;
++            padding: 1rem;
++            align-items: start;
++            flex: 1;
++            overflow: hidden;
++            width: 100%;
+         }
+ 
+         /* Dashboard Sidebar Nav */
+@@ -33,6 +46,9 @@
+             padding: 1rem;
+             box-shadow: var(--shadow-sm);
+             height: fit-content;
++            position: sticky;
++            top: 0;
++            z-index: 100;
+         }
+         .dash-nav-item {
+             display: flex;
+@@ -61,9 +77,19 @@
+             font-weight: 600;
+         }
+ 
+-        /* Content Area */
+         .dash-content {
+-            min-height: 500px;
++            height: 100%;
++            overflow-y: auto;
++            padding-right: 0.5rem;
++            scrollbar-width: thin;
++            scrollbar-color: var(--primary) transparent;
++        }
++        .dash-content::-webkit-scrollbar {
++            width: 6px;
++        }
++        .dash-content::-webkit-scrollbar-thumb {
++            background: var(--primary);
++            border-radius: 10px;
+         }
+         .tab-content {
+             display: none;
+@@ -72,6 +98,52 @@
+         .tab-content.active {
+             display: block;
+         }
++        
++        .tab-content h2, 
++        .tab-content .section-title {
++            position: sticky;
++            top: -1rem; /* Stick to the very top of the scroll container */
++            background: var(--bg-color);
++            padding: 1rem 0;
++            z-index: 90;
++            margin-top: 0;
++            border-bottom: 1px solid var(--border);
++            margin-bottom: 1.5rem !important;
++        }
++        
++        @media (max-width: 992px) {
++            .dashboard-wrapper {
++                display: flex;
++                flex-direction: column;
++                gap: 0;
++                padding: 0;
++            }
++            .dash-nav {
++                position: sticky;
++                top: 0;
++                z-index: 110;
++                border-radius: 0;
++                margin: 0;
++                padding: 0.75rem 1rem;
++                background: var(--card-bg);
++                border-bottom: 1px solid var(--border);
++                display: flex;
++                overflow-x: auto;
++                gap: 0.5rem;
++                flex-shrink: 0;
++            }
++            .tab-content h2, .tab-content .section-title {
++                top: 0;
++                z-index: 90;
++                padding: 1rem;
++            }
++            .dash-content {
++                flex: 1;
++                min-height: 0;
++                padding: 1rem;
++                overflow-y: auto;
++            }
++        }
+ 
+         @keyframes fadeIn {
+             from { opacity: 0; transform: translateY(10px); }
+@@ -564,11 +636,5 @@
+             window.location.href = 'profile.html';
+         });
+     </script>
+-    <!-- Floating Support Symbol -->
+-    <a href="support.html" class="support-fixed-container" id="supportSymbol">
+-        <div class="support-symbol">
+-            <i class="ph ph-headset"></i>
+-        </div>
+-    </a>
+ </body>
+ </html>
+diff --git a/frontend/styles.css b/frontend/styles.css
+index 3372ac4..18b397b 100644
+--- a/frontend/styles.css
++++ b/frontend/styles.css
+@@ -2729,17 +2729,10 @@ body.sidebar-active {
+     .support-fixed-container {
+         bottom: 85px !important; /* Above mobile bottom nav */
+         right: 15px !important;
+-        opacity: 0;
+-        visibility: hidden;
+-        pointer-events: none;
+-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+-        transform: translateY(20px) scale(0.8);
+-    }
+-    .support-fixed-container.visible {
+-        opacity: 1;
+-        visibility: visible;
+-        pointer-events: auto;
+-        transform: translateY(0) scale(1);
++        opacity: 1 !important;
++        visibility: visible !important;
++        pointer-events: auto !important;
++        transform: translateY(0) scale(1) !important;
+     }
+     .support-symbol {
+         width: 40px !important;
