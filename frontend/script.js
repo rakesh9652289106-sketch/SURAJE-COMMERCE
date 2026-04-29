@@ -1942,19 +1942,28 @@ async function setupCartInteractions() {
                 const data = await res.json().catch(() => ({ error: "Server returned an invalid response." }));
                 
                 if (res.ok) {
-                    Toast.show("Order placed successfully!", "success");
+                    cart = [];
+                    localStorage.removeItem('cart');
+                    updateCartSidebar();
 
+                    if (selectedPaymentMethod !== 'cash') {
+                        const finalTotalAmount = document.getElementById('modalFinalTotal').innerText.replace('₹', '').trim();
+                        Toast.show("Redirecting to Razorpay for payment...", "success");
+                        setTimeout(() => {
+                            window.location.href = `https://razorpay.me/@venkatarakeshkumarpuvvada?amount=${finalTotalAmount}&phone=${orderData.phone}`;
+                        }, 1500);
+                        return;
+                    }
+
+                    Toast.show("Order placed successfully!", "success");
                     showCheckoutStep('success');
                     
                     if (document.getElementById('successOrderId')) {
                         document.getElementById('successOrderId').innerText = `#${data.dailySeq || data.orderId || '0000'}`;
                     }
-                    if (document.getElementById('successMethod')) document.getElementById('successMethod').innerText = selectedPaymentMethod === 'cash' ? 'Cash on Delivery' : selectedPaymentMethod.toUpperCase();
+                    if (document.getElementById('successMethod')) document.getElementById('successMethod').innerText = 'Cash on Delivery';
                     if (document.getElementById('successTotalAmount')) document.getElementById('successTotalAmount').innerText = document.getElementById('modalFinalTotal').innerText;
 
-                    cart = [];
-                    localStorage.removeItem('cart');
-                    updateCartSidebar();
                 } else {
                     Toast.show(data.error || "Order failed.", "error");
                 }
