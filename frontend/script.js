@@ -1444,6 +1444,83 @@ function setupSearchFunctionality() {
         searchInput.value = '';
     }
 
+    // --- Search History Logic ---
+    const historyDropdown = document.getElementById('searchHistoryDropdown');
+    const historyList = document.getElementById('searchHistoryList');
+    const clearHistoryBtn = document.getElementById('clearSearchHistoryBtn');
+    
+    function getHistory() {
+        try { return JSON.parse(localStorage.getItem('search_history')) || []; }
+        catch(e) { return []; }
+    }
+    
+    function saveHistory(history) {
+        localStorage.setItem('search_history', JSON.stringify(history));
+    }
+    
+    function addHistoryTerm(term) {
+        if (!term) return;
+        let history = getHistory();
+        history = history.filter(item => item.toLowerCase() !== term.toLowerCase());
+        history.unshift(term);
+        if (history.length > 5) history.pop();
+        saveHistory(history);
+        renderHistory();
+    }
+    
+    function renderHistory() {
+        if (!historyDropdown || !historyList) return;
+        const history = getHistory();
+        if (history.length === 0) {
+            historyDropdown.style.display = 'none';
+            return;
+        }
+        
+        historyList.innerHTML = history.map(term => `
+            <li class="history-item" style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; gap: 0.5rem; color: var(--text-main); font-size: 0.85rem; transition: background 0.2s;" onmouseover="this.style.background='var(--primary-light-alpha)'" onmouseout="this.style.background='transparent'" onclick="window.applySearchHistory('${term.replace(/'/g, "\\'")}')">
+                <i class="ph ph-clock-counter-clockwise" style="color: var(--text-soft);"></i> ${term}
+            </li>
+        `).join('');
+    }
+    
+    window.applySearchHistory = function(term) {
+        searchInput.value = term;
+        if (historyDropdown) historyDropdown.style.display = 'none';
+        searchInput.dispatchEvent(new Event('input'));
+        addHistoryTerm(term); // Bump to top when used
+    };
+
+    if (clearHistoryBtn) {
+        clearHistoryBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            saveHistory([]);
+            renderHistory();
+        });
+    }
+
+    searchInput.addEventListener('focus', () => {
+        if (searchInput.value.trim() === '') {
+            const history = getHistory();
+            if (history.length > 0 && historyDropdown) historyDropdown.style.display = 'block';
+        }
+    });
+
+    searchInput.addEventListener('blur', () => {
+        setTimeout(() => { if (historyDropdown) historyDropdown.style.display = 'none'; }, 200);
+    });
+
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const query = e.target.value.trim();
+            if (query) addHistoryTerm(query);
+            if (historyDropdown) historyDropdown.style.display = 'none';
+        }
+    });
+
+    renderHistory(); // Initial render
+    // --- End Search History Logic ---
+
     searchInput.addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase().trim();
         const grid = document.getElementById("productGrid");
@@ -1452,7 +1529,11 @@ function setupSearchFunctionality() {
             resultCountEl.style.display = 'none';
             toggleHomeSections(true); // Show everything again
             populateProducts("productGrid", products);
+            const history = getHistory();
+            if (history.length > 0 && historyDropdown) historyDropdown.style.display = 'block';
             return;
+        } else {
+            if (historyDropdown) historyDropdown.style.display = 'none';
         }
 
         // Hide home sections to focus on results
@@ -1484,7 +1565,7 @@ function setupSearchFunctionality() {
                     <i class="ph ph-magnifying-glass" style="font-size: 3rem; margin-bottom: 1rem; display: block; color: var(--border);"></i>
                     <h4 style="color: var(--text-main); margin-bottom: 0.5rem;">No products found</h4>
                     <p>We couldn't find anything matching "${e.target.value}"</p>
-                    <button class="btn btn-outline" style="margin-top: 1.5rem;" onclick="document.querySelector('.search-bar input').value=''; document.querySelector('.search-bar input').dispatchEvent(new Event('input'));">Clear Search</button>
+                    <button class="btn btn-outline" style="margin-top: 1.5rem;" onclick="document.querySelector('.search-bar input').value=''; document.querySelector('.search-bar input').dispatchEvent(new Event('input')); document.querySelector('.search-bar input').focus();">Clear Search</button>
                 </div>`;
         } else {
             populateProducts("productGrid", filteredProducts);

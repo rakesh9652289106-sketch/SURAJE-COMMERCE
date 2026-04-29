@@ -115,10 +115,19 @@
                 </div>
             </div>
             
-            <div class="search-bar">
+            <div class="search-bar" style="position: relative;">
                 <i class="ph ph-magnifying-glass search-icon"></i>
                 <input type="text" id="mainSearchInput" autocomplete="off" data-i18n="nav_search_placeholder" placeholder="Search for 'Atta', 'Maggi' or 'Milk'...">
                 <span class="search-brand-watermark">SURAJ</span>
+                <div id="searchHistoryDropdown" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background: var(--card-bg); border: 1px solid var(--border); box-shadow: var(--shadow-md); border-radius: var(--radius-md); z-index: 1000; margin-top: 0.5rem; overflow: hidden;">
+                    <div style="padding: 0.5rem 1rem; font-size: 0.75rem; color: var(--text-soft); font-weight: 600; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
+                        Recent Searches
+                        <button id="clearSearchHistoryBtn" style="background: none; border: none; color: var(--primary); font-size: 0.7rem; cursor: pointer;">Clear</button>
+                    </div>
+                    <ul id="searchHistoryList" style="list-style: none; margin: 0; padding: 0;">
+                        <!-- History items injected here -->
+                    </ul>
+                </div>
             </div>            <div class="nav-actions">
                 <!-- User requested authentication links -->
                 <div class="auth-links">
