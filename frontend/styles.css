@@ -464,13 +464,13 @@ body.dark-theme header.sticky .search-brand-watermark {
     }
 
     .premium-user-badge {
-        height: 34px !important;
-        padding: 4px 10px !important;
-        gap: 0.5rem !important;
+        height: 30px !important;
+        padding: 2px 8px !important;
+        gap: 0.4rem !important;
     }
     
     .premium-user-badge span {
-        font-size: 0.75rem !important;
+        font-size: 0.7rem !important;
     }
     
     .premium-user-badge .avatar-circle {
@@ -2869,7 +2869,7 @@ body.sidebar-active {
         height: 65px !important;
         box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1) !important;
         z-index: 10000 !important;
-        justify-content: space-around !important;
+        justify-content: space-evenly !important;
         align-items: center !important;
         margin: 0 !important;
     }
@@ -3058,45 +3058,30 @@ body.sidebar-active {
 
 @media (max-width: 768px) {
     .nav-container {
-        padding: 0.6rem 1rem !important;
+        padding: 0.5rem 0.75rem !important;
+        flex-wrap: wrap !important;
+        justify-content: space-between !important;
+        gap: 0.5rem 0.75rem !important;
+    }
+    .nav-left {
+        flex: 1 !important;
+        min-width: 0;
+        gap: 0.5rem !important;
+    }
+    .mobile-nav-actions {
+        flex: 0 0 auto !important;
+        gap: 0.5rem !important;
+    }
+    .search-bar {
+        width: 100% !important;
+        order: 3;
+        margin-top: 0.25rem !important;
     }
 }
 
 /* --- Professional Mobile Refinements --- */
 
-/* 1. Compact 3-Column Category Grid for Mobile */
-@media (max-width: 480px) {
-    .category-scroll {
-        display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 0.75rem !important;
-        mask-image: none !important;
-        -webkit-mask-image: none !important;
-        overflow-x: visible !important;
-        padding: 1rem 0 !important;
-    }
-    .category-card {
-        min-width: unset !important;
-        padding: 1rem 0.5rem !important;
-        height: auto !important;
-        aspect-ratio: 1/1.2;
-    }
-    .category-card i {
-        font-size: 1.75rem !important;
-    }
-    .category-name {
-        font-size: 0.7rem !important;
-        line-height: 1.1 !important;
-        display: -webkit-box !important;
-        -webkit-line-clamp: 2 !important;
-        -webkit-box-orient: vertical !important;
-        overflow: hidden !important;
-    }
-    /* Hide carousel arrows in grid mode */
-    #categoryLeftArrow, #categoryRightArrow {
-        display: none !important;
-    }
-}
+/* 1. Restored category scroll for Mobile */
 
 /* 2. Hide Horizontal Scrollbars globally while keeping touch-scroll */
 .category-chips-container,

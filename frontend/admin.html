@@ -260,9 +260,13 @@
             <section id="view-orders" class="content-section">
                 <div class="section-header-row">
                     <h1 class="page-title">Order Management</h1>
-                    <div class="global-date-filter">
-                        <label><i class="ph ph-calendar"></i> Filter Date</label>
-                        <input type="date" onchange="fetchOrders(this.value)">
+                    <div style="display:flex; gap:1rem;">
+                        <input type="text" id="orderSearch" placeholder="Search orders..." 
+                            onkeyup="fetchOrders(this.value, document.getElementById('orderDateFilter').value)"
+                            style="padding:0.4rem; border-radius:4px; border:1px solid #E2E8F0;">
+                        <input type="date" id="orderDateFilter" 
+                            onchange="fetchOrders(document.getElementById('orderSearch').value, this.value)"
+                            style="padding:0.4rem; border-radius:4px; border:1px solid #E2E8F0;">
                     </div>
                 </div>
 
@@ -898,6 +902,14 @@
                             </div>
                             <div class="form-group"><label>Shop Address</label><input type="text" id="sAddress"></div>
                             <div class="form-group"><label>Hero Image URL</label><input type="text" id="sImage"></div>
+                            
+                            <!-- Razorpay Keys -->
+                            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #E2E8F0;">
+                                <h4 style="margin-bottom: 1rem; color: #1E293B;"><i class="ph ph-credit-card"></i> Razorpay Integration</h4>
+                                <div class="form-group"><label>Razorpay Key ID</label><input type="text" id="rzpKeyId" placeholder="rzp_test_..."></div>
+                                <div class="form-group"><label>Razorpay Key Secret</label><input type="password" id="rzpSecret" placeholder="Enter Key Secret"></div>
+                            </div>
+
                             <button type="submit" class="btn-submit" style="margin-top: 1rem;">Save Shop Settings</button>
                         </form>
                     </div>

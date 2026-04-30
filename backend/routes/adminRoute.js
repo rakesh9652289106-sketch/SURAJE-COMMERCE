@@ -294,7 +294,7 @@ router.get('/orders', async (req, res) => {
     }
     if (search) {
         // Search by order ID (convert to string for ilike) or user name/phone
-        query = query.or(`id.eq.${!isNaN(search)?search:-1},users.username.ilike.%${search}%,users.phone.ilike.%${search}%,address.ilike.%${search}%`);
+        query = query.or(`id.eq.${!isNaN(search)?search:-1},users.username.ilike.%${search}%,users.full_name.ilike.%${search}%,users.phone.ilike.%${search}%,address.ilike.%${search}%`);
     }
     const { data, error } = await query.order('id', { ascending: false });
     if (error) return res.status(500).json({ error: error.message });
@@ -621,7 +621,7 @@ router.get('/users', async (req, res) => {
     let query = supabase.from('users').select('*');
     
     if (search) {
-        query = query.or(`username.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
+        query = query.or(`username.ilike.%${search}%,full_name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%,alternate_phone.ilike.%${search}%`);
     }
     if (date) {
         const start = `${date}T00:00:00.000Z`;
@@ -676,6 +676,10 @@ router.get('/system/health', async (req, res) => {
         const { data: sData, error: sErr } = await supabase.from('settings').select('*').limit(1);
         if (sErr) throw sErr;
         const sCols = sData.length > 0 ? Object.keys(sData[0]) : [];
+        if (sCols.length > 0) {
+            if (!sCols.includes('razorpay_key_id')) health.missing_columns.push({ table: 'settings', column: 'razorpay_key_id', sql: "ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS razorpay_key_id TEXT;" });
+            if (!sCols.includes('razorpay_secret')) health.missing_columns.push({ table: 'settings', column: 'razorpay_secret', sql: "ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS razorpay_secret TEXT;" });
+        }
 
         // Check orders table
         const { data: oData, error: oErr } = await supabase.from('orders').select('*').limit(1);

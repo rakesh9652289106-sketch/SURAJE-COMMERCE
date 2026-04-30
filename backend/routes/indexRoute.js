@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { supabase } = require('../supabaseClient');
+const Razorpay = require('razorpay');
+const crypto = require('crypto');
 
 router.get('/coupons', async (req, res) => {
     try {
@@ -292,6 +294,58 @@ router.get('/notifications/history', async (req, res) => {
     res.json(data);
 });
 
+router.post('/payment/create-order', async (req, res) => {
+    const { amount } = req.body;
+    
+    // Fetch settings to get keys
+    const { data: settings, error } = await supabase.from('settings').select('razorpay_key_id, razorpay_secret').single();
+    if (error || !settings || !settings.razorpay_key_id || !settings.razorpay_secret) {
+        return res.status(500).json({ error: "Razorpay is not configured. Please add API keys in the admin panel." });
+    }
 
+    try {
+        const instance = new Razorpay({
+            key_id: settings.razorpay_key_id,
+            key_secret: settings.razorpay_secret,
+        });
+
+        const options = {
+            amount: Math.round(amount * 100), // amount in paise
+            currency: "INR",
+            receipt: `receipt_${Date.now()}`
+        };
+
+        const order = await instance.orders.create(options);
+        res.json({ order_id: order.id, key_id: settings.razorpay_key_id });
+    } catch (err) {
+        console.error("Razorpay Create Order Error:", err);
+        res.status(500).json({ error: "Failed to create Razorpay order." });
+    }
+});
+
+router.post('/payment/verify', async (req, res) => {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, db_order_id } = req.body;
+    
+    const { data: settings, error } = await supabase.from('settings').select('razorpay_secret').single();
+    if (error || !settings || !settings.razorpay_secret) {
+        return res.status(500).json({ error: "Razorpay is not configured." });
+    }
+
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+        .createHmac('sha256', settings.razorpay_secret)
+        .update(body.toString())
+        .digest('hex');
+                                
+    if (expectedSignature === razorpay_signature) {
+        // Update order status in DB to paid
+        if (db_order_id) {
+            await supabase.from('orders').update({ payment_status: 'paid' }).eq('id', db_order_id);
+        }
+        res.json({ message: "Payment verified successfully" });
+    } else {
+        res.status(400).json({ error: "Invalid signature" });
+    }
+});
 
 module.exports = router;

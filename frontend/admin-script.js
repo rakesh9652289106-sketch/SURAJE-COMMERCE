@@ -751,9 +751,11 @@ window.closeQuickVariantEditor = () => {
 
 // --- ORDERS ---
 
-async function fetchOrders(date = "") {
+async function fetchOrders(search = "", date = "") {
     try {
-        const res = await fetch(date ? `/api/admin/orders?date=${date}` : '/api/admin/orders');
+        let url = `/api/admin/orders?search=${search}`;
+        if (date) url += `&date=${date}`;
+        const res = await fetch(url);
         const orders = await res.json();
         
         const todayStr = new Date().toISOString().split('T')[0];
@@ -925,6 +927,9 @@ async function fetchShopSettings() {
         document.getElementById('sAddress').value = s.shop_address || '';
         document.getElementById('sImage').value = s.shop_image || '';
         
+        if (document.getElementById('rzpKeyId')) document.getElementById('rzpKeyId').value = s.razorpay_key_id || '';
+        if (document.getElementById('rzpSecret')) document.getElementById('rzpSecret').value = s.razorpay_secret || '';
+        
         // App Config
         if (document.getElementById('defaultLanguage')) document.getElementById('defaultLanguage').value = s.default_language || 'en';
         if (document.getElementById('privacyPolicyText')) document.getElementById('privacyPolicyText').value = s.privacy_policy || '';
@@ -947,7 +952,9 @@ async function handleSaveSettings(e) {
         shop_email: document.getElementById('sEmail').value,
         shop_phone: document.getElementById('sPhone').value,
         shop_address: document.getElementById('sAddress').value,
-        shop_image: document.getElementById('sImage').value
+        shop_image: document.getElementById('sImage').value,
+        razorpay_key_id: document.getElementById('rzpKeyId')?.value || '',
+        razorpay_secret: document.getElementById('rzpSecret')?.value || ''
     };
     await fetch('/api/admin/settings', {
         method: 'PATCH',

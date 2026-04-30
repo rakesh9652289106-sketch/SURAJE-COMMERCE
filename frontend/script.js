@@ -1932,7 +1932,9 @@ async function setupCartInteractions() {
                 deliveryType: window.selectedDeliveryType
             };
 
+            let isRedirecting = false;
             try {
+                // 1. Create order in DB (status: pending, payment_status: pending)
                 const res = await fetch('/api/orders', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -1941,39 +1943,122 @@ async function setupCartInteractions() {
                 
                 const data = await res.json().catch(() => ({ error: "Server returned an invalid response." }));
                 
-                if (res.ok) {
-                    cart = [];
-                    localStorage.removeItem('cart');
-                    updateCartSidebar();
+                if (!res.ok) {
+                    Toast.show(data.error || "Order failed.", "error");
+                    return;
+                }
+                
+                const dbOrderId = data.orderId;
 
-                    if (selectedPaymentMethod !== 'cash') {
-                        const finalTotalAmount = document.getElementById('modalFinalTotal').innerText.replace('₹', '').trim();
-                        Toast.show("Redirecting to Razorpay for payment...", "success");
-                        setTimeout(() => {
-                            window.location.href = `https://razorpay.me/@venkatarakeshkumarpuvvada?amount=${finalTotalAmount}&phone=${orderData.phone}`;
-                        }, 1500);
+                if (selectedPaymentMethod !== 'cash') {
+                    isRedirecting = true;
+                    confirmOrderBtn.innerText = "Initializing Payment...";
+                    
+                    const finalTotalAmount = document.getElementById('modalFinalTotal').innerText.replace(/[^0-9.]/g, '');
+                    
+                    // 2. Create Razorpay Order
+                    const rzpRes = await fetch('/api/payment/create-order', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ amount: finalTotalAmount })
+                    });
+                    
+                    const rzpData = await rzpRes.json();
+                    if (!rzpRes.ok) {
+                        Toast.show(rzpData.error || "Failed to initialize payment.", "error");
+                        confirmOrderBtn.innerText = "Confirm Order";
+                        confirmOrderBtn.disabled = false;
                         return;
                     }
-
-                    Toast.show("Order placed successfully!", "success");
-                    showCheckoutStep('success');
                     
-                    if (document.getElementById('successOrderId')) {
-                        document.getElementById('successOrderId').innerText = `#${data.dailySeq || data.orderId || '0000'}`;
-                    }
-                    if (document.getElementById('successMethod')) document.getElementById('successMethod').innerText = 'Cash on Delivery';
-                    if (document.getElementById('successTotalAmount')) document.getElementById('successTotalAmount').innerText = document.getElementById('modalFinalTotal').innerText;
-
-                } else {
-                    Toast.show(data.error || "Order failed.", "error");
+                    // 3. Open Razorpay Checkout
+                    const options = {
+                        "key": rzpData.key_id,
+                        "amount": finalTotalAmount * 100,
+                        "currency": "INR",
+                        "name": "SURAJ SnapBasket",
+                        "description": "Order Payment",
+                        "order_id": rzpData.order_id,
+                        "handler": async function (response) {
+                            // 4. Verify Payment
+                            Toast.show("Verifying Payment...", "info");
+                            const verifyRes = await fetch('/api/payment/verify', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature,
+                                    db_order_id: dbOrderId
+                                })
+                            });
+                            
+                            const verifyData = await verifyRes.json();
+                            if (verifyRes.ok) {
+                                cart = [];
+                                localStorage.removeItem('cart');
+                                updateCartSidebar();
+                                Toast.show("Payment Successful! Order placed.", "success");
+                                showCheckoutStep('success');
+                                if (document.getElementById('successOrderId')) document.getElementById('successOrderId').innerText = `#${data.dailySeq || dbOrderId}`;
+                                if (document.getElementById('successMethod')) document.getElementById('successMethod').innerText = 'Online Payment';
+                                if (document.getElementById('successTotalAmount')) document.getElementById('successTotalAmount').innerText = `₹${finalTotalAmount}`;
+                            } else {
+                                Toast.show(verifyData.error || "Payment verification failed.", "error");
+                                confirmOrderBtn.innerText = "Confirm Order";
+                                confirmOrderBtn.disabled = false;
+                            }
+                        },
+                        "prefill": {
+                            "name": orderData.name,
+                            "contact": orderData.phone
+                        },
+                        "theme": {
+                            "color": "#4F46E5"
+                        },
+                        "modal": {
+                            "ondismiss": function() {
+                                Toast.show("Payment cancelled.", "warning");
+                                confirmOrderBtn.innerText = "Confirm Order";
+                                confirmOrderBtn.disabled = false;
+                            }
+                        }
+                    };
+                    
+                    const rzp = new Razorpay(options);
+                    rzp.on('payment.failed', function (response){
+                        Toast.show("Payment Failed. " + response.error.description, "error");
+                        confirmOrderBtn.innerText = "Confirm Order";
+                        confirmOrderBtn.disabled = false;
+                    });
+                    rzp.open();
+                    
+                    return; // Stop here, handler will clear cart and show success
                 }
+
+                // --- CASH FLOW ---
+                cart = [];
+                localStorage.removeItem('cart');
+                updateCartSidebar();
+                
+                Toast.show("Order placed successfully!", "success");
+                showCheckoutStep('success');
+                
+                if (document.getElementById('successOrderId')) {
+                    document.getElementById('successOrderId').innerText = `#${data.dailySeq || dbOrderId || '0000'}`;
+                }
+                if (document.getElementById('successMethod')) document.getElementById('successMethod').innerText = 'Cash on Delivery';
+                if (document.getElementById('successTotalAmount')) document.getElementById('successTotalAmount').innerText = document.getElementById('modalFinalTotal').innerText;
+
             } catch(e) { 
                 console.error(e); 
                 Toast.show("Connection error. Please try again.", "error"); 
             }
             finally {
-                confirmOrderBtn.innerText = "Confirm Order";
-                confirmOrderBtn.disabled = false;
+                if (!isRedirecting) {
+                    confirmOrderBtn.innerText = "Confirm Order";
+                    confirmOrderBtn.disabled = false;
+                }
             }
         };
     }
