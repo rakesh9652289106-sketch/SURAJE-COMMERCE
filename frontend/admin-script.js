@@ -793,25 +793,34 @@ async function fetchOrders(search = "", date = "") {
             return `
                 <tr>
                     <td>#${o.display_id || o.id}</td>
-                    <td><div style="font-weight:600;">${o.full_name || 'Customer'}</div><small style="color:#64748B;">${o.phone || ''}</small></td>
-                    <td style="font-weight:700; color:#1E293B;">₹${o.total}</td>
-                    <td><div style="display:flex; flex-wrap:wrap; gap:4px;">${itemsHtml}</div></td>
-                    <td><small style="color:#64748B;">${o.address || ''}</small></td>
                     <td>
-                        <div style="text-transform:uppercase; font-size:0.7rem; font-weight:700; color:#475569;">${o.payment_method}</div>
-                        <span class="badge ${o.payment_status === 'paid' ? 'delivered' : 'pending'}" style="font-size:0.6rem; padding:1px 6px;">${o.payment_status}</span>
+                        <div style="font-weight:600; color:#1E293B;">${o.full_name || 'Customer'}</div>
+                        <div style="font-size:0.75rem; color:#64748B;">${o.phone || ''}</div>
                     </td>
+                    <td style="font-weight:600; color:#EF4444;">₹${o.total}</td>
                     <td>
-                        <select onchange="updateOrderStatus(${o.id}, this.value)" class="admin-input" style="padding:4px 8px; font-size:0.85rem; border-color:#CBD5E1;">
+                        <div style="font-size:0.85rem; color:#475569;">${o.payment_method.toUpperCase()}</div>
+                        <div style="font-size:0.75rem; color:${o.payment_status === 'paid' ? '#10B981' : '#EF4444'}; font-weight:600;">
+                            ${o.payment_status.toUpperCase()}
+                        </div>
+                    </td>
+                    <td style="font-size:0.85rem; color:#475569;">${new Date(o.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <select onchange="updateOrderStatus(${o.id}, this.value)" class="admin-input" style="padding:4px 8px; font-size:0.8rem; border-radius:20px; border-color:#CBD5E1; background: ${o.status === 'delivered' ? '#DCFCE7' : (o.status === 'cancelled' ? '#FEF2F2' : '#F1F5F9')}; color: ${o.status === 'delivered' ? '#16A34A' : (o.status === 'cancelled' ? '#EF4444' : '#475569')}; font-weight:700; text-transform:uppercase;">
                             <option value="pending" ${o.status === 'pending' ? 'selected' : ''}>Pending</option>
                             <option value="confirmed" ${o.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
                             <option value="delivered" ${o.status === 'delivered' ? 'selected' : ''}>Delivered</option>
+                            <option value="cancelled" ${o.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
                         </select>
                     </td>
-                    <td style="white-space:nowrap; font-size:0.85rem; color:#64748B;">${new Date(o.created_at).toLocaleDateString()}</td>
                     <td>
                         <div style="display:flex; gap:6px;">
-                            <button onclick="deleteOrder(${o.id})" class="action-btn" style="background:#EF4444;" title="Delete Order"><i class="ph ph-trash"></i></button>
+                            <button onclick="viewOrderDetails(${o.id})" class="action-btn" style="background:#F1F5F9; color:#64748B; border:1px solid #E2E8F0;" title="View Details">
+                                <i class="ph ph-eye"></i>
+                            </button>
+                            <button onclick="deleteOrder(${o.id})" class="action-btn" style="background:#FEE2E2; color:#EF4444; border:1px solid #FECACA;" title="Delete Order">
+                                <i class="ph ph-trash"></i>
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -1579,3 +1588,47 @@ async function fetchCancelledPayments(search = "", date = "") {
         if (window.Toast) Toast.show("Could not load cancelled payments", "error");
     }
 }
+
+window.viewOrderDetails = async (id) => {
+    try {
+        const res = await fetch(`/api/admin/orders`);
+        const orders = await res.json();
+        const o = orders.find(x => x.id === id);
+        if (!o) return Toast.show("Order not found", "error");
+
+        const items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
+        const itemsHtml = items.map(i => `
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f1f5f9;">
+                <span>${i.name} ${i.weight ? `(${i.weight})` : ''} x${i.quantity}</span>
+                <span style="font-weight:600;">₹${i.price * i.quantity}</span>
+            </div>
+        `).join('');
+
+        document.getElementById('orderDetailContent').innerHTML = `
+            <div style="background:#F8FAFC; padding:1rem; border-radius:8px; margin-bottom:1rem;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+                    <span style="color:#64748B;">Customer:</span>
+                    <strong style="color:#1E293B;">${o.full_name}</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+                    <span style="color:#64748B;">Phone:</span>
+                    <strong style="color:#1E293B;">${o.phone}</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span style="color:#64748B;">Address:</span>
+                    <strong style="color:#1E293B; text-align:right; max-width:200px;">${o.address}</strong>
+                </div>
+            </div>
+            <h4 style="margin-bottom:0.5rem; color:#475569;">Items</h4>
+            <div style="margin-bottom:1rem;">${itemsHtml}</div>
+            <div style="display:flex; justify-content:space-between; font-size:1.1rem; font-weight:700; color:#1E293B; border-top:2px solid #E2E8F0; padding-top:0.5rem;">
+                <span>Total Amount</span>
+                <span>₹${o.total}</span>
+            </div>
+        `;
+        document.getElementById('orderDetailModal').style.display = 'flex';
+    } catch (err) {
+        console.error(err);
+        Toast.show("Error loading details", "error");
+    }
+};
