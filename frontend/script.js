@@ -1907,7 +1907,8 @@ async function setupCartInteractions() {
 
     if (confirmOrderBtn) {
         confirmOrderBtn.onclick = async () => {
-            if (!getCookie('user_id')) {
+            const currentUserId = getCookie('user_id') || localStorage.getItem('user_id');
+            if (!currentUserId) {
                 Toast.show("Please login to place an order!", "warning");
                 openAuthModal();
                 return;
@@ -1954,7 +1955,14 @@ async function setupCartInteractions() {
                     isRedirecting = true;
                     confirmOrderBtn.innerText = "Initializing Payment...";
                     
-                    const finalTotalAmount = document.getElementById('modalFinalTotal').innerText.replace(/[^0-9.]/g, '');
+                    const finalTotalAmount = parseFloat(document.getElementById('modalFinalTotal').innerText.replace(/[^0-9.]/g, '')) || 0;
+                    
+                    if (finalTotalAmount <= 0) {
+                        Toast.show("Order total must be greater than 0 for online payments.", "error");
+                        confirmOrderBtn.innerText = "Confirm Order";
+                        confirmOrderBtn.disabled = false;
+                        return;
+                    }
                     
                     // 2. Create Razorpay Order
                     const rzpRes = await fetch('/api/payment/create-order', {
@@ -2069,8 +2077,8 @@ async function setupCartInteractions() {
                 if (document.getElementById('successTotalAmount')) document.getElementById('successTotalAmount').innerText = document.getElementById('modalFinalTotal').innerText;
 
             } catch(e) { 
-                console.error(e); 
-                Toast.show("Connection error. Please try again.", "error"); 
+                console.error("Order error:", e); 
+                Toast.show("Error: " + (e.message || "Connection error"), "error"); 
             }
             finally {
                 if (!isRedirecting) {

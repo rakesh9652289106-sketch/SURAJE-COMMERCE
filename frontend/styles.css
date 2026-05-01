@@ -63,7 +63,11 @@ body {
 
 
 body.no-scroll {
-    overflow: hidden;
+    overflow: hidden !important;
+    height: 100vh !important;
+    width: 100% !important;
+    position: fixed !important;
+    touch-action: none;
 }
 
 a {
