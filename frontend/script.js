@@ -2017,19 +2017,37 @@ async function setupCartInteractions() {
                             "color": "#4F46E5"
                         },
                         "modal": {
-                            "ondismiss": function() {
+                            "ondismiss": async function() {
                                 Toast.show("Payment cancelled.", "warning");
                                 confirmOrderBtn.innerText = "Confirm Order";
                                 confirmOrderBtn.disabled = false;
+                                
+                                // Mark order as cancelled in DB
+                                if (dbOrderId) {
+                                    await fetch('/api/orders/cancel', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ orderId: dbOrderId })
+                                    });
+                                }
                             }
                         }
                     };
                     
                     const rzp = new Razorpay(options);
-                    rzp.on('payment.failed', function (response){
+                    rzp.on('payment.failed', async function (response){
                         Toast.show("Payment Failed. " + response.error.description, "error");
                         confirmOrderBtn.innerText = "Confirm Order";
                         confirmOrderBtn.disabled = false;
+
+                        // Mark order as cancelled in DB
+                        if (dbOrderId) {
+                            await fetch('/api/orders/cancel', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ orderId: dbOrderId })
+                            });
+                        }
                     });
                     rzp.open();
                     

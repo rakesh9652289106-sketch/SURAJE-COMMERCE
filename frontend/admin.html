@@ -167,6 +167,7 @@
             <ul class="sidebar-menu">
                 <li class="active" onclick="showSection('view-dashboard')"><i class="ph ph-chart-pie"></i> Dashboard Overview</li>
                 <li onclick="showSection('view-orders')"><i class="ph ph-receipt"></i> Recent Orders</li>
+                <li onclick="showSection('view-cancelled-orders')"><i class="ph ph-prohibit"></i> Cancelled Orders</li>
                 <li onclick="showSection('view-payment')"><i class="ph ph-currency-circle-dollar"></i> Payment Tracking</li>
                 <li onclick="showSection('view-categories')"><i class="ph ph-list-bullets"></i> Product Categories</li>
                 <li onclick="showSection('view-brands')"><i class="ph ph-copyright"></i> Brand Partners</li>
@@ -999,6 +1000,40 @@
 
                             <button type="submit" class="btn-submit" style="margin-top: 1.5rem; background: #4F46E5;">Update Security Credentials</button>
                         </form>
+                    </div>
+                </section>
+
+                <!-- Cancelled Orders -->
+                <section id="view-cancelled-orders" class="content-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <h1 class="page-title">Cancelled Orders</h1>
+                        <div style="display: flex; gap: 1rem;">
+                            <input type="text" id="cancelledOrderSearch" placeholder="Search orders..." 
+                                style="padding: 0.6rem 1rem; border: 1px solid #E2E8F0; border-radius: 8px; width: 250px;"
+                                onkeyup="fetchCancelledOrders(this.value, document.getElementById('cancelledOrderDateFilter').value)">
+                            <input type="date" id="cancelledOrderDateFilter" 
+                                style="padding: 0.6rem 1rem; border: 1px solid #E2E8F0; border-radius: 8px;"
+                                onchange="fetchCancelledOrders(document.getElementById('cancelledOrderSearch').value, this.value)">
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>CUSTOMER</th>
+                                    <th>TOTAL</th>
+                                    <th>PAYMENT</th>
+                                    <th>DATE</th>
+                                    <th>STATUS</th>
+                                    <th>ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cancelledOrdersTableBody">
+                                <!-- Orders will be loaded here -->
+                            </tbody>
+                        </table>
                     </div>
                 </section>
         </main>

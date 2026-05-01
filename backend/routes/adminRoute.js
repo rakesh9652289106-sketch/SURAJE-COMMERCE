@@ -286,20 +286,18 @@ router.get('/info', checkAdminAuth, async (req, res) => {
 
 router.get('/orders', async (req, res) => {
     const { date, search } = req.query;
-    let query = supabase.from('orders').select(`*, users!inner(username, email, phone, full_name)`);
+    // By default, exclude cancelled orders from recent orders
+    let query = supabase.from('orders').select(`*, users!inner(username, email, phone, full_name)`).neq('status', 'cancelled');
     if (date) {
         const start = `${date}T00:00:00.000Z`;
         const end = `${date}T23:59:59.999Z`;
         query = query.gte('created_at', start).lte('created_at', end);
     }
-    if (search) {
-        // Search by order ID (convert to string for ilike) or user name/phone
-        query = query.or(`id.eq.${!isNaN(search)?search:-1},users.username.ilike.%${search}%,users.full_name.ilike.%${search}%,users.phone.ilike.%${search}%,address.ilike.%${search}%`);
-    }
+    // Fetch all matching by date (or all if no date)
     const { data, error } = await query.order('id', { ascending: false });
     if (error) return res.status(500).json({ error: error.message });
     
-    const formattedData = data.map(o => ({
+    let formattedData = data.map(o => ({
         ...o, 
         username: o.users?.username, 
         full_name: o.users?.full_name || 'Guest User',
@@ -307,16 +305,73 @@ router.get('/orders', async (req, res) => {
         phone: o.users?.phone
     }));
 
+    // Filter by search in Javascript to avoid complex PostgREST cross-table OR limitations
+    if (search) {
+        const s = search.toLowerCase();
+        formattedData = formattedData.filter(o => 
+            o.id.toString().includes(s) ||
+            (o.full_name && o.full_name.toLowerCase().includes(s)) ||
+            (o.username && o.username.toLowerCase().includes(s)) ||
+            (o.phone && o.phone.includes(s)) ||
+            (o.address && o.address.toLowerCase().includes(s))
+        );
+    }
+
     // Group by date to assign daily sequence numbers (1, 2, 3...)
     const dateGroups = {};
-    const sorted = [...formattedData].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    const sorted = [...formattedData].sort((a, b) => {
+        const dateA = a.created_at ? new Date(a.created_at) : 0;
+        const dateB = b.created_at ? new Date(b.created_at) : 0;
+        return dateA - dateB;
+    });
     
     sorted.forEach(o => {
-        const dateKey = new Date(o.created_at).toISOString().split('T')[0];
-        if (!dateGroups[dateKey]) dateGroups[dateKey] = 0;
-        dateGroups[dateKey]++;
-        o.display_id = dateGroups[dateKey];
+        try {
+            const dateKey = o.created_at ? new Date(o.created_at).toISOString().split('T')[0] : 'unknown';
+            if (!dateGroups[dateKey]) dateGroups[dateKey] = 0;
+            dateGroups[dateKey]++;
+            o.daily_seq = dateGroups[dateKey]; 
+            o.display_id = dateGroups[dateKey]; // Keep for frontend compatibility
+        } catch (e) {
+            o.daily_seq = 1;
+            o.display_id = 1;
+        }
     });
+
+    res.json(formattedData);
+});
+
+router.get('/orders/cancelled', async (req, res) => {
+    const { date, search } = req.query;
+    let query = supabase.from('orders').select(`*, users!inner(username, email, phone, full_name)`).eq('status', 'cancelled');
+    
+    if (date) {
+        const start = `${date}T00:00:00.000Z`;
+        const end = `${date}T23:59:59.999Z`;
+        query = query.gte('created_at', start).lte('created_at', end);
+    }
+    
+    const { data, error } = await query.order('id', { ascending: false });
+    if (error) return res.status(500).json({ error: error.message });
+    
+    let formattedData = data.map(o => ({
+        ...o, 
+        username: o.users?.username, 
+        full_name: o.users?.full_name || 'Guest User',
+        email: o.users?.email, 
+        phone: o.users?.phone
+    }));
+
+    if (search) {
+        const s = search.toLowerCase();
+        formattedData = formattedData.filter(o => 
+            o.id.toString().includes(s) ||
+            (o.full_name && o.full_name.toLowerCase().includes(s)) ||
+            (o.username && o.username.toLowerCase().includes(s)) ||
+            (o.phone && o.phone.includes(s)) ||
+            (o.address && o.address.toLowerCase().includes(s))
+        );
+    }
 
     res.json(formattedData);
 });
@@ -423,18 +478,27 @@ router.patch('/products/:id/:field', async (req, res) => {
 });
 
 router.get('/settings', async (req, res) => {
-    const { data, error } = await supabase.from('settings').select('*').eq('id', 1).single();
+    // Order by ID to ensure we always get the same primary settings record
+    const { data, error } = await supabase.from('settings').select('*').order('id', { ascending: true }).limit(1).single();
     if (error) return res.status(500).json({ error: error.message });
     res.json(data);
 });
 
 router.patch('/settings', async (req, res) => {
     const data = { ...req.body };
-    if (Object.keys(data).length === 0) return res.status(400).json({ error: "No fields to update" });
-    
-    const { error } = await supabase.from('settings').update(data).eq('id', 1);
-    if (error) return res.status(500).json({ error: error.message });
-    res.json({ message: "Settings updated successfully" });
+    try {
+        if (Object.keys(data).length === 0) return res.status(400).json({ error: "No fields to update" });
+
+        // First, get the ID of the settings record we are managing
+        const { data: sData, error: sErr } = await supabase.from('settings').select('id').order('id', { ascending: true }).limit(1).single();
+        if (sErr) throw sErr;
+
+        const { error } = await supabase.from('settings').update(data).eq('id', sData.id);
+        if (error) throw error;
+        res.json({ message: "Settings updated successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 router.delete('/products/:id', async (req, res) => {

@@ -191,6 +191,7 @@ function showSection(sectionId, forFulfillment = false) {
         if (sectionId === 'view-payment') fetchPaymentHistory();
         if (sectionId === 'view-promo') { fetchBanner(); fetchOffers(); fetchCategoriesForSelects(); }
         if (sectionId === 'view-settings') fetchShopSettings();
+        if (sectionId === 'view-cancelled-orders') fetchCancelledOrders();
     }
     
     // UI updates
@@ -956,11 +957,15 @@ async function handleSaveSettings(e) {
         razorpay_key_id: document.getElementById('rzpKeyId')?.value || '',
         razorpay_secret: document.getElementById('rzpSecret')?.value || ''
     };
-    await fetch('/api/admin/settings', {
+    const res = await fetch('/api/admin/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     });
+    if (!res.ok) {
+        const err = await res.json();
+        return alert("Failed to save: " + (err.error || "Unknown error"));
+    }
     refreshWithToast("Settings saved", "success");
 }
 
@@ -1527,4 +1532,50 @@ window.fetchDashboardStats = async function() {
 // Initial health check
 if (getCookie('admin_auth') === 'true') {
     checkSystemHealth();
+}
+
+async function fetchCancelledOrders(search = "", date = "") {
+    try {
+        let url = `/api/admin/orders/cancelled?search=${search}`;
+        if (date) url += `&date=${date}`;
+
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Failed to fetch cancelled orders");
+        const orders = await res.json();
+
+        const tbody = document.getElementById('cancelledOrdersTableBody');
+        if (!tbody) return;
+
+        if (orders.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:3rem; color:#64748B;">No cancelled orders found.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = orders.map(o => `
+            <tr>
+                <td>#${o.display_id || o.id}</td>
+                <td>
+                    <div style="font-weight:600; color:#1E293B;">${o.full_name}</div>
+                    <div style="font-size:0.75rem; color:#64748B;">${o.phone}</div>
+                </td>
+                <td style="font-weight:600; color:#EF4444;">₹${o.total}</td>
+                <td>
+                    <div style="font-size:0.85rem; color:#475569;">${o.payment_method.toUpperCase()}</div>
+                    <div style="font-size:0.75rem; color:#EF4444; font-weight:600;">
+                        ${o.payment_status.toUpperCase()}
+                    </div>
+                </td>
+                <td style="font-size:0.85rem; color:#475569;">${new Date(o.created_at).toLocaleDateString()}</td>
+                <td><span class="status-badge badge-cancelled">CANCELLED</span></td>
+                <td>
+                    <button class="action-btn" title="View Details" onclick="viewOrderDetails(${o.id})">
+                        <i class="ph ph-eye"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        console.error(e);
+        if (window.Toast) Toast.show("Could not load cancelled orders", "error");
+    }
 }

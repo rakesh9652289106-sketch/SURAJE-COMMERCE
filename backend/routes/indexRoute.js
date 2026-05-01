@@ -251,6 +251,19 @@ router.post('/orders', async (req, res) => {
     }
 });
 
+router.post('/orders/cancel', async (req, res) => {
+    const { orderId } = req.body;
+    if (!orderId) return res.status(400).json({ error: "Order ID required" });
+
+    try {
+        const { error } = await supabase.from('orders').update({ status: 'cancelled' }).eq('id', orderId);
+        if (error) throw error;
+        res.json({ message: "Order cancelled" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 router.get('/reviews/recent', async (req, res) => {
     // Fetch latest 6 reviews with product names
     const { data, error } = await supabase
