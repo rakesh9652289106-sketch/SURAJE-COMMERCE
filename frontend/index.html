@@ -414,7 +414,7 @@
     <div class="checkout-modal-overlay" id="checkoutModal">
         <div class="checkout-modal" style="max-width: 450px;">
             <!-- Step 1: Delivery Selection -->
-            <div id="checkoutStepDelivery" style="display: none;">
+            <div id="checkoutStepDelivery" class="checkout-step" style="display: none;">
                 <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
                     <button class="back-circle-btn" id="backToCartBtn" style="background: var(--bg-color); border: 1px solid var(--border); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary); cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
                         <i class="ph ph-arrow-left" style="font-size: 1.25rem;"></i>
@@ -443,7 +443,7 @@
                 <button class="btn btn-primary" id="deliveryNextBtn" style="width: 100%; padding: 1.25rem; border-radius: 16px; font-size: 1.15rem; font-weight: 800; box-shadow: 0 12px 20px -5px rgba(16, 185, 129, 0.4); transform: translateY(0); transition: all 0.3s ease;">Continue to Details</button>
             </div>
 
-            <div id="checkoutStepAddress" style="display: none;">
+            <div id="checkoutStepAddress" class="checkout-step" style="display: none;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);">
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
                         <button class="close-cart" onclick="showCheckoutStep('delivery')" title="Back" style="background: var(--bg-color); border: none; cursor: pointer; color: var(--primary); font-size: 1.25rem; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="ph ph-arrow-left"></i></button>
@@ -480,7 +480,7 @@
                 <button class="btn btn-primary" id="addressNextBtn" style="width: 100%;">Next: Payment Method</button>
             </div>
 
-            <div id="checkoutStepPayment" style="display: none;">
+            <div id="checkoutStepPayment" class="checkout-step" style="display: none;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
                         <button class="close-cart" id="paymentBackBtn" title="Back" style="background: var(--bg-color); border: none; cursor: pointer; color: var(--primary); font-size: 1.25rem; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="ph ph-arrow-left"></i></button>
@@ -548,7 +548,7 @@
                 <button class="btn btn-primary" id="confirmOrderBtn" style="width: 100%; margin-top: 1.5rem;" disabled>Confirm & Place Order</button>
             </div>
             
-            <div id="checkoutStepSuccess" style="display: none; flex-direction: column; align-items: center; text-align: center;">
+            <div id="checkoutStepSuccess" class="checkout-step" style="display: none; flex-direction: column; align-items: center; text-align: center;">
                 <div class="success-check-icon shadow-lg">
                     <i class="ph ph-check" style="font-weight: 800; font-size: 5rem;"></i>
                 </div>

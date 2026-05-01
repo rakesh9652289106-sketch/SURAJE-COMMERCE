@@ -256,7 +256,10 @@ router.post('/orders/cancel', async (req, res) => {
     if (!orderId) return res.status(400).json({ error: "Order ID required" });
 
     try {
-        const { error } = await supabase.from('orders').update({ status: 'cancelled' }).eq('id', orderId);
+        const { error } = await supabase.from('orders').update({ 
+            status: 'cancelled',
+            payment_status: 'cancelled'
+        }).eq('id', orderId);
         if (error) throw error;
         res.json({ message: "Order cancelled" });
     } catch (err) {

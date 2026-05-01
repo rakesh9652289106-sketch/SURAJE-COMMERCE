@@ -191,7 +191,7 @@ function showSection(sectionId, forFulfillment = false) {
         if (sectionId === 'view-payment') fetchPaymentHistory();
         if (sectionId === 'view-promo') { fetchBanner(); fetchOffers(); fetchCategoriesForSelects(); }
         if (sectionId === 'view-settings') fetchShopSettings();
-        if (sectionId === 'view-cancelled-orders') fetchCancelledOrders();
+        if (sectionId === 'view-cancelled-orders') fetchCancelledPayments();
     }
     
     // UI updates
@@ -1534,20 +1534,20 @@ if (getCookie('admin_auth') === 'true') {
     checkSystemHealth();
 }
 
-async function fetchCancelledOrders(search = "", date = "") {
+async function fetchCancelledPayments(search = "", date = "") {
     try {
         let url = `/api/admin/orders/cancelled?search=${search}`;
         if (date) url += `&date=${date}`;
 
         const res = await fetch(url);
-        if (!res.ok) throw new Error("Failed to fetch cancelled orders");
+        if (!res.ok) throw new Error("Failed to fetch cancelled payments");
         const orders = await res.json();
 
         const tbody = document.getElementById('cancelledOrdersTableBody');
         if (!tbody) return;
 
         if (orders.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:3rem; color:#64748B;">No cancelled orders found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:3rem; color:#64748B;">No cancelled payments found.</td></tr>';
             return;
         }
 
@@ -1576,6 +1576,6 @@ async function fetchCancelledOrders(search = "", date = "") {
         `).join('');
     } catch (e) {
         console.error(e);
-        if (window.Toast) Toast.show("Could not load cancelled orders", "error");
+        if (window.Toast) Toast.show("Could not load cancelled payments", "error");
     }
 }

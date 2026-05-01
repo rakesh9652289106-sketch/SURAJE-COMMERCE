@@ -179,7 +179,7 @@
                 <li onclick="showSection('view-users')"><i class="ph ph-users"></i> Manage Users</li>
                 <li onclick="showSection('view-coupons')"><i class="ph ph-ticket"></i> Coupon Codes</li>
                 <li onclick="showSection('view-settings')"><i class="ph ph-gear"></i> App Settings</li>
-                <li onclick="showSection('view-cancelled-orders')"><i class="ph ph-prohibit"></i> Cancelled Orders</li>
+                <li onclick="showSection('view-cancelled-orders')"><i class="ph ph-prohibit"></i> Cancelled Payments</li>
                 <li><a href="/" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.5rem;"><i class="ph ph-storefront"></i> View Store</a></li>
                 <li onclick="adminLogout()" style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem; color: #FDA4AF;"><i class="ph ph-sign-out"></i> Admin Logout</li>
             </ul>
@@ -1006,14 +1006,14 @@
                 <!-- Cancelled Orders -->
                 <section id="view-cancelled-orders" class="content-section">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                        <h1 class="page-title">Cancelled Orders</h1>
+                        <h1 class="page-title">Cancelled Payments</h1>
                         <div style="display: flex; gap: 1rem;">
                             <input type="text" id="cancelledOrderSearch" placeholder="Search orders..." 
                                 style="padding: 0.6rem 1rem; border: 1px solid #E2E8F0; border-radius: 8px; width: 250px;"
-                                onkeyup="fetchCancelledOrders(this.value, document.getElementById('cancelledOrderDateFilter').value)">
+                                onkeyup="fetchCancelledPayments(this.value, document.getElementById('cancelledOrderDateFilter').value)">
                             <input type="date" id="cancelledOrderDateFilter" 
                                 style="padding: 0.6rem 1rem; border: 1px solid #E2E8F0; border-radius: 8px;"
-                                onchange="fetchCancelledOrders(document.getElementById('cancelledOrderSearch').value, this.value)">
+                                onchange="fetchCancelledPayments(document.getElementById('cancelledOrderSearch').value, this.value)">
                         </div>
                     </div>
 
