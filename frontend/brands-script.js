@@ -46,6 +46,7 @@ function setupNavMenu() {
         sidebar.classList.add('active');
         if (overlay) overlay.classList.add('active');
         document.body.style.overflow = 'hidden';
+        document.body.classList.add('sidebar-active');
         const username = getCookie('username');
         if (username) {
             if (sidebarUsername) sidebarUsername.innerText = decodeURIComponent(username);
@@ -56,6 +57,7 @@ function setupNavMenu() {
         sidebar.classList.remove('active');
         if (overlay) overlay.classList.remove('active');
         document.body.style.overflow = 'auto';
+        document.body.classList.remove('sidebar-active');
     };
     navBtn.addEventListener('click', openNav);
     if (closeBtn) closeBtn.addEventListener('click', closeNav);

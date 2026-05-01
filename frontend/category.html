@@ -638,8 +638,16 @@
             const overlay = document.getElementById('navOverlay');
             const closeBtn = document.getElementById('closeNavBtn');
             
-            navBtn.onclick = () => { sidebar.classList.add('active'); overlay.classList.add('active'); };
-            closeBtn.onclick = () => { sidebar.classList.remove('active'); overlay.classList.remove('active'); };
+            navBtn.onclick = () => { 
+                sidebar.classList.add('active'); 
+                overlay.classList.add('active'); 
+                document.body.classList.add('sidebar-active');
+            };
+            closeBtn.onclick = () => { 
+                sidebar.classList.remove('active'); 
+                overlay.classList.remove('active'); 
+                document.body.classList.remove('sidebar-active');
+            };
             overlay.onclick = closeBtn.onclick;
 
             // Dashboard Wiring

@@ -484,6 +484,7 @@ function setupNavMenu() {
         sidebar.classList.add('active');
         if (overlay) overlay.classList.add('active');
         document.body.style.overflow = 'hidden';
+        document.body.classList.add('sidebar-active');
 
         const name = getCookie('full_name');
         const usernameCookie = getCookie('username');
@@ -499,6 +500,7 @@ function setupNavMenu() {
         sidebar.classList.remove('active');
         if (overlay) overlay.classList.remove('active');
         document.body.style.overflow = 'auto';
+        document.body.classList.remove('sidebar-active');
     };
 
     navBtn.addEventListener('click', openNav);
