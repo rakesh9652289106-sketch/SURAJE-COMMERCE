@@ -2130,8 +2130,8 @@ body.sidebar-active {
     position: fixed;
     top: 0;
     left: -110%; /* Hidden off-screen left */
-    width: 82%;
-    max-width: 340px;
+    width: 92%;
+    max-width: 360px;
     height: 100%;
     background-color: var(--card-bg);
     z-index: 2001;
@@ -2196,6 +2196,12 @@ body.sidebar-active {
     flex: 1;
     overflow-y: auto;
     padding: 1.5rem 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.nav-sidebar-content::-webkit-scrollbar {
+    display: none;
 }
 
 .nav-section {
@@ -2914,11 +2920,11 @@ body.sidebar-active {
     }
 
     .mobile-bottom-nav .nav-item i {
-        font-size: 1.5rem !important;
+        font-size: 1.25rem !important;
     }
 
     .mobile-bottom-nav .nav-item span {
-        font-size: 0.7rem !important;
+        font-size: 0.65rem !important;
         font-weight: 700 !important;
     }
 
