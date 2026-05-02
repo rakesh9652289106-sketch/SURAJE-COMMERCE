@@ -144,16 +144,27 @@ window.reorder = async function(itemsJson) {
         let skippedCount = 0;
 
         items.forEach(oldItem => {
-            const currentItem = allProducts.find(p => p.name === oldItem.name);
+            const currentItem = allProducts.find(p => String(p.id) === String(oldItem.id) || p.name === oldItem.name);
             
             if (currentItem && currentItem.is_available !== 0) {
-                // Check if already in cart
-                const existing = cart.find(c => c.name === oldItem.name);
+                const weight = oldItem.weight || currentItem.weight;
+                // Check if already in cart with SAME weight
+                const existing = cart.find(c => (String(c.id) === String(currentItem.id) || c.name === oldItem.name) && String(c.weight) === String(weight));
+                
                 if (existing) {
                     existing.quantity += oldItem.quantity;
                 } else {
+                    // Try to find matching variant in current item data to get latest price
+                    let variantInfo = null;
+                    if (currentItem.variants && currentItem.variants.length > 0) {
+                        variantInfo = currentItem.variants.find(v => String(v.weight) === String(weight));
+                    }
+                    
                     cart.push({
                         ...currentItem,
+                        weight: weight,
+                        price: variantInfo ? variantInfo.price : (oldItem.price || currentItem.price),
+                        originalprice: variantInfo ? (variantInfo.originalprice || variantInfo.originalPrice) : (oldItem.originalprice || currentItem.originalprice),
                         quantity: oldItem.quantity
                     });
                 }
@@ -391,22 +402,36 @@ function setupNotifications() {
                 list.dataset.lastId = latestId;
 
                 if (prevLastId && latestId > parseInt(prevLastId)) {
-                    const newMsg = history[0].message;
+                    const latestNotif = history[0];
+                    const isImp = latestNotif.is_important == 1 || latestNotif.is_important === true;
                     if (window.Notification && Notification.permission === 'granted') {
-                        new Notification("SnapBasket Alert", { body: newMsg });
+                        new Notification(isImp ? "🚨 IMPORTANT ALERT" : "SnapBasket Alert", { body: latestNotif.message });
                     }
-                    if (window.Toast) Toast.show("New Store Message Received!", "info");
+                    if (window.Toast) {
+                        if (isImp) {
+                            Toast.show("🚨 IMPORTANT: " + latestNotif.message, "error");
+                        } else {
+                            Toast.show("New Store Message Received!", "info");
+                        }
+                    }
                 }
             }
 
             const lastClearedId = parseInt(localStorage.getItem('lastClearedNotifId') || '0');
             const activeNotifs = history.filter(n => n.id > lastClearedId);
             
+            const hasImportant = activeNotifs.some(n => n.is_important == 1 || n.is_important === true);
             const updateBadges = (count) => {
                 [desktopBadge, mobileBadge].forEach(b => {
                     if (b) {
                         b.innerText = count;
                         b.style.display = count > 0 ? 'flex' : 'none';
+                        // Turn badge red if there's an important message
+                        if (hasImportant) {
+                            b.classList.add('important-badge');
+                        } else {
+                            b.classList.remove('important-badge');
+                        }
                     }
                 });
             };
@@ -418,19 +443,21 @@ function setupNotifications() {
                 if (activeNotifs.length === 0) {
                     list.innerHTML = '<li style="text-align: center; padding: 1.5rem; color: var(--text-soft); font-size: 0.8rem;">No new notifications</li>';
                 } else {
-                    const newListHtml = activeNotifs.map(n => `
-                        <li onclick="window.location.href='notifications.html?id=${n.id}'" style="padding: 1rem 0; border-bottom: 1px solid var(--border); transition: background 0.2s; cursor: pointer;" onmouseover="this.style.background='var(--primary-light-alpha)'" onmouseout="this.style.background='transparent'">
+                    const newListHtml = activeNotifs.map(n => {
+                        const isImp = n.is_important == 1 || n.is_important === true;
+                        return `
+                        <li onclick="window.location.href='notifications.html?id=${n.id}'" style="padding: 1rem 0; border-bottom: 1px solid var(--border); transition: background 0.2s; cursor: pointer; ${isImp ? 'background: #FEF2F2;' : ''}" onmouseover="this.style.background='${isImp ? '#FEE2E2' : 'var(--primary-light-alpha)'}'" onmouseout="this.style.background='${isImp ? '#FEF2F2' : 'transparent'}'">
                             <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
-                                <div style="width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid #10B981; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
-                                    <i class="ph ph-info" style="color: #10B981; font-size: 0.9rem;"></i>
+                                <div style="width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid ${isImp ? '#EF4444' : '#10B981'}; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+                                    <i class="ph ${isImp ? 'ph-warning-circle' : 'ph-info'}" style="color: ${isImp ? '#EF4444' : '#10B981'}; font-size: 0.9rem;"></i>
                                 </div>
                                 <div style="flex: 1;">
-                                    <div style="font-weight: 600; color: var(--text-main); line-height: 1.4; font-size: 0.95rem;">${n.message}</div>
+                                    <div style="font-weight: ${isImp ? '700' : '600'}; color: ${isImp ? '#EF4444' : 'var(--text-main)'}; line-height: 1.4; font-size: 0.95rem;">${isImp ? '⚠️ ' : ''}${n.message}</div>
                                     <div style="font-size: 0.75rem; color: var(--text-soft); margin-top: 0.4rem;">${new Date(n.created_at).toLocaleString()}</div>
                                 </div>
                             </div>
                         </li>
-                    `).join('');
+                    `;}).join('');
                     
                     if (list.innerHTML !== newListHtml) {
                         list.innerHTML = newListHtml;
@@ -1468,6 +1495,13 @@ function setupSearchFunctionality() {
         renderHistory();
     }
     
+    function removeHistoryTerm(term) {
+        let history = getHistory();
+        history = history.filter(item => item !== term);
+        saveHistory(history);
+        renderHistory();
+    }
+    
     function renderHistory() {
         if (!historyDropdown || !historyList) return;
         const history = getHistory();
@@ -1477,8 +1511,14 @@ function setupSearchFunctionality() {
         }
         
         historyList.innerHTML = history.map(term => `
-            <li class="history-item" style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; gap: 0.5rem; color: var(--text-main); font-size: 0.85rem; transition: background 0.2s;" onmouseover="this.style.background='var(--primary-light-alpha)'" onmouseout="this.style.background='transparent'" onclick="window.applySearchHistory('${term.replace(/'/g, "\\'")}')">
-                <i class="ph ph-clock-counter-clockwise" style="color: var(--text-soft);"></i> ${term}
+            <li class="history-item" style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; color: var(--text-main); font-size: 0.85rem; transition: background 0.2s;" onmouseover="this.style.background='var(--primary-light-alpha)'" onmouseout="this.style.background='transparent'" onclick="window.applySearchHistory('${term.replace(/'/g, "\\'")}')">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="ph ph-clock-counter-clockwise" style="color: var(--text-soft);"></i>
+                    <span>${term}</span>
+                </div>
+                <button onclick="event.stopPropagation(); window.removeSearchHistoryItem('${term.replace(/'/g, "\\'")}')" style="background: none; border: none; padding: 4px; cursor: pointer; color: var(--text-soft); border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.1)'; this.style.color='#EF4444';" onmouseout="this.style.background='transparent'; this.style.color='var(--text-soft)';">
+                    <i class="ph ph-x" style="font-size: 0.9rem;"></i>
+                </button>
             </li>
         `).join('');
     }
@@ -1488,6 +1528,10 @@ function setupSearchFunctionality() {
         if (historyDropdown) historyDropdown.style.display = 'none';
         searchInput.dispatchEvent(new Event('input'));
         addHistoryTerm(term); // Bump to top when used
+    };
+
+    window.removeSearchHistoryItem = function(term) {
+        removeHistoryTerm(term);
     };
 
     if (clearHistoryBtn) {
@@ -2026,7 +2070,7 @@ async function setupCartInteractions() {
                         },
                         "modal": {
                             "ondismiss": async function() {
-                                Toast.show("Payment cancelled.", "warning");
+                                Toast.show("Order Cancelled. You can try again from the payment page.", "warning");
                                 confirmOrderBtn.innerText = "Confirm Order";
                                 confirmOrderBtn.disabled = false;
                                 
@@ -2044,7 +2088,7 @@ async function setupCartInteractions() {
                     
                     const rzp = new Razorpay(options);
                     rzp.on('payment.failed', async function (response){
-                        Toast.show("Payment Failed. " + response.error.description, "error");
+                        Toast.show("Order Cancelled! Payment Failed. You can try again.", "error");
                         confirmOrderBtn.innerText = "Confirm Order";
                         confirmOrderBtn.disabled = false;
 
@@ -2219,7 +2263,9 @@ function toggleHomeSections(show) {
         '.special-offers',
         '.trending-section',
         '.brands-section',
-        '.testimonials-section'
+        '.testimonials-section',
+        '.category-section',
+        '.category-chips-container'
     ];
     
     sections.forEach(selector => {
@@ -2384,6 +2430,33 @@ window.updateVariantPrice = function(select, prodId, productName) {
     }
 }
 
+window.updateVariantPrice = function(select, prodId, productName) {
+    const option = select.options[select.selectedIndex];
+    const price = option.getAttribute('data-price');
+    const oldPrice = option.getAttribute('data-old-price');
+    const img = option.getAttribute('data-img');
+    const weight = option.getAttribute('data-weight');
+    
+    console.log(`Variant Changed for ${productName}: ${weight} - ₹${price}`);
+
+    const currPriceEl = document.getElementById(`currPrice-${prodId}`);
+    const oldPriceEl = document.getElementById(`oldPrice-${prodId}`);
+    const weightEl = document.getElementById(`weight-${prodId}`);
+    
+    const productCard = select.closest('.product-card');
+    const productImg = productCard?.querySelector('.product-img');
+    
+    if (currPriceEl) currPriceEl.innerText = `₹${price}`;
+    if (oldPriceEl) oldPriceEl.innerText = oldPrice && oldPrice !== price ? `₹${oldPrice}` : '';
+    if (weightEl) weightEl.innerText = weight;
+    if (productImg && img) productImg.src = img;
+    
+    // Refresh the Add/Qty button for this specific card to match cart state for THIS variant
+    if (typeof refreshProductButtons === 'function') {
+        refreshProductButtons();
+    }
+};
+
 function addToCart(product, selectedVariant = null) {
     console.log("Adding to cart:", product.name, "Variant:", selectedVariant?.weight);
 
@@ -2523,11 +2596,9 @@ function refreshProductButtons() {
     containers.forEach(container => {
         const name = container.dataset.productName;
         const prodId = container.dataset.productId;
-        const index = Number(container.dataset.productIndex);
-        const source = container.dataset.productSource;
         
         // Find product in global list
-        const prod = products.find(p => p.name === name);
+        const prod = products.find(p => String(p.id) === String(prodId) || p.name === name);
         if (!prod) return;
 
         // Calculate quantity of CURRENTLY SELECTED variant in the card
@@ -2536,9 +2607,16 @@ function refreshProductButtons() {
         let selectedWeight = null;
         if (select) {
             selectedWeight = select.options[select.selectedIndex].getAttribute('data-weight');
+        } else {
+            // Check if there's a weight element (for non-variant products or initial state)
+            const weightEl = card?.querySelector('.product-weight');
+            if (weightEl) selectedWeight = weightEl.innerText;
         }
 
-        const variantItem = cart.find(c => String(c.id) === String(prodId) && (!selectedWeight || c.weight === selectedWeight));
+        // If no selected weight yet (first load of variant product), default to the product's base weight
+        if (!selectedWeight) selectedWeight = prod.weight;
+
+        const variantItem = cart.find(c => String(c.id) === String(prodId) && String(c.weight) === String(selectedWeight));
         const currentQty = variantItem ? variantItem.quantity : 0;
         const isAvailable = prod.is_available !== 0;
 

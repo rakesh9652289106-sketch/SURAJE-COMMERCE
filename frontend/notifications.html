@@ -8,7 +8,8 @@
     <!-- Phosphor Icons -->
     <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
     <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
-    <script src="theme-manager.js"></script>
+    <script src="theme-manager.js?v=1.1"></script>
+    <script src="script.js?v=1.1"></script>
     <style>
         .notif-container {
             max-width: 600px;
@@ -86,6 +87,14 @@
             border-radius: 50%;
             opacity: 0.3;
             animation: rotateDashed 12s linear infinite;
+        }
+
+        .notif-icon-circle.danger {
+            background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%) !important;
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3) !important;
+        }
+        .notif-icon-circle.danger::after {
+            border-color: #EF4444 !important;
         }
 
         .notif-title {
@@ -246,7 +255,7 @@
 
         <!-- Detail View (Screenshot Style) -->
         <div id="detailView" class="read-card">
-            <div class="notif-icon-circle">
+            <div class="notif-icon-circle" id="detailIconCircle">
                 <i class="ph-fill ph-megaphone" id="detailIcon"></i>
             </div>
             <h2 class="notif-title" id="detailTitle">Store Alert!</h2>
@@ -264,7 +273,7 @@
                 <div class="divider-dashed"></div>
                 <div class="detail-row" id="detailStatusRow">
                     <span class="detail-label">Status</span>
-                    <span class="detail-value" style="color: var(--primary);">Verified Message</span>
+                    <span class="detail-value" id="detailStatusText" style="color: var(--primary);">Verified Message</span>
                 </div>
             </div>
 
@@ -272,6 +281,31 @@
                 <i class="ph ph-house"></i> Continue Shopping
             </button>
         </div>
+    </div>
+
+    <div class="mobile-bottom-nav">
+        <a href="/" class="nav-item">
+            <i class="ph-fill ph-house"></i>
+            <span>Home</span>
+        </a>
+        <a href="category.html?name=All" class="nav-item">
+            <i class="ph ph-squares-four"></i>
+            <span>Categories</span>
+        </a>
+        <a href="wishlist.html" class="nav-item" style="position: relative;">
+            <i class="ph ph-heart"></i>
+            <span class="badge" id="bottomWishlistBadge" style="position: absolute; top: -5px; right: 10px; background-color: #EF4444; color: white; width: 16px; height: 16px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold;">0</span>
+            <span>Wishlist</span>
+        </a>
+        <a href="#" class="nav-item cart-btn-mobile" id="mobileBottomCartBtn" style="position: relative;">
+            <i class="ph ph-shopping-cart"></i>
+            <span class="badge" id="bottomCartBadge" style="position: absolute; top: -5px; right: 10px; background-color: var(--primary); color: white; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold;">0</span>
+            <span>Cart</span>
+        </a>
+        <a href="#" class="nav-item" id="mobileBottomProfileBtn">
+            <i class="ph ph-user-circle"></i>
+            <span>Profile</span>
+        </a>
     </div>
 
     <script>
@@ -285,7 +319,30 @@
             listView.style.display = 'none';
             detailView.style.display = 'block';
             
-            document.getElementById('detailTitle').innerText = notif.title || "Store Alert";
+            const isImportant = notif.is_important == 1 || notif.is_important === true;
+            
+            const iconCircle = document.getElementById('detailIconCircle');
+            const detailStatus = document.getElementById('detailStatusText');
+            
+            if (isImportant) {
+                iconCircle.classList.add('danger');
+                document.getElementById('detailIcon').className = 'ph-fill ph-warning-circle';
+                document.getElementById('detailTitle').style.color = '#EF4444';
+                if (detailStatus) {
+                    detailStatus.innerText = 'Important Alert';
+                    detailStatus.style.color = '#EF4444';
+                }
+            } else {
+                iconCircle.classList.remove('danger');
+                document.getElementById('detailIcon').className = 'ph-fill ph-megaphone';
+                document.getElementById('detailTitle').style.color = '';
+                if (detailStatus) {
+                    detailStatus.innerText = 'Verified Message';
+                    detailStatus.style.color = 'var(--primary)';
+                }
+            }
+
+            document.getElementById('detailTitle').innerText = notif.title || (isImportant ? "IMPORTANT ALERT" : "Store Alert");
             document.getElementById('detailMessage').innerText = notif.message;
             document.getElementById('detailTime').innerText = new Date(notif.created_at).toLocaleString();
             document.getElementById('detailType').innerText = notif.type === 'order' ? 'Order Update' : 'SURAJ Update';
@@ -318,17 +375,21 @@
 
                 listItems.innerHTML = history.map(n => {
                     const safeNotif = JSON.stringify(n).replace(/'/g, "&apos;");
+                    const isImportant = n.is_important == 1 || n.is_important === true;
                     return `
-                        <div class="notif-item" onclick='showDetail(${safeNotif})'>
+                        <div class="notif-item" onclick='showDetail(${safeNotif})' style="${isImportant ? 'border-left: 4px solid #EF4444; background: #FEF2F2;' : ''}">
                             <div class="notif-item-icon">
-                                <i class="ph-fill ${n.type === 'order' ? 'ph-package' : 'ph-megaphone'}"></i>
+                                <i class="ph-fill ${n.type === 'order' ? 'ph-package' : (isImportant ? 'ph-warning-circle' : 'ph-megaphone')}" 
+                                   style="${isImportant ? 'color: #EF4444;' : ''}"></i>
                             </div>
                             <div class="notif-item-content">
-                                <div class="notif-item-title">${n.type === 'order' ? 'Order Update' : 'SURAJ Update'}</div>
-                                <div class="notif-item-snippet">${n.message}</div>
+                                <div class="notif-item-title" style="${isImportant ? 'color: #EF4444; font-weight: 800;' : ''}">
+                                    ${isImportant ? 'IMPORTANT ALERT' : (n.type === 'order' ? 'Order Update' : 'SURAJ Update')}
+                                </div>
+                                <div class="notif-item-snippet" style="${isImportant ? 'color: #B91C1C; font-weight: 500;' : ''}">${n.message}</div>
                                 <div class="notif-item-time">${new Date(n.created_at).toLocaleDateString()}</div>
                             </div>
-                            <i class="ph ph-caret-right" style="align-self: center; color: var(--border);"></i>
+                            <i class="ph ph-caret-right" style="align-self: center; color: ${isImportant ? '#EF4444' : 'var(--border)'};"></i>
                         </div>
                     `;
                 }).join('');
@@ -341,6 +402,18 @@
 
         backBtn.onclick = () => window.location.href = '/';
         document.getElementById('closeDetailBtn').onclick = () => window.location.href = '/';
+
+        // Bind bottom cart button to open cart overlay (if exists, else go home)
+        document.getElementById('mobileBottomCartBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = '/'; 
+        });
+        
+        // Link bottom profile btn
+        document.getElementById('mobileBottomProfileBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'profile.html';
+        });
 
         async function init() {
             await fetchNotifications();

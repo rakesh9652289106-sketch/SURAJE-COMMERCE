@@ -175,8 +175,35 @@ function showSection(sectionId, forFulfillment = false) {
         // Refresh data
         if (sectionId === 'view-dashboard') { fetchDashboardStats(); setupCharts(); }
         if (sectionId === 'view-orders') {
+            window.isFulfillmentMode = forFulfillment;
             document.getElementById('fulfillmentHeading').style.display = forFulfillment ? 'block' : 'none';
             document.getElementById('deliveryPincodeSettings').style.display = forFulfillment ? 'block' : 'none';
+            
+            // Update table headers dynamically
+            const theadRow = document.querySelector('#view-orders .admin-table thead tr');
+            if (theadRow) {
+                if (forFulfillment) {
+                    theadRow.innerHTML = `
+                        <th>ID</th>
+                        <th>CUSTOMER</th>
+                        <th>TOTAL</th>
+                        <th>PAYMENT</th>
+                        <th>DATE</th>
+                        <th>PAYMENT STATUS</th>
+                        <th>ACTION</th>
+                    `;
+                } else {
+                    theadRow.innerHTML = `
+                        <th>ID</th>
+                        <th>CUSTOMER</th>
+                        <th>ORDERED ITEMS</th>
+                        <th>DELIVERY ADDRESS</th>
+                        <th>STATUS</th>
+                        <th>ACTION</th>
+                    `;
+                }
+            }
+            
             fetchOrders();
             if (forFulfillment) fetchDeliverySettings();
         }
@@ -790,21 +817,50 @@ async function fetchOrders(search = "", date = "") {
         tbody.innerHTML = orders.map(o => {
             const items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
             const itemsHtml = items.map(i => `<div class="order-item-badge">${i.name} ${i.weight ? `(${i.weight})` : ''} x${i.quantity}</div>`).join('');
-            return `
-                <tr>
-                    <td>#${o.display_id || o.id}</td>
+            
+            const method = (o.payment_method || 'cash').toUpperCase();
+            let columnsHtml = '';
+            
+            if (window.isFulfillmentMode) {
+                columnsHtml = `
+                    <td style="font-weight:600; color:#EF4444;">₹${o.total || 0}</td>
                     <td>
-                        <div style="font-weight:600; color:#1E293B;">${o.full_name || 'Customer'}</div>
-                        <div style="font-size:0.75rem; color:#64748B;">${o.phone || ''}</div>
-                    </td>
-                    <td style="font-weight:600; color:#EF4444;">₹${o.total}</td>
-                    <td>
-                        <div style="font-size:0.85rem; color:#475569;">${o.payment_method.toUpperCase()}</div>
+                        <div style="font-size:0.85rem; color:#475569;">${method}</div>
                         <div style="font-size:0.75rem; color:${o.payment_status === 'paid' ? '#10B981' : '#EF4444'}; font-weight:600;">
-                            ${o.payment_status.toUpperCase()}
+                            ${(o.payment_status || 'pending').toUpperCase()}
                         </div>
                     </td>
-                    <td style="font-size:0.85rem; color:#475569;">${new Date(o.created_at).toLocaleDateString()}</td>
+                    <td style="font-size:0.85rem; color:#475569;">${o.created_at ? new Date(o.created_at).toLocaleDateString() : 'N/A'}</td>
+                    <td>
+                        ${method === 'CASH' ? `
+                            <select onchange="updatePaymentStatus(${o.id}, this.value)" class="admin-input" style="padding:4px 8px; font-size:0.8rem; border-radius:20px; border-color:#CBD5E1; background: ${o.payment_status === 'paid' ? '#DCFCE7' : '#FEF2F2'}; color: ${o.payment_status === 'paid' ? '#16A34A' : '#EF4444'}; font-weight:700; text-transform:uppercase;">
+                                <option value="pending" ${o.payment_status === 'pending' ? 'selected' : ''}>COD PENDING</option>
+                                <option value="paid" ${o.payment_status === 'paid' ? 'selected' : ''}>RECEIVED</option>
+                            </select>
+                        ` : `
+                            <div style="padding:6px 12px; font-size:0.8rem; border-radius:20px; background: ${o.payment_status === 'paid' ? '#DCFCE7' : '#FEF2F2'}; color: ${o.payment_status === 'paid' ? '#16A34A' : '#EF4444'}; font-weight:700; text-align:center; display:inline-block;">
+                                ${(o.payment_status || 'pending').toUpperCase()} (${method})
+                            </div>
+                        `}
+                    </td>
+                `;
+            } else {
+                columnsHtml = `
+                    <td>
+                        <div style="display:flex; flex-wrap:wrap; gap:4px; max-width:300px;">
+                            ${itemsHtml}
+                        </div>
+                        <div style="margin-top:8px; font-weight:700; color:var(--primary); font-size:0.85rem; border-top:1px dashed #CBD5E1; padding-top:4px;">
+                            Total Items: ${items.reduce((sum, i) => sum + i.quantity, 0)}
+                        </div>
+                    </td>
+                    <td style="font-size:0.8rem; color:#475569; max-width:200px; line-height:1.4;">
+                        <div style="display:flex; gap:6px;">
+                            <i class="ph ph-map-pin" style="color:var(--primary); margin-top:2px;"></i>
+                            <span>${o.address || 'N/A'}</span>
+                        </div>
+                        <div style="font-size:0.75rem; color:var(--primary); font-weight:700; margin-top:4px; border-top:1px dashed #CBD5E1; padding-top:4px;">Type: ${o.delivery_type || 'Home Delivery'}</div>
+                    </td>
                     <td>
                         <select onchange="updateOrderStatus(${o.id}, this.value)" class="admin-input" style="padding:4px 8px; font-size:0.8rem; border-radius:20px; border-color:#CBD5E1; background: ${o.status === 'delivered' ? '#DCFCE7' : (o.status === 'cancelled' ? '#FEF2F2' : '#F1F5F9')}; color: ${o.status === 'delivered' ? '#16A34A' : (o.status === 'cancelled' ? '#EF4444' : '#475569')}; font-weight:700; text-transform:uppercase;">
                             <option value="pending" ${o.status === 'pending' ? 'selected' : ''}>Pending</option>
@@ -813,6 +869,17 @@ async function fetchOrders(search = "", date = "") {
                             <option value="cancelled" ${o.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
                         </select>
                     </td>
+                `;
+            }
+
+            return `
+                <tr>
+                    <td>#${o.display_id || o.id}</td>
+                    <td>
+                        <div style="font-weight:600; color:#1E293B;">${o.full_name || 'Customer'}</div>
+                        <div style="font-size:0.75rem; color:#64748B;">${o.phone || ''}</div>
+                    </td>
+                    ${columnsHtml}
                     <td>
                         <div style="display:flex; gap:6px;">
                             <button onclick="viewOrderDetails(${o.id})" class="action-btn" style="background:#F1F5F9; color:#64748B; border:1px solid #E2E8F0;" title="View Details">
@@ -836,6 +903,15 @@ async function updateOrderStatus(id, status) {
         body: JSON.stringify({ status })
     });
     refreshWithToast("Status updated", "success");
+}
+
+async function updatePaymentStatus(id, status) {
+    await fetch(`/api/admin/orders/${id}/payment-status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+    });
+    refreshWithToast("Payment status updated", "success");
 }
 
 async function deleteOrder(id) {
@@ -1023,28 +1099,48 @@ async function fetchNotificationsHistory(date = "") {
         const notifications = await res.json();
         const tbody = document.getElementById('notifHistoryBody');
         if (!tbody) return;
-        tbody.innerHTML = notifications.map(n => `
-            <tr>
-                <td>#${n.id}</td>
-                <td>${n.message}</td>
-                <td>${new Date(n.created_at).toLocaleString()}</td>
-                <td>
-                    <button onclick="deleteNotification(${n.id})" class="action-btn" style="background:#EF4444;"><i class="ph ph-trash"></i></button>
-                </td>
-            </tr>
-        `).join('');
+        tbody.innerHTML = notifications.map(n => {
+            const isDanger = n.is_important == 1 || n.is_important === true;
+            return `
+                <tr>
+                    <td>#${n.id}</td>
+                    <td style="${isDanger ? 'color: #EF4444 !important; font-weight: 700;' : ''}">${n.message}</td>
+                    <td style="font-size: 0.85rem; color: #64748B;">${new Date(n.created_at).toLocaleString()}</td>
+                    <td style="text-align: center;">
+                        ${isDanger ? '<i class="ph-fill ph-warning-circle" style="color: #EF4444 !important; font-size: 1.25rem;" title="Important Notification"></i>' : '<span style="color: #CBD5E1;">-</span>'}
+                    </td>
+                    <td>
+                        <button onclick="deleteNotification(${n.id})" class="action-btn" style="background:#EF4444;"><i class="ph ph-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
     } catch (e) {}
 }
 
 async function handleSendNotification(e) {
     e.preventDefault();
     const message = document.getElementById('nMessage').value;
-    await fetch('/api/admin/notifications', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message })
-    });
-    refreshWithToast("Broadcast sent", "success");
+    const is_important = document.getElementById('nIsImportant')?.checked ? 1 : 0;
+
+    const btn = e.target.querySelector('button');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph ph-spinner-gap ph-spin"></i> Broadcasting...';
+
+    try {
+        await fetch('/api/admin/notifications', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, is_important })
+        });
+        refreshWithToast("Broadcast sent", "success");
+        e.target.reset();
+    } catch (err) {
+        Toast.show("Failed to send notification", "error");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Push Notification';
+    }
 }
 
 async function deleteNotification(id) {

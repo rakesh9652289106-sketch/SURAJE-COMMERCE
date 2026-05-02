@@ -142,6 +142,9 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/thin/style.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        /* Existing styles... */
+    </style>
 </head>
 
 <body>
@@ -172,7 +175,6 @@
             </div>
             <ul class="sidebar-menu">
                 <li class="active" onclick="showSection('view-dashboard')"><i class="ph ph-chart-pie"></i> Dashboard Overview</li>
-                <li onclick="showSection('view-orders', true)"><i class="ph ph-truck"></i> Manage Delivery</li>
                 <li onclick="showSection('view-orders')"><i class="ph ph-receipt"></i> Recent Orders</li>
                 <li onclick="showSection('view-products')"><i class="ph ph-package"></i> Manage Products</li>
                 <li onclick="showSection('view-notifications')"><i class="ph ph-bell"></i> Push Notifications</li>
@@ -186,6 +188,7 @@
                 <li onclick="showSection('view-users')"><i class="ph ph-users"></i> Manage Users</li>
                 <li onclick="showSection('view-coupons')"><i class="ph ph-ticket"></i> Coupon Codes</li>
                 <li onclick="showSection('view-settings')"><i class="ph ph-gear"></i> App Settings</li>
+                <li onclick="showSection('view-orders', true)"><i class="ph ph-truck"></i> Manage Delivery</li>
                 <li><a href="/" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.5rem;"><i class="ph ph-storefront"></i> View Store</a></li>
                 <li onclick="adminLogout()" style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem; color: #FDA4AF;"><i class="ph ph-sign-out"></i> Admin Logout</li>
             </ul>
@@ -537,6 +540,12 @@
                         top of the site, use the "Banner Scrolling Text" form below.</p>
                     <form id="adminNotificationForm">
                         <div class="form-group"><label>Message</label><input type="text" id="nMessage" required></div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem; padding: 0.75rem; background: #FEF2F2; border: 1px solid #FEE2E2; border-radius: 8px;">
+                            <input type="checkbox" id="nIsImportant" style="width: 18px; height: 18px; cursor: pointer;">
+                            <label for="nIsImportant" style="margin: 0; color: #EF4444; font-weight: 600; font-size: 0.9rem; cursor: pointer;">
+                                <i class="ph-fill ph-warning-circle"></i> Mark as Important (Visible in Red)
+                            </label>
+                        </div>
                         <button type="submit" class="btn-submit">Push Notification</button>
                     </form>
                 </div>
@@ -564,8 +573,10 @@
                     <table class="admin-table">
                         <thead>
                             <tr>
-                                <th>Date</th>
+                                <th>ID</th>
                                 <th>Message</th>
+                                <th>Date</th>
+                                <th>Danger</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -1027,9 +1038,7 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>CUSTOMER</th>
-                                    <th>TOTAL</th>
-                                    <th>PAYMENT</th>
-                                    <th>DATE</th>
+                                    <th>ORDERED ITEMS</th>
                                     <th>STATUS</th>
                                     <th>ACTION</th>
                                 </tr>
@@ -1252,8 +1261,8 @@
         </div>
     </div>
 
-    <script src="toast.js"></script>
-    <script src="admin-script.js" defer></script>
+    <script src="toast.js?v=1.1"></script>
+    <script src="admin-script.js?v=1.1"></script>
 </body>
 
 </html>

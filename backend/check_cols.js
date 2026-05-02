@@ -1,9 +1,11 @@
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const { supabase } = require('./supabaseClient');
 
 async function checkColumns() {
     console.log("🔍 Checking Users, Orders, and Coupons table structures...");
     
-    const tables = ['users', 'orders', 'coupons', 'settings'];
+    const tables = ['users', 'orders', 'coupons', 'settings', 'products'];
     
     for (const table of tables) {
         console.log(`\nTable: ${table}`);

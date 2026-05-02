@@ -123,12 +123,24 @@ window.updateVariantPrice = function(select, prodId) {
     const option = select.options[select.selectedIndex];
     const price = option.getAttribute('data-price');
     const oldPrice = option.getAttribute('data-old-price');
+    const img = option.getAttribute('data-img');
     
     const currPriceEl = document.getElementById(`currPrice-${prodId}`);
     const oldPriceEl = document.getElementById(`oldPrice-${prodId}`);
+    const productCard = select.closest('.product-card');
+    const productImg = productCard?.querySelector('.product-img');
+
     if (currPriceEl) currPriceEl.innerText = `₹${price}`;
-    if (oldPriceEl) oldPriceEl.innerText = oldPrice ? `₹${oldPrice}` : '';
-}
+    if (oldPriceEl) oldPriceEl.innerText = oldPrice && oldPrice !== price ? `₹${oldPrice}` : '';
+    if (productImg && img) productImg.src = img;
+    
+    // Refresh buttons by re-filtering (slightly heavy but ensures consistency)
+    const section = document.getElementById('brandProductsSection');
+    if (section && section.style.display !== 'none') {
+        const brandName = section.querySelector('strong').innerText;
+        filterByBrand(brandName);
+    }
+};
 
 function populateProducts(containerId, items) {
     const container = document.getElementById(containerId);
@@ -202,7 +214,7 @@ window.addToCartByBrand = function(productName, prodId) {
     const prod = products.find(p => p.id == prodId || p.name === productName);
     if(prod) {
         const card = document.querySelector(`.product-card[data-product-id="${prod.id}"]`);
-        const select = card?.querySelector('.variant-select');
+        const select = card?.querySelector('.variant-select-inline');
         
         let selectedVariant = null;
         if (select) {

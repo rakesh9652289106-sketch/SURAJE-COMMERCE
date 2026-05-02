@@ -122,13 +122,14 @@ router.get('/dashboard/stats', checkAdminAuth, async (req, res) => {
         const start = `${filterDate}T00:00:00.000Z`;
         const end = `${filterDate}T23:59:59.999Z`;
 
+        const orderFilter = 'payment_method.ilike.cash,payment_status.ilike.paid';
         const [ordersData, productsCount, reviewsCount, messagesCount, todayStatus, deliveredStatus] = await Promise.all([
-            supabase.from('orders').select('total'),
+            supabase.from('orders').select('total').or(orderFilter),
             supabase.from('products').select('*', { count: 'exact', head: true }),
             supabase.from('reviews').select('*', { count: 'exact', head: true }),
             supabase.from('support_messages').select('*', { count: 'exact', head: true }).eq('status', 'unread'),
-            supabase.from('orders').select('*', { count: 'exact', head: true }).gte('created_at', start).lte('created_at', end),
-            supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'delivered')
+            supabase.from('orders').select('*', { count: 'exact', head: true }).or(orderFilter).gte('created_at', start).lte('created_at', end),
+            supabase.from('orders').select('*', { count: 'exact', head: true }).or(orderFilter).eq('status', 'delivered')
         ]);
 
         stats.totalOrders = ordersData.data?.length || 0;
@@ -191,7 +192,11 @@ router.delete('/support-messages/:id', async (req, res) => {
 });
 
 router.post('/notifications', async (req, res) => {
-    const { error } = await supabase.from('notifications').insert([{ message: req.body.message }]);
+    const { message, is_important } = req.body;
+    const { error } = await supabase.from('notifications').insert([{ 
+        message, 
+        is_important: is_important ? 1 : 0 
+    }]);
     if (error) return res.status(500).json({ error: error.message });
     res.status(201).json({ message: "Notification sent to Storefront!" });
 });
@@ -287,7 +292,7 @@ router.get('/info', checkAdminAuth, async (req, res) => {
 router.get('/orders', async (req, res) => {
     const { date, search } = req.query;
     // By default, exclude cancelled orders from recent orders
-    let query = supabase.from('orders').select(`*, users!inner(username, email, phone, full_name)`).neq('status', 'cancelled');
+    let query = supabase.from('orders').select(`*, users!inner(username, email, phone, full_name)`);
     if (date) {
         const start = `${date}T00:00:00.000Z`;
         const end = `${date}T23:59:59.999Z`;
@@ -297,7 +302,15 @@ router.get('/orders', async (req, res) => {
     const { data, error } = await query.order('id', { ascending: false });
     if (error) return res.status(500).json({ error: error.message });
     
-    let formattedData = data.map(o => ({
+    // Only show successful online payments (Card, UPI, Wallet, etc.). Keep all Cash on Delivery.
+    const validOrders = (data || []).filter(o => {
+        const method = (o.payment_method || '').toLowerCase();
+        const pStatus = (o.payment_status || '').toLowerCase();
+        if (method === 'cash') return true;
+        return pStatus === 'paid';
+    });
+
+    let formattedData = validOrders.map(o => ({
         ...o, 
         username: o.users?.username, 
         full_name: o.users?.full_name || 'Guest User',

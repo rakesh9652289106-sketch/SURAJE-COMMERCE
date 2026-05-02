@@ -11,6 +11,7 @@
     
     --secondary: #F59E0B;
     --secondary-hover: #D97706;
+    --danger: #EF4444;
     
     --bg-color: #F8FAFC; 
     --bg-rgb: 248, 250, 252;
@@ -2131,7 +2132,7 @@ body.sidebar-active {
     top: 0;
     left: -110%; /* Hidden off-screen left */
     width: 100%;
-    max-width: 360px;
+    max-width: 400px; /* Increased from 360px */
     height: 100%;
     background-color: var(--card-bg);
     z-index: 2001;
@@ -2210,12 +2211,22 @@ body.sidebar-active {
 }
 
 .nav-section h5 {
-    font-size: 0.75rem;
+    font-size: 0.85rem; /* Increased from 0.75rem */
     text-transform: uppercase;
     color: var(--text-soft);
-    letter-spacing: 1px;
-    margin-bottom: 0.75rem;
-    padding-left: 1rem;
+    letter-spacing: 1.2px;
+    margin-bottom: 1rem;
+    padding-left: 0;
+    font-weight: 700; /* Made Bold */
+}
+
+@media (min-width: 1024px) {
+    .nav-section h5 {
+        font-size: 1.1rem; /* Even bigger for webview/desktop */
+        margin-bottom: 1.5rem;
+        color: var(--text-main);
+        font-weight: 800;
+    }
 }
 
 .nav-item {
@@ -2245,7 +2256,7 @@ body.sidebar-active {
 .nav-divider {
     height: 1px;
     background-color: var(--border);
-    margin: 1rem 1.5rem;
+    margin: 1rem 0; /* Removed 1.5rem side margin */
 }
 
 /* User Status Badges */
@@ -2894,11 +2905,11 @@ body.sidebar-active {
         backdrop-filter: blur(25px) !important;
         -webkit-backdrop-filter: blur(25px) !important;
         border-top: 1px solid var(--border) !important;
-        padding: 8px 0 env(safe-area-inset-bottom, 10px) 0 !important;
+        padding: 8px 4px env(safe-area-inset-bottom, 10px) 4px !important; /* Reduced side padding */
         height: 65px !important;
         box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1) !important;
         z-index: 10000 !important;
-        justify-content: space-evenly !important;
+        justify-content: space-around !important; /* Changed from space-evenly */
         align-items: center !important;
         margin: 0 !important;
     }
@@ -2910,6 +2921,7 @@ body.sidebar-active {
         color: var(--text-soft) !important;
         text-decoration: none !important;
         flex: 1 !important;
+        min-width: 0 !important; /* Ensure they can shrink if needed */
         gap: 4px !important;
         transition: transform 0.2s ease !important;
     }
@@ -2924,8 +2936,9 @@ body.sidebar-active {
     }
 
     .mobile-bottom-nav .nav-item span {
-        font-size: 0.65rem !important;
+        font-size: 0.6rem !important; /* Slightly smaller to fit 5 items */
         font-weight: 700 !important;
+        letter-spacing: -0.2px;
     }
 
     /* Prevent any horizontal overflow */
@@ -3167,4 +3180,70 @@ body.sidebar-active {
 }
 #notifList::-webkit-scrollbar-thumb:hover {
     background: rgba(148, 163, 184, 0.5);
+}
+
+/* Notifications Button Styling (Global) */
+.notifications-btn, .mobile-notifications-btn {
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--border) !important;
+    transition: var(--transition);
+    background: var(--card-bg) !important;
+}
+
+.notifications-btn {
+    width: 42px !important;
+    height: 42px !important;
+}
+
+.mobile-notifications-btn {
+    width: 40px !important;
+    height: 40px !important;
+}
+
+.notifications-btn i {
+    font-size: 1.4rem !important;
+    color: var(--text-main) !important;
+}
+
+.mobile-notifications-btn i {
+    font-size: 1.6rem !important;
+    color: var(--text-main) !important;
+}
+
+.badge.notif-badge, .badge.mobile-notif-badge, #notifBadge, .mobile-notif-badge {
+    position: absolute !important;
+    top: -2px !important;
+    right: -2px !important;
+    background-color: var(--secondary) !important; /* Default Orange */
+    color: white !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 2px solid var(--card-bg) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+.badge.notif-badge, #notifBadge {
+    width: 22px !important;
+    height: 22px !important;
+    font-size: 0.8rem !important;
+    font-weight: 900 !important;
+}
+
+.badge.mobile-notif-badge, .mobile-notif-badge {
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 0.75rem !important;
+    font-weight: 800 !important;
+}
+
+/* Important Alert state override - Red color */
+.badge.important-badge {
+    background-color: #EF4444 !important;
 }
