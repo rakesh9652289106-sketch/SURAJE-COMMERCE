@@ -1256,6 +1256,10 @@ function setupAuth() {
             return showAuthError("All fields including security questions are required.");
         }
 
+        if (!isValidIndianPhone(phone)) {
+            return showAuthError("Please enter a valid 10-digit mobile number.");
+        }
+
         if (q1 === q2) {
             return showAuthError("Please select two different security questions.");
         }

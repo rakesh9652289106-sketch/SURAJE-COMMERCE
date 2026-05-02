@@ -74,10 +74,29 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/light/style.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/thin/style.css">
     <script src="theme-manager.js"></script>
+    <script src="splash-manager.js"></script>
     <script type="module" src="translations.js"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
+    <!-- Splash Screen Intro -->
+    <div id="splashScreen" class="splash-screen">
+        <div class="splash-video-container">
+            <video id="splashVideo" autoplay muted playsinline>
+                <source src="https://cdn.pixabay.com/video/2019/04/12/22745-329241624_large.mp4" type="video/mp4">
+            </video>
+        </div>
+        <div class="splash-content">
+            <div class="splash-logo">
+                <i class="ph-fill ph-shopping-cart"></i>
+                <h1>SURAJ</h1>
+            </div>
+            <div class="splash-loader"></div>
+            <p class="splash-tagline">Freshness Delivered in Minutes</p>
+        </div>
+        <button id="skipSplash" class="skip-splash">Skip Intro</button>
+    </div>
+
     <!-- Header Notification (Dynamic Promo Bar) -->
     <div class="top-notification" id="dynamicNotificationBanner" style="background: #059669; color: white; padding: 0.5rem; text-align: center; font-weight: 600; font-size: 0.85rem; letter-spacing: 0.5px; overflow: hidden; white-space: nowrap;">
         <marquee behavior="scroll" direction="left" scrollamount="6" id="notificationText">📣 Loading latest updates...</marquee>

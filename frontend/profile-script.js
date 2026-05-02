@@ -368,14 +368,25 @@ function setupForms() {
     const pForm = document.getElementById('profileForm');
     pForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const phone = pForm.phone.value.trim();
+        const altPhone = pForm.alternate_phone.value.trim();
+
+        // Validation
+        if (phone && !/^\d{10}$/.test(phone)) {
+            return Toast.show("Phone number must be exactly 10 digits", "error");
+        }
+        if (altPhone && !/^\d{10}$/.test(altPhone)) {
+            return Toast.show("Alternate phone must be exactly 10 digits", "error");
+        }
+
         const data = {
-            full_name: pForm.full_name.value,
-            email: pForm.email.value,
-            phone: pForm.phone.value,
-            alternate_phone: pForm.alternate_phone.value,
+            full_name: pForm.full_name.value.trim(),
+            email: pForm.email.value.trim(),
+            phone: phone,
+            alternate_phone: altPhone,
             gender: pForm.gender.value,
             dob: pForm.dob.value,
-            profile_pic: pForm.profile_pic.value
+            profile_pic: pForm.profile_pic.value.trim()
         };
 
         try {

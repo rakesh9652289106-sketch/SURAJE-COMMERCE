@@ -15,6 +15,7 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/thin/style.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <script src="theme-manager.js"></script>
+    <script src="splash-manager.js"></script>
     <script type="module" src="translations.js"></script>
     <style>
         .dashboard-wrapper {
@@ -239,6 +240,24 @@
     </style>
 </head>
 <body>
+    <!-- Splash Screen Intro -->
+    <div id="splashScreen" class="splash-screen">
+        <div class="splash-video-container">
+            <video id="splashVideo" autoplay muted playsinline>
+                <source src="https://cdn.pixabay.com/video/2019/04/12/22745-329241624_large.mp4" type="video/mp4">
+            </video>
+        </div>
+        <div class="splash-content">
+            <div class="splash-logo">
+                <i class="ph-fill ph-shopping-cart"></i>
+                <h1>SURAJ</h1>
+            </div>
+            <div class="splash-loader"></div>
+            <p class="splash-tagline">Freshness Delivered in Minutes</p>
+        </div>
+        <button id="skipSplash" class="skip-splash">Skip Intro</button>
+    </div>
+
     <header class="navbar">
         <div class="nav-container">
             <div style="display:flex; align-items:center; gap: 1.2rem;">
@@ -385,11 +404,11 @@
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
                             <div class="form-group">
                                 <label>Phone Number</label>
-                                <input type="text" class="form-control" name="phone" placeholder="+91 XXXXX XXXXX">
+                                <input type="text" class="form-control" name="phone" placeholder="10-digit number" maxlength="10" pattern="\d{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '');" title="Please enter a 10-digit mobile number">
                             </div>
                             <div class="form-group">
                                 <label>Alternate Phone</label>
-                                <input type="text" class="form-control" name="alternate_phone" placeholder="Alternative contact number">
+                                <input type="text" class="form-control" name="alternate_phone" placeholder="10-digit number" maxlength="10" pattern="\d{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '');" title="Please enter a 10-digit mobile number">
                             </div>
                         </div>
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">

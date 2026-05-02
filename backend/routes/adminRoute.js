@@ -193,10 +193,18 @@ router.delete('/support-messages/:id', async (req, res) => {
 
 router.post('/notifications', async (req, res) => {
     const { message, is_important } = req.body;
-    const { error } = await supabase.from('notifications').insert([{ 
+    let { error } = await supabase.from('notifications').insert([{ 
         message, 
         is_important: is_important ? 1 : 0 
     }]);
+
+    // Defensive: If column is missing, retry without is_important
+    if (error && (error.message.includes('is_important') || error.code === '42703')) {
+        console.warn("Retrying notification without is_important column...");
+        const retry = await supabase.from('notifications').insert([{ message }]);
+        error = retry.error;
+    }
+
     if (error) return res.status(500).json({ error: error.message });
     res.status(201).json({ message: "Notification sent to Storefront!" });
 });
