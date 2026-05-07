@@ -59,16 +59,31 @@ router.get('/addresses', async (req, res) => {
 });
 
 router.post('/addresses', async (req, res) => {
-    const addr = { ...req.body, user_id: req.userId };
-    
-    // If setting as default, unset others first
-    if (addr.is_default) {
-        await supabase.from('addresses').update({ is_default: 0 }).eq('user_id', req.userId);
-    }
+    try {
+        const addr = { ...req.body, user_id: req.userId };
+        
+        // Ensure is_default is treated as an integer if it's not already
+        if (typeof addr.is_default === 'boolean') {
+            addr.is_default = addr.is_default ? 1 : 0;
+        }
 
-    const { data, error } = await supabase.from('addresses').insert([addr]).select().single();
-    if (error) return res.status(500).json({ error: error.message });
-    res.status(201).json(data);
+        // If setting as default, unset others first
+        if (addr.is_default === 1) {
+            await supabase.from('addresses').update({ is_default: 0 }).eq('user_id', req.userId);
+        }
+
+        const { data, error } = await supabase.from('addresses').insert([addr]).select().single();
+        
+        if (error) {
+            console.error("Address save error:", error);
+            return res.status(500).json({ error: "Database error: " + error.message });
+        }
+        
+        res.status(201).json(data);
+    } catch (err) {
+        console.error("Address route error:", err);
+        res.status(500).json({ error: "Server error: " + err.message });
+    }
 });
 
 router.patch('/addresses/:id/default', async (req, res) => {

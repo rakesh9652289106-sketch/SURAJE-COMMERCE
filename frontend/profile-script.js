@@ -197,7 +197,7 @@ async function fetchAddresses() {
         const res = await fetch('/api/user/addresses');
         const addresses = await res.json();
 
-        if (!addresses.length) {
+        if (!Array.isArray(addresses) || !addresses.length) {
             grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; padding:2rem; color:var(--text-soft);">No saved addresses yet.</p>';
             return;
         }
@@ -415,11 +415,15 @@ function setupForms() {
         e.preventDefault();
         const data = {
             label: aForm.label.value,
-            address_line: aForm.address_line.value,
-            city: aForm.city.value,
-            pincode: aForm.pincode.value,
-            is_default: aForm.is_default.checked
+            address_line: aForm.address_line.value.trim(),
+            city: aForm.city.value.trim(),
+            pincode: aForm.pincode.value.trim(),
+            is_default: aForm.is_default.checked ? 1 : 0
         };
+
+        if (!data.address_line || !data.city || !data.pincode) {
+            return Toast.show("Please fill all required fields", "error");
+        }
 
         try {
             const res = await fetch('/api/user/addresses', {
@@ -427,14 +431,22 @@ function setupForms() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
+            
+            const result = await res.json();
+            
             if (res.ok) {
-                Toast.show("Address added!", "success");
+                Toast.show("Address added successfully!", "success");
                 toggleModal('addressModalOverlay', false);
                 aForm.reset();
                 fetchAddresses();
                 fetchOverview();
+            } else {
+                Toast.show(result.error || "Failed to save address", "error");
             }
-        } catch (e) { console.error(e); }
+        } catch (e) { 
+            console.error(e);
+            Toast.show("Connection error. Please try again.", "error");
+        }
     });
 }
 
