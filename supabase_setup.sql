@@ -2,8 +2,24 @@
 -- Instructions: Copy and run this ENTIRE script in your Supabase SQL Editor.
 
 --------------------------------------------------------------------------------
+-- 0. Clean Reset of Static/Seed Tables (To prevent casing & column conflict issues)
+--------------------------------------------------------------------------------
+DROP TABLE IF EXISTS public.coupon_usage CASCADE;
+DROP TABLE IF EXISTS public.wishlist_items CASCADE;
+DROP TABLE IF EXISTS public.orders CASCADE;
+DROP TABLE IF EXISTS public.reviews CASCADE;
+DROP TABLE IF EXISTS public.support_messages CASCADE;
+DROP TABLE IF EXISTS public.addresses CASCADE;
+
+DROP TABLE IF EXISTS public.categories CASCADE;
+DROP TABLE IF EXISTS public.products CASCADE;
+DROP TABLE IF EXISTS public.brands CASCADE;
+DROP TABLE IF EXISTS public.banners CASCADE;
+DROP TABLE IF EXISTS public.special_offers CASCADE;
+DROP TABLE IF EXISTS public.coupons CASCADE;
+
+--------------------------------------------------------------------------------
 -- 1. Base Tables Creation (Ordered by Dependencies)
--- WARNING: We create coupons BEFORE orders to avoid foreign key reference errors.
 --------------------------------------------------------------------------------
 
 -- Users Table
@@ -63,14 +79,14 @@ CREATE TABLE IF NOT EXISTS public.settings (
 );
 
 -- Categories Table
-CREATE TABLE IF NOT EXISTS public.categories (
+CREATE TABLE public.categories (
     id SERIAL PRIMARY KEY,
     name TEXT,
     iconurl TEXT
 );
 
 -- Products Table
-CREATE TABLE IF NOT EXISTS public.products (
+CREATE TABLE public.products (
     id SERIAL PRIMARY KEY,
     name TEXT,
     category TEXT,
@@ -97,13 +113,13 @@ CREATE TABLE IF NOT EXISTS public.notifications (
 );
 
 -- Brands Table
-CREATE TABLE IF NOT EXISTS public.brands (
+CREATE TABLE public.brands (
     id SERIAL PRIMARY KEY,
     name TEXT
 );
 
 -- Banners Table
-CREATE TABLE IF NOT EXISTS public.banners (
+CREATE TABLE public.banners (
     id SERIAL PRIMARY KEY,
     badge TEXT,
     title TEXT,
@@ -114,7 +130,7 @@ CREATE TABLE IF NOT EXISTS public.banners (
 );
 
 -- Special Offers Table
-CREATE TABLE IF NOT EXISTS public.special_offers (
+CREATE TABLE public.special_offers (
     id SERIAL PRIMARY KEY,
     title TEXT,
     description TEXT,
@@ -123,7 +139,7 @@ CREATE TABLE IF NOT EXISTS public.special_offers (
 );
 
 -- Coupons Table
-CREATE TABLE IF NOT EXISTS public.coupons (
+CREATE TABLE public.coupons (
     id SERIAL PRIMARY KEY,
     code TEXT UNIQUE,
     discount_value INTEGER,
@@ -134,7 +150,7 @@ CREATE TABLE IF NOT EXISTS public.coupons (
 );
 
 -- Orders Table
-CREATE TABLE IF NOT EXISTS public.orders (
+CREATE TABLE public.orders (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES public.users(id),
     total INTEGER,
@@ -153,7 +169,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
 );
 
 -- Support Messages Table
-CREATE TABLE IF NOT EXISTS public.support_messages (
+CREATE TABLE public.support_messages (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES public.users(id),
     name TEXT,
@@ -167,7 +183,7 @@ CREATE TABLE IF NOT EXISTS public.support_messages (
 );
 
 -- Reviews Table
-CREATE TABLE IF NOT EXISTS public.reviews (
+CREATE TABLE public.reviews (
     id SERIAL PRIMARY KEY,
     product_id INTEGER REFERENCES public.products(id),
     username TEXT,
@@ -177,7 +193,7 @@ CREATE TABLE IF NOT EXISTS public.reviews (
 );
 
 -- Addresses Table
-CREATE TABLE IF NOT EXISTS public.addresses (
+CREATE TABLE public.addresses (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES public.users(id),
     label TEXT,
@@ -188,7 +204,7 @@ CREATE TABLE IF NOT EXISTS public.addresses (
 );
 
 -- Coupon Usage Table
-CREATE TABLE IF NOT EXISTS public.coupon_usage (
+CREATE TABLE public.coupon_usage (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES public.users(id),
     coupon_id INTEGER REFERENCES public.coupons(id),
@@ -196,7 +212,7 @@ CREATE TABLE IF NOT EXISTS public.coupon_usage (
 );
 
 -- Wishlist Items Table
-CREATE TABLE IF NOT EXISTS public.wishlist_items (
+CREATE TABLE public.wishlist_items (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES public.users(id),
     product_id INTEGER REFERENCES public.products(id),
@@ -241,7 +257,6 @@ INSERT INTO public.users (username, password, full_name, email, phone, status) V
 ) ON CONFLICT DO NOTHING;
 
 -- Seed Categories
-TRUNCATE TABLE public.categories RESTART IDENTITY CASCADE;
 INSERT INTO public.categories (name, iconurl) VALUES 
 ('Dals & Pulses', 'ph-bowl-food'),
 ('Snacks', 'ph-cookie'),
@@ -253,7 +268,6 @@ INSERT INTO public.categories (name, iconurl) VALUES
 ('Vegetables', 'ph-leaf');
 
 -- Seed Products
-TRUNCATE TABLE public.products RESTART IDENTITY CASCADE;
 INSERT INTO public.products (name, category, weight, price, originalprice, rating, reviews, imgurl, discount, is_trending, is_daily_essential, description) VALUES 
 ('Premium Toor Dal', 'Dals & Pulses', '1 kg', 180, 220, '4.8', '120', 'https://images.unsplash.com/photo-1589131649983-4ec35f63d309?w=300&h=300&fit=crop', '18% OFF', 1, 1, 'High quality Premium Toor Dal for your daily needs.'),
 ('Fresh Red Apples', 'Fresh Fruits', '1 kg', 150, 180, '4.9', '340', 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=300&h=300&fit=crop', '16% OFF', 1, 1, 'High quality Fresh Red Apples for your daily needs.'),
@@ -280,7 +294,6 @@ INSERT INTO public.products (name, category, weight, price, originalprice, ratin
 ('Dhara Mustard Oil', 'Household', '1 L', 135, 150, '4.5', '320', 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=300&h=300&fit=crop', '10% OFF', 0, 1, 'High quality Dhara Mustard Oil for your daily needs.');
 
 -- Seed Brands
-TRUNCATE TABLE public.brands RESTART IDENTITY CASCADE;
 INSERT INTO public.brands (name) VALUES 
 ('Amul Food'), 
 ('Tata Sampann'), 
@@ -290,19 +303,16 @@ INSERT INTO public.brands (name) VALUES
 ('Maggi');
 
 -- Seed Banners
-TRUNCATE TABLE public.banners RESTART IDENTITY CASCADE;
 INSERT INTO public.banners (badge, title, description, btntext, imgurl, target_category) VALUES 
 ('Super Deal!', 'Fresh Organic Veggies', 'Get up to 40% OFF on farm-fresh vegetables and fruits today.', 'Shop Now', 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200', 'Vegetables'),
 ('Mega Offer!', 'Morning Fresh Milk', 'Pure and fresh milk delivered directly from local organic farms every morning.', 'Shop Now', 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=1200', 'Dairy & Bakery');
 
 -- Seed Special Offers
-TRUNCATE TABLE public.special_offers RESTART IDENTITY CASCADE;
 INSERT INTO public.special_offers (title, description, colorclass, target_category) VALUES 
 ('Festive Dhamaka', 'Buy 1 Get 1 Free on Sweets', 'bg-orange', 'Dairy & Bakery'),
 ('Health is Wealth', 'Flat 20% Off on Dry Fruits', 'bg-purple', 'Snacks');
 
 -- Seed Coupons
-TRUNCATE TABLE public.coupons RESTART IDENTITY CASCADE;
 INSERT INTO public.coupons (code, discount_value, discount_type, min_amount, is_one_time, expiry_date) VALUES 
 ('WELCOME10', 10, 'percent', 0, 0, '2026-12-31 23:59:59+00'),
 ('FIRSTSAVE100', 100, 'fixed', 500, 1, '2026-12-31 23:59:59+00'),
