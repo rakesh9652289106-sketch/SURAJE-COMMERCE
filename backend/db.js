@@ -236,9 +236,18 @@ function initDb() {
         db.run("ALTER TABLE orders ADD COLUMN payment_status TEXT DEFAULT 'pending'", (err) => {});
         db.run("ALTER TABLE orders ADD COLUMN discount_amount INTEGER DEFAULT 0", (err) => {});
         db.run("ALTER TABLE orders ADD COLUMN delivery_type TEXT DEFAULT 'Home Delivery'", (err) => {});
+        db.run("ALTER TABLE orders ADD COLUMN coupon_id INTEGER", (err) => {});
+        db.run("ALTER TABLE orders ADD COLUMN daily_seq INTEGER DEFAULT 1", (err) => {});
+        db.run("ALTER TABLE orders ADD COLUMN coins_earned INTEGER DEFAULT 0", (err) => {});
+        db.run("ALTER TABLE orders ADD COLUMN coins_used INTEGER DEFAULT 0", (err) => {});
         db.run("ALTER TABLE users ADD COLUMN created_at DATETIME", (err) => {
             if (!err) db.run("UPDATE users SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL");
         });
+        db.run("ALTER TABLE users ADD COLUMN coins INTEGER DEFAULT 0", (err) => {});
+        db.run("ALTER TABLE settings ADD COLUMN coin_reward_rate INTEGER DEFAULT 1000", (err) => {});
+        db.run("ALTER TABLE settings ADD COLUMN coin_reward_amount INTEGER DEFAULT 30", (err) => {});
+        db.run("ALTER TABLE settings ADD COLUMN coin_value_per_rupee INTEGER DEFAULT 10", (err) => {});
+        db.run("ALTER TABLE settings ADD COLUMN coins_system_active INTEGER DEFAULT 1", (err) => {});
 
 
 
