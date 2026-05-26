@@ -1,6 +1,15 @@
 * {
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
+    cursor: default;
+}
+
+a, button, select, input[type="submit"], input[type="button"], .pointer-cursor, [role="button"], i, .sidebar-menu li, .action-btn, .close-btn, .tab-nav-item, .toggle-switch, .slider {
+    cursor: pointer !important;
+}
+
+input[type="text"], input[type="password"], input[type="number"], input[type="email"], textarea {
+    cursor: text !important;
 }
 
 :focus:not(:focus-visible) {

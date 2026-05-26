@@ -1,5 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
+/* --- PREMIUM CURSOR RESET --- */
+* {
+    cursor: default;
+}
+a, button, select, input[type="submit"], input[type="button"], .pointer-cursor, [role="button"], i, .carousel-arrow {
+    cursor: pointer !important;
+}
+input[type="text"], input[type="password"], input[type="number"], input[type="email"], textarea {
+    cursor: text !important;
+}
+
 /* --- SPLASH SCREEN --- */
 .splash-screen {
     position: fixed;

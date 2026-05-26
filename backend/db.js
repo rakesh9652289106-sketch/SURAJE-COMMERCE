@@ -137,6 +137,24 @@ function initDb() {
             }
         });
 
+        // Seed Default Admin if empty
+        db.get("SELECT COUNT(*) as count FROM admin_users", (err, row) => {
+            if (row && row.count === 0) {
+                console.log("Seeding default admin...");
+                db.run("INSERT INTO admin_users (phone, full_name, password, security_q1, security_a1, security_q2, security_a2) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    [
+                        '9490229108',
+                        'SURESH',
+                        hashPassword('SURAJ524004'),
+                        'Birth related question',
+                        'amma',
+                        'School related question',
+                        'nanna'
+                    ]
+                );
+            }
+        });
+
         // 2. For Users
         db.all("SELECT id, password FROM users", (err, rows) => {
             if (rows) {

@@ -13,19 +13,16 @@ async function ensureAdmin() {
     const adminData = {
         full_name: "SURESH",
         phone: "9490229108",
-        username: "9490229108",
         password: hashPassword("SURAJ524004"),
         security_q1: "Birth related question",
         security_a1: "AMMA".toLowerCase(),
         security_q2: "School related question",
-        security_a2: "NANNA".toLowerCase(),
-        status: "active",
-        language: "en"
+        security_a2: "NANNA".toLowerCase()
     };
 
     // Check if user exists
     const { data: existingUser } = await supabase
-        .from('users')
+        .from('admin_users')
         .select('id')
         .eq('phone', adminData.phone)
         .single();
@@ -33,7 +30,7 @@ async function ensureAdmin() {
     if (existingUser) {
         console.log("Updating existing Admin Suresh...");
         const { error } = await supabase
-            .from('users')
+            .from('admin_users')
             .update(adminData)
             .eq('id', existingUser.id);
         
@@ -42,7 +39,7 @@ async function ensureAdmin() {
     } else {
         console.log("Creating Admin Suresh...");
         const { error } = await supabase
-            .from('users')
+            .from('admin_users')
             .insert([adminData]);
         
         if (error) console.error("Creation failed:", error);
