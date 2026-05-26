@@ -8,9 +8,11 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // Initialize Supabase Client
 let realSupabase = null;
+let useSQLiteDefault = true;
 try {
     if (supabaseUrl && supabaseKey) {
         realSupabase = createClient(supabaseUrl, supabaseKey);
+        useSQLiteDefault = false;
     }
 } catch (e) {
     console.error("Failed to initialize real Supabase client:", e.message);
@@ -503,7 +505,7 @@ class SupabaseSQLiteMock {
 // Create routing client
 const hybridSupabase = {
     // Mode tracker
-    useSQLite: true,
+    useSQLite: useSQLiteDefault,
 
     from(table) {
         if (this.useSQLite) {
@@ -515,14 +517,6 @@ const hybridSupabase = {
 
 // Check connection to Supabase and decide whether to fall back
 async function detectBestDatabase() {
-    // If Supabase URL points to the dead domain, immediately fall back to local SQLite to save timeout wait
-    if (supabaseUrl && supabaseUrl.includes('thylknptldldxydjwfub.supabase.co')) {
-        console.warn("⚠️ [DB ROUTER] Supabase domain 'thylknptldldxydjwfub.supabase.co' is KNOWN OFFLINE/PAUSED.");
-        console.warn("⚡ [DB ROUTER] Fallback to local SQLite Database is ACTIVE!");
-        hybridSupabase.useSQLite = true;
-        return;
-    }
-
     if (!realSupabase) {
         console.warn("⚠️ [DB ROUTER] No real Supabase config. Defaulting to local SQLite Database.");
         hybridSupabase.useSQLite = true;

@@ -243,7 +243,7 @@ INSERT INTO public.settings (
 INSERT INTO public.admin_users (phone, full_name, password) VALUES (
     '9490229108',
     'SURESH',
-    'SURAJ524004'
+    'c28c87f37c203dacef0579761de7447c:b84838a3e18bdbcdfd659ceabcc62dada15dad9f393a1064449070f6a87d0e8016954852f11df63eb941c155e4561ef849a3522f6b6453bc07d4e5ac07987409'
 ) ON CONFLICT DO NOTHING;
 
 -- Seed Default User
