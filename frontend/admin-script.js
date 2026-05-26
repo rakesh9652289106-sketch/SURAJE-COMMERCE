@@ -1504,6 +1504,26 @@ function setupEventListeners() {
     document.getElementById('couponForm')?.addEventListener('submit', handleCouponSubmit);
     document.getElementById('adminSecurityForm')?.addEventListener('submit', handleSecurityUpdate);
     document.getElementById('appFeaturesForm')?.addEventListener('submit', handleSaveAppConfig);
+
+    // Smooth field transition on pressing Enter inside admin login overlay
+    document.getElementById('adminFullName')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('adminPhone')?.focus();
+        }
+    });
+    document.getElementById('adminPhone')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('adminPassword')?.focus();
+        }
+    });
+    document.getElementById('adminPassword')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('adminSubmitBtn')?.click();
+        }
+    });
 }
 
 async function handleSecurityUpdate(e) {
@@ -1554,9 +1574,11 @@ async function handleSecurityUpdate(e) {
 window.togglePasswordVisibility = (id, el) => {
     const input = document.getElementById(id);
     if (input.type === 'password') {
-        input.type = 'text'; el.classList.replace('ph-eye', 'ph-eye-closed');
+        input.type = 'text';
+        el.classList.replace('ph-eye', 'ph-eye-slash');
     } else {
-        input.type = 'password'; el.classList.replace('ph-eye-closed', 'ph-eye');
+        input.type = 'password';
+        el.classList.replace('ph-eye-slash', 'ph-eye');
     }
 };
 

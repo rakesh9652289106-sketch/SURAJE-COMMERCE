@@ -2176,7 +2176,7 @@ async function fetchBanners() {
                     ${b.description ? `<p>${b.description}</p>` : ''}
                     <button class="btn btn-primary" onclick="navigateToBannerCategory('${b.target_category || 'All'}')">${b.btnText || b.btntext || 'Shop Now'}</button>
                 </div>
-                <img src="${b.imgurl || b.imgUrl}" alt="Promo Banner" class="banner-image" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200'">
+                <img src="${b.imgurl || b.imgUrl}" alt="Promo Banner" class="banner-image" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200'">
             `;
             slider.appendChild(slide);
         }
@@ -2235,10 +2235,29 @@ function populateCategories() {
     grid.innerHTML = '';
     categories.forEach(cat => {
         // Icon mapping fallback for premium feel
-        let iconClass = cat.iconUrl || 'ph-package';
-        if (cat.name === 'Dairy & Bread' || cat.name === 'Dairy & Bakery') iconClass = 'ph-moped'; // Representative icon
-        if (cat.name === 'Fresh Vegetables' || cat.name === 'Vegetables') iconClass = 'ph-leaf';
-        if (cat.name === 'Fruits') iconClass = 'ph-orange';
+        let iconClass = cat.iconurl || cat.iconUrl || 'ph-package';
+        const nameLower = (cat.name || '').toLowerCase();
+        if (nameLower.includes('dairy') || nameLower.includes('bread') || nameLower.includes('bakery')) {
+            iconClass = 'ph-moped';
+        } else if (nameLower.includes('vegetable')) {
+            iconClass = 'ph-leaf';
+        } else if (nameLower.includes('fruit') && !nameLower.includes('dry')) {
+            iconClass = 'ph-orange';
+        } else if (nameLower.includes('snack')) {
+            iconClass = 'ph-cookie';
+        } else if (nameLower.includes('dry fruit')) {
+            iconClass = 'ph-plant';
+        } else if (nameLower.includes('household')) {
+            iconClass = 'ph-house-line';
+        } else if (nameLower.includes('drink') || nameLower.includes('beverage')) {
+            iconClass = 'ph-brandy';
+        } else if (nameLower.includes('dal') || nameLower.includes('pulse') || nameLower.includes('atta') || nameLower.includes('rice')) {
+            iconClass = 'ph-bowl-food';
+        } else if (nameLower.includes('oil') || nameLower.includes('ghee') || nameLower.includes('masala')) {
+            iconClass = 'ph-drop';
+        } else if (nameLower.includes('salt') || nameLower.includes('sugar')) {
+            iconClass = 'ph-grain';
+        }
         
         const html = `
             <div class="category-link" style="cursor: pointer;" onclick="window.filterByCategory('${cat.name}')">
@@ -2361,7 +2380,7 @@ function populateProducts(containerId, items) {
             <div class="product-card" style="${!isAvailable ? 'opacity: 0.6; filter: grayscale(1);' : ''}">
                 <i class="${isWishlisted ? 'ph-fill' : 'ph'} ph-heart" style="position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; color: #EF4444; z-index: 2; cursor: pointer;" onclick="toggleWishlist(event, '${prod.id}')"></i>
                 ${prod.discount ? `<span class="discount-badge">${prod.discount}</span>` : ''}
-                <img src="${imgurl}" alt="${prod.name}" class="product-img" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&text=Product'">
+                <img src="${imgurl}" alt="${prod.name}" class="product-img" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&text=Product'">
                 <div class="product-info">
                     ${prod.variants && prod.variants.length > 0 ? `
                         <select class="variant-select-inline" onchange="updateVariantPrice(this, '${prod.id}', '${safeName}')">
@@ -2525,7 +2544,7 @@ function updateCartSidebar() {
             itemHTML.style.borderBottom = '1px solid var(--border)';
             
             itemHTML.innerHTML = `
-                <img src="${item.imgurl || item.imgUrl || ''}" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&text=Product'" style="width: 50px; height: 50px; object-fit: contain; background: var(--bg-color); border-radius: 8px;">
+                <img src="${item.imgurl || item.imgUrl || ''}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&text=Product'" style="width: 50px; height: 50px; object-fit: contain; background: var(--bg-color); border-radius: 8px;">
                 <div style="flex: 1;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <h5 style="font-size: 0.9rem; margin-bottom: 0.2rem;">${item.name}</h5>
