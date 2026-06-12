@@ -4,7 +4,8 @@
   "description": "Full-stack SURAJ E-Commerce application",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "postinstall": "node -e \"if (process.platform === 'linux') require('child_process').execSync('npm rebuild sqlite3 --build-from-source', {stdio: 'inherit'})\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.103.0",
