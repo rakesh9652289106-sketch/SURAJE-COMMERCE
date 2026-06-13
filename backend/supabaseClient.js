@@ -534,8 +534,19 @@ function ensureSQLiteSeeded() {
                     resolve();
                 }
             } else {
-                console.log("✅ [DB ROUTER] SQLite database tables already exist.");
-                resolve();
+                console.log("✅ [DB ROUTER] SQLite database tables already exist. Ensuring migrations...");
+                // Run ALTER TABLE migrations dynamically to ensure Razorpay columns exist
+                db.run("ALTER TABLE settings ADD COLUMN razorpay_key_id TEXT", (err) => {
+                    if (err && !err.message.includes("duplicate column name")) {
+                        console.error("Error migrating razorpay_key_id:", err.message);
+                    }
+                });
+                db.run("ALTER TABLE settings ADD COLUMN razorpay_secret TEXT", (err) => {
+                    if (err && !err.message.includes("duplicate column name")) {
+                        console.error("Error migrating razorpay_secret:", err.message);
+                    }
+                    resolve();
+                });
             }
         });
     });

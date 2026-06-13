@@ -96,7 +96,9 @@ function initDb() {
             pay_cash_active INTEGER DEFAULT 1,
             pay_upi_active INTEGER DEFAULT 1,
             allowed_pincodes TEXT,
-            pincode_restriction_active INTEGER DEFAULT 1
+            pincode_restriction_active INTEGER DEFAULT 1,
+            razorpay_key_id TEXT,
+            razorpay_secret TEXT
         )`);
 
         // Migrations: Add marquee_text if it doesn't exist
@@ -266,6 +268,8 @@ function initDb() {
         db.run("ALTER TABLE settings ADD COLUMN coin_reward_amount INTEGER DEFAULT 30", (err) => {});
         db.run("ALTER TABLE settings ADD COLUMN coin_value_per_rupee INTEGER DEFAULT 10", (err) => {});
         db.run("ALTER TABLE settings ADD COLUMN coins_system_active INTEGER DEFAULT 1", (err) => {});
+        db.run("ALTER TABLE settings ADD COLUMN razorpay_key_id TEXT", (err) => {});
+        db.run("ALTER TABLE settings ADD COLUMN razorpay_secret TEXT", (err) => {});
 
 
 
