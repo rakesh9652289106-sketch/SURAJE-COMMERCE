@@ -515,11 +515,38 @@ const hybridSupabase = {
     }
 };
 
+// Function to ensure SQLite is initialized and seeded if empty
+function ensureSQLiteSeeded() {
+    return new Promise((resolve) => {
+        db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='products'", (err, row) => {
+            if (err || !row) {
+                console.warn("⚠️ [DB ROUTER] SQLite database is empty. Running initialization and seeding...");
+                try {
+                    const { initDb } = require('./db');
+                    initDb();
+                    // Wait a bit for async db operations to complete
+                    setTimeout(() => {
+                        console.log("✅ [DB ROUTER] SQLite database initialized and seeded successfully.");
+                        resolve();
+                    }, 2000);
+                } catch (e) {
+                    console.error("❌ [DB ROUTER] Database initialization failed:", e.message);
+                    resolve();
+                }
+            } else {
+                console.log("✅ [DB ROUTER] SQLite database tables already exist.");
+                resolve();
+            }
+        });
+    });
+}
+
 // Check connection to Supabase and decide whether to fall back
 async function detectBestDatabase() {
     if (!realSupabase) {
         console.warn("⚠️ [DB ROUTER] No real Supabase config. Defaulting to local SQLite Database.");
         hybridSupabase.useSQLite = true;
+        await ensureSQLiteSeeded();
         return;
     }
 
@@ -536,6 +563,7 @@ async function detectBestDatabase() {
     } catch (e) {
         console.warn(`⚠️ [DB ROUTER] Supabase ping failed (${e.message}). Falling back to local SQLite Database.`);
         hybridSupabase.useSQLite = true;
+        await ensureSQLiteSeeded();
     }
 }
 
